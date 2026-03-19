@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador de Protocolo | AVANCE</title>
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Reaproveita o tema/base visual do agente (variáveis + layout sidebar/main) -->
+  
+  <link rel="stylesheet" href="./protocolo.css" />
+  <link rel="stylesheet" href="../shared/loading.css">
+</head>
+
+<body>
+  <aside class="sidebar">
+     <div class="logo-container">
+      <a href="/hub/hub.html">
+        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" />
+        
+        <img src="../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" />
+      </a>
+    </div>
+
+    <div class="chat-list" style="margin-top: 20px;">
+      <div class="chat-item active">
+        <i class="ph ph-receipt"></i>
+        <div class="chat-info">
+          <div class="chat-title">Gerador de Protocolo</div>
+          <div class="chat-date">Registro e envio</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-item user-info-item" id="sidebar-userbar">
+        <i class="ph ph-envelope-simple"></i>
+        <span class="user-email-text" id="user-email"></span>
+
+        <button class="settings-dots" id="settings-btn" type="button" aria-label="Configurações">
+          <i class="ph ph-dots-three-vertical"></i>
+        </button>
+
+        <div class="settings-dropdown" id="settings-menu" hidden>
+          <button type="button" class="dropdown-item " id="menu-back-hub">
+            <i class="ph ph-house"></i>
+            <span>Voltar ao Hub</span>
+          </button>
+          <button type="button" class="dropdown-item danger" id="menu-logout">
+            <i class="ph ph-sign-out"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="sidebar-footer-item" id="theme-toggle" type="button">
+        <i class="ph ph-moon"></i>
+        <span>Modo escuro</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="chat-header">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" type="button">
+        <i class="ph ph-list"></i>
+      </button>
+
+      <div class="assistant-info">
+        <div class="assistant-avatar">
+          <i class="ph ph-receipt"></i>
+        </div>
+        <div class="assistant-details">
+          <span class="name">Gerador de Protocolo</span>
+          <span class="status">Gera, registra na planilha e prepara mensagem</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="protocol-wrap">
+      <div class="protocol-card">
+        <h1 class="protocol-title">Novo protocolo</h1>
+        <p class="protocol-subtitle">Preencha os dados e clique em “Gerar”.</p>
+
+        <div class="protocol-form">
+          <div class="field">
+            <label for="phone">Telefone do cliente (DDD)</label>
+            <input id="phone" class="input-dark-lite" placeholder="(22) 99999-9999" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="agent">Consultor</label>
+              <input id="agent" class="input-dark-lite" placeholder="Nome do consultor" />
+            </div>
+
+            <div class="field">
+              <label for="channel">Canal</label>
+              <select id="channel" class="input-dark-lite">
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">E-mail</option>
+                <option value="ligacao">Ligação</option>
+              </select>
+            </div>
+          </div>
+
+            <div class="grid-2">
+                <!-- <div class="field">
+                    <label for="agendorType">Tipo no Agendor</label>
+                    <select id="agendorType" class="input-dark-lite">
+                    <option value="">Não enviar ao Agendor (por enquanto)</option>
+                    <option value="empresa">Empresa</option>
+                    <option value="pessoa">Pessoa</option>
+                    <option value="negocio">Negócio</option>
+                    </select>
+                </div> -->
+
+                <div class="field" id="orgPickerWrap" hidden>
+                    <label for="orgPicker">Registro encontrado</label>
+                    <select id="orgPicker" class="input-dark-lite"></select>
+                    <small class="hint">Selecione a empresa correta e clique em “Gerar” novamente.</small>
+                </div>
+            </div>
+
+          <div class="actions">
+            <button id="btn-generate" class="btn-primary" type="button">
+              <i class="ph ph-seal-check"></i>
+              <span>Gerar</span>
+            </button>
+
+            <button id="btn-clear" class="btn-secondary" type="button">
+              <i class="ph ph-eraser"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+
+          <div id="result" class="result" hidden>
+            <div class="result-row">
+              <span class="k">Protocolo</span>
+              <span class="v" id="proto"></span>
+            </div>
+            <div class="result-row">
+              <span class="k">Planilha</span>
+              <span class="v" id="sheetStatus"></span>
+            </div>
+            <div class="result-row">
+              <span class="k">Agendor</span>
+              <span class="v" id="agendorStatus"></span>
+            </div>
+
+            <div class="field" style="margin-top: 12px;">
+              <label for="msg">Mensagem pronta</label>
+              <textarea id="msg" class="input-dark-lite" rows="4"></textarea>
+            </div>
+
+            <div class="actions">
+              <button id="btn-copy-proto" class="btn-secondary" type="button">
+                <i class="ph ph-copy"></i>
+                <span>Copiar protocolo</span>
+              </button>
+
+              <button id="btn-copy-msg" class="btn-secondary" type="button">
+                <i class="ph ph-copy"></i>
+                <span>Copiar mensagem</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="errorBox" class="error" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/loading.js"></script>
+  <script src="../supabaseClient.js"></script>
+  <script src="./protocolo.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.30);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  padding: 20px;
+}
+
+.app-loading-overlay[hidden] {
+  display: none !important;
+}
+
+.app-loading-card {
+  width: min(92vw, 420px);
+  border-radius: 18px;
+  padding: 26px 22px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  background: var(--bg-sidebar);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+
+.app-loading-icon-wrap {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(37, 99, 235, 0.10);
+}
+
+.app-loading-spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid rgba(37, 99, 235, 0.18);
+  border-top-color: var(--accent-color);
+  animation: app-loading-spin 0.8s linear infinite;
+}
+
+.app-loading-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.app-loading-message {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+body.dark-mode .app-loading-overlay {
+  background: rgba(2, 6, 23, 0.45);
+}
+
+body.dark-mode .app-loading-card {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+body.dark-mode .app-loading-icon-wrap {
+  background: rgba(59, 130, 246, 0.14);
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

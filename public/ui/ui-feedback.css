@@ -1,0 +1,46 @@
+.global-feedback {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  min-width: 260px;
+  max-width: 420px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.global-feedback.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.global-feedback.success {
+  background: #163a22;
+  color: #d1fadf;
+  border: 1px solid #2f9e44;
+}
+
+.global-feedback.error {
+  background: #4a1414;
+  color: #ffd5d5;
+  border: 1px solid #d92d20;
+}
+.global-feedback.warning {
+  background: #4a3414;
+  color: #ffe7c2;
+  border: 1px solid #f5a524;
+}
+
+.global-feedback.info {
+  background: #132f4c;
+  color: #d7ecff;
+  border: 1px solid #3b82f6;
+}

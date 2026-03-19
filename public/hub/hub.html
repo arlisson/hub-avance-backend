@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hub | AVANCE</title>
+
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="./hub.css" />
+</head>
+
+<body>
+  <!-- Aplica o tema ANTES de qualquer renderização para evitar o flash de tema claro -->
+  <script>
+    (function () {
+      if (localStorage.getItem('theme') !== 'light') {
+        document.body.classList.add('dark-mode');
+      }
+    })();
+  </script>
+
+  <header class="top-navbar">
+    <div class="logo-container">
+      <a href="/hub/hub.html">
+        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" width="200" height="60" />
+
+        <img src="../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" width="200" height="60" />
+      </a>
+    </div>
+
+    <nav class="navbar-links">
+      <a href="#" class="nav-link active">Início</a>
+      <a href="#hub-grid" class="nav-link">Aplicações</a>
+      <a href="../sobre/sobre.html" class="nav-link">Sobre</a>
+      <a href="../produtos/produtos.html" class="nav-link">Produtos</a>
+    </nav>
+
+    <div class="navbar-right">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Abrir Menu" type="button">
+        <i class="ph ph-list"></i>
+      </button>
+      
+      <button class="theme-toggle-top" id="theme-toggle" type="button" aria-label="Ativar modo claro">
+        <i class="ph ph-moon"></i>
+      </button>
+      <div class="user-menu-container">
+        <button class="user-profile-btn" id="settings-btn" type="button">
+          <i class="ph ph-user-circle"></i>
+          <span id="user-email" class="nav-user-email">Carregando...</span>
+          <i class="ph ph-caret-down" style="font-size: 14px;"></i>
+        </button>
+
+        <div class="settings-dropdown" id="settings-menu" hidden>
+
+          <a href="../perfil/perfil.html" class="dropdown-item reset-action" id="perfil-user"
+            style="text-decoration: none;">
+            <i class="ph ph-user"></i>
+            <span>Perfil</span>
+          </a>
+
+          <a href="../usuarios/usuarios.html" class="dropdown-item reset-action" id="menu-users"
+            style="text-decoration: none;" hidden>
+            <i class="ph ph-users-three"></i>
+            <span>Usuários</span>
+          </a>
+
+          <a href="/redefinirSenha/redefinirSenha.html" class="dropdown-item reset-action"
+            style="text-decoration: none;">
+            <i class="ph ph-lock-key"></i>
+            <span>Alterar Senha</span>
+          </a>
+
+          <button type="button" class="dropdown-item danger" id="menu-logout">
+            <i class="ph ph-sign-out"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <section class="hero-section">
+      <div class="hero-content">
+        <p class="hero-badge">Avance Vip</p>
+        <h1 class="hero-title">O próximo nível da sua<br>operação começa agora.</h1>
+        <p class="hero-subtitle">Você tomou a decisão certa. Reunimos tecnologia, automação e estratégia em um só lugar.
+          Acesse nossas aplicações abaixo e deixe o trabalho pesado com a gente.</p>
+
+        <button class="hero-btn" onclick="document.getElementById('hub-grid').scrollIntoView({behavior: 'smooth'})"
+          type="button">
+          Começar agora <i class="ph ph-arrow-up-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <section class="hub-testimonials-section">
+      <div class="hub-section-title" style="margin-top: 0; margin-bottom: 30px;">
+        <h2>O que dizem sobre nós</h2>
+      </div>
+
+      <div class="testimonials-container">
+        <div class="testimonials-track" id="testimonials-track"></div>
+      </div>
+    </section>
+
+    <div class="showcase-wrapper">
+      <div class="showcase-content">
+
+        <div class="hub-section-title">
+          <h2>Nossas Aplicações</h2>
+        </div>
+        <div class="hub-grid" id="hub-grid"></div>
+      </div>
+    </div>
+
+    <footer class="hub-footer">
+      <span>AVANCE • Hub de Distribuição</span>
+    </footer>
+  </main>
+
+  <!-- Modal (pop-up) de detalhes -->
+  <div id="app-modal-backdrop" class="app-modal-backdrop" hidden>
+    <div id="app-modal" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="app-modal-title" hidden>
+      <div class="app-modal-header">
+        <div class="app-modal-titlewrap">
+          <div class="app-modal-badge" id="app-modal-badge"></div>
+          <h2 class="app-modal-title" id="app-modal-title"></h2>
+        </div>
+
+        <button type="button" class="app-modal-close" id="app-modal-close" aria-label="Fechar">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <div class="app-modal-body">
+        <p class="app-modal-desc" id="app-modal-desc"></p>
+
+        <div class="app-modal-video" id="app-modal-video">
+          <!-- iframe inserido via JS -->
+        </div>
+
+        <div class="app-modal-actions app-modal-actions-bottom" id="app-modal-actions">
+          <!-- botões inseridos via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabaseClient.js"></script>
+  <script src="./hub.js" defer></script>
+</body>
+
+</html>

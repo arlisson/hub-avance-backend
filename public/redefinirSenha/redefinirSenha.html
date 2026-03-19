@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redefinir senha</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="../reset/reset.css" />
+  </head>
+
+  <body>
+    <div class="reset-container">
+      <div class="reset-card">
+        <div class="reset-header">
+          <div class="reset-logo-container">
+            <img src="../../img/avanceVip.png" alt="Logo" />
+          </div>
+
+          <h1>Alterar senha</h1>
+          <p>Informe sua senha atual e defina a nova.</p>
+        </div>
+
+        <form id="reset-form">
+          <div class="input-group" id="current-password-group">
+            <label for="current-password">Senha atual</label>
+            <div class="input-wrapper">
+              <i class="ph ph-lock-key input-icon"></i>
+              <input
+                id="current-password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                id="toggle-current-password"
+                aria-label="Mostrar/ocultar senha atual"
+              >
+                <i class="ph ph-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="new-password">Nova senha</label>
+            <div class="input-wrapper">
+              <i class="ph ph-lock input-icon"></i>
+              <input
+                id="new-password"
+                type="password"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                id="toggle-new-password"
+                aria-label="Mostrar/ocultar senha"
+              >
+                <i class="ph ph-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="password-rules" id="password-rules">
+            <div class="rule" data-rule="len">• Mínimo de 8 caracteres</div>
+            <div class="rule" data-rule="digit">• Pelo menos 1 número</div>
+          </div>
+
+          <button type="submit" class="reset-btn" id="save-btn">
+            Salvar
+          </button>
+        </form>
+
+        <div class="reset-footer">
+          <a class="back-link" href="../hub/hub.html">
+            Voltar para o Início
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabaseClient.js"></script>
+    <script src="./redefinirSenha.js" defer></script>
+  </body>
+</html>

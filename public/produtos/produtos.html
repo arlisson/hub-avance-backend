@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produtos | AVANCE</title>
+
+  <link rel="preconnect" href="https://unpkg.com" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="./produtos.css" />
+</head>
+
+<body>
+  <!-- Aplica o tema ANTES de qualquer renderização para evitar o flash de tema claro -->
+  <script>
+    (function () {
+      if (localStorage.getItem('theme') !== 'light') {
+        document.body.classList.add('dark-mode');
+      }
+    })();
+  </script>
+
+  <header class="top-navbar">
+    <div class="logo-container">
+      <a href="/hub/hub.html">
+        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" width="200" height="60" />
+        <img src="../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" width="200" height="60" />
+      </a>
+    </div>
+
+    <nav class="navbar-links" id="navbar-links">
+      <a href="/hub/hub.html" class="nav-link">Início</a>
+      <a href="/hub/hub.html#hub-grid" class="nav-link">Aplicações</a>
+      <a href="../sobre/sobre.html" class="nav-link">Sobre</a>
+      <a href="../produtos/produtos.html" class="nav-link active">Produtos</a>
+    </nav>
+
+    <div class="navbar-right">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Abrir Menu" type="button">
+        <i class="ph ph-list"></i>
+      </button>
+      <button class="theme-toggle-top" id="theme-toggle" type="button" aria-label="Ativar modo escuro">
+        <i class="ph ph-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ============================
+         HERO SECTION
+         ============================ -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <p class="hero-badge">AVANCE VIP</p>
+        <h1 class="hero-title">Trabalhamos com as grandes<br>operadoras do Brasil.</h1>
+        <p class="hero-subtitle">
+          Você escolhe nós resolvemos. Primeiro ouvimos o que o seu negócio precisa.
+          Depois, levamos até você a melhor solução, com o cuidado de um consultor dedicado.
+        </p>
+        <button
+          class="hero-btn"
+          type="button"
+          onclick="document.getElementById('produtos-ancora').scrollIntoView({ behavior: 'smooth' })">
+          Ver soluções <i class="ph ph-arrow-down"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================
+         PRODUTO CARDS (SHOWCASE)
+         ============================ -->
+    <div class="showcase-wrapper" id="produtos-ancora">
+      <div class="showcase-content">
+
+        <div class="hub-section-title">
+          <h2>O que podemos fazer por você</h2>
+          <p class="section-subtitle">
+            Selecione o produto que melhor atende à sua necessidade. Vamos entender a sua demanda e encontrar a melhor opção juntos.
+          </p>
+        </div>
+
+        <!-- Os cards são injetados pelo produtos.js -->
+        <div class="products-grid" id="products-grid" aria-label="Produtos disponíveis" role="list"></div>
+
+      </div>
+    </div>
+
+    <!-- ============================
+         CTA FLUTUANTE
+         ============================ -->
+    <section class="cta-section">
+      <div class="cta-content">
+        <i class="ph ph-question cta-icon"></i>
+        <p class="cta-text">Não sabe qual solução é ideal para o seu negócio?</p>
+        <a
+          href="#"
+          id="cta-whatsapp-geral"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="cta-whatsapp-btn">
+          <i class="ph ph-whatsapp-logo"></i>
+          Falar com um consultor
+        </a>
+      </div>
+    </section>
+
+    <footer class="hub-footer">
+      <span>AVANCE • Consultoria em Telecomunicações</span>
+    </footer>
+  </main>
+
+  <!-- ============================
+       MODAL DE CONSULTORIA (Multi-step)
+       ============================ -->
+  <div id="prod-modal-backdrop" class="app-modal-backdrop" hidden>
+    <div
+      id="prod-modal"
+      class="app-modal prod-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="prod-modal-title"
+      hidden>
+      <!-- Conteúdo injetado dinamicamente pelo produtos.js -->
+    </div>
+  </div>
+
+  <script src="./produtos.js" defer></script>
+</body>
+
+</html>

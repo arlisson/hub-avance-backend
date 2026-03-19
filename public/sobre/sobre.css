@@ -1,0 +1,621 @@
+/* ==========================================================
+   1. VARIÁVEIS DE COR (Claro / Escuro)
+   ========================================================== */
+:root {
+  --bg-main: #FAFEFF;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #131739;
+  --brand-primary: #133868;
+  --brand-accent: #5AC3E8;
+  --brand-light: #ADE5F2;
+  --brand-action: #57C5EA;
+  --text-primary: #0F2C58;
+  --text-secondary: #5AC3E8;
+  --border-subtle: rgba(173, 229, 242, 0.4);
+  --shadow-color: rgba(19, 56, 104, 0.08);
+  --border-color: rgba(173, 229, 242, 0.4);
+}
+
+body.dark-mode {
+  --bg-main: #0B0E23;
+  --bg-card: #131739;
+  --text-primary: #FAFEFF;
+  --text-secondary: #ADE5F2;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================
+   2. RESET E BASE
+   ========================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-main) !important;
+  /* Mantém a cor base para o fundo */
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* Deixa o conteúdo transparente para as estrelas aparecerem */
+.main-content,
+.hero-section {
+  background-color: transparent !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================
+   3. BARRA DE NAVEGAÇÃO (TOP NAVBAR)
+   ========================================================== */
+.top-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background-color: rgba(250, 254, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+}
+
+body.dark-mode .top-navbar {
+  background-color: rgba(11, 14, 35, 0.85);
+}
+
+.company-logo {
+  max-width: 180px;
+  height: auto;
+  transition: transform 0.2s ease;
+}
+
+.company-logo:hover {
+  transform: scale(1.05);
+}
+
+/* Controle da Logo Claro/Escuro */
+body.dark-mode .logo-escuro {
+  display: block;
+}
+
+body.dark-mode .logo-claro {
+  display: none;
+}
+
+body:not(.dark-mode) .logo-escuro {
+  display: none;
+}
+
+body:not(.dark-mode) .logo-claro {
+  display: block;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 32px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  opacity: 1;
+  color: var(--brand-primary);
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active {
+  color: var(--brand-action);
+}
+
+.theme-toggle-top {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.2s;
+}
+
+.theme-toggle-top:hover {
+  background: rgba(87, 197, 234, 0.15);
+  color: var(--brand-action);
+}
+
+body.dark-mode .theme-toggle-top {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================
+   4. HERO SECTION (Cabeçalho da Página Sobre)
+   ========================================================== */
+/* Hero Section Menor para páginas internas */
+.about-hero {
+  width: 100%;
+  /* Garante que ocupe a tela toda de ponta a ponta */
+  min-height: 40vh;
+  display: flex;
+  flex-direction: column;
+  /* Organiza em coluna (título em cima, subtítulo embaixo) */
+  align-items: center;
+  /* A MÁGICA: Centraliza horizontalmente */
+  justify-content: center;
+  /* Centraliza verticalmente */
+  text-align: center;
+  /* Centraliza o texto dentro da caixa */
+  padding: 120px 20px 40px;
+}
+
+/* Garante que o bloco de texto interno não tenha margens empurrando ele */
+.about-hero .hero-content {
+  margin: 0 auto;
+}
+
+.hero-title {
+  text-align: center;
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 700;
+  color: var(--brand-primary);
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+body.dark-mode .hero-title {
+  color: #FAFEFF;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--text-primary);
+  opacity: 0.8;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+body.dark-mode .hero-subtitle {
+  color: var(--brand-light);
+}
+
+/* ==========================================================
+   5. BLOCO NEON LED (A Caixa Flutuante)
+   ========================================================== */
+.showcase-wrapper {
+  position: relative;
+  width: 95%;
+  max-width: 1200px;
+  /* Largura bacana para leitura */
+  margin: 40px auto 80px auto;
+  border-radius: 20px;
+  overflow: visible;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  animation: pulseNeonLED 4s ease-in-out infinite;
+}
+
+.showcase-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: var(--border-color);
+  border-radius: 21px;
+  z-index: -2;
+}
+
+.showcase-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg-card);
+  /* Usa a cor do tema */
+  border-radius: 20px;
+  z-index: -1;
+  transition: background-color 0.3s ease;
+}
+
+@keyframes pulseNeonLED {
+
+  0%,
+  100% {
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      0 0 10px 1px rgba(87, 197, 234, 0.3),
+      0 0 40px 5px rgba(87, 197, 234, 0.1),
+      0 0 60px 10px rgba(15, 44, 88, 0.1);
+  }
+
+  50% {
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      0 0 15px 1px rgba(87, 197, 234, 0.6),
+      0 0 70px 15px rgba(87, 197, 234, 0.3),
+      0 0 100px 30px rgba(15, 44, 88, 0.3);
+  }
+}
+
+/* ==========================================================
+   6. CONTEÚDO DO SOBRE (Textos)
+   ========================================================== */
+.about-content {
+  padding: 60px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.about-text-area {
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.about-text-area p {
+  margin-bottom: 24px;
+}
+
+.about-text-area p:last-child {
+  margin-bottom: 0;
+}
+
+.about-text-area strong {
+  color: var(--brand-action);
+  font-weight: 700;
+}
+
+/* ==========================================================
+   7. SEÇÃO DE CONTATO E CARDS
+   ========================================================== */
+.hub-section-title {
+  text-align: center;
+  margin: 40px auto;
+}
+
+.hub-section-title h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+body.dark-mode .hub-section-title h2 {
+  color: #FAFEFF;
+}
+
+.contact-grid {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 100px;
+}
+
+.contact-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 40px 30px;
+  width: 320px;
+  /* Um pouco mais largo */
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.dark-mode .contact-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.contact-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--brand-action);
+  box-shadow: 0 20px 40px rgba(87, 197, 234, 0.15);
+}
+
+.contact-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(87, 197, 234, 0.1);
+  color: var(--brand-action);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.contact-card:hover .contact-icon {
+  transform: scale(1.1);
+  background: var(--brand-action);
+  color: var(--bg-main);
+}
+
+.contact-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.contact-card p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+/* ==========================================================
+   8. RODAPÉ (FOOTER)
+   ========================================================== */
+.hub-footer {
+  text-align: center;
+  padding: 24px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.6;
+  margin-top: auto;
+  width: 100%;
+}
+
+body.dark-mode .hub-footer {
+  opacity: 0.4;
+}
+
+/* ==========================================================
+   9. RESPONSIVIDADE (MOBILE)
+   ========================================================== */
+@media (max-width: 900px) {
+
+  /* 1. Reduz o espaçamento geral da barra */
+  .top-navbar {
+    padding: 12px 16px !important;
+  }
+
+  /* 2. Força o logótipo a diminuir no telemóvel */
+  .company-logo {
+    max-width: 120px !important;
+  }
+
+  .navbar-logo {
+    height: 26px !important;
+  }
+
+  /* 3. Aproxima os botões do lado direito à força */
+  .navbar-right {
+    gap: 8px !important;
+  }
+
+  /* 4. Deixa os botões mais compactos */
+  .user-profile-btn {
+    padding: 6px 10px !important;
+  }
+
+  .theme-toggle-top {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+  }
+
+  /* Botão hambúrguer */
+  .mobile-menu-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    font-size: 26px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px;
+    transition: transform 0.2s ease;
+  }
+
+  /* Menu suspenso */
+  .navbar-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-main);
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    gap: 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: none;
+    z-index: 999;
+  }
+
+  .navbar-links.active {
+    display: flex !important;
+  }
+
+  /* Esconde o texto do email no telemóvel */
+  .nav-user-email {
+    display: none !important;
+  }
+}
+
+/* Esconde o botão do menu mobile por padrão (no PC) */
+.mobile-menu-btn {
+  display: none;
+}
+
+/* ==========================================================
+   MENU DO USUÁRIO (PERFIL E DROPDOWN)
+   ========================================================== */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-menu-container {
+  position: relative;
+}
+
+.user-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+}
+
+.user-profile-btn:focus,
+.user-profile-btn:active {
+  outline: none;
+  border-color: var(--brand-action);
+  box-shadow: 0 0 0 2px rgba(87, 197, 234, 0.3);
+}
+
+.user-profile-btn:hover {
+  background: rgba(87, 197, 234, 0.05);
+}
+
+.nav-user-email {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- A Caixa do Dropdown --- */
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 15px);
+  right: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  min-width: 140px;
+  z-index: 9999;
+  display: block;
+  height: auto;
+  min-height: 48px;
+}
+
+.settings-dropdown[hidden] {
+  display: none;
+}
+
+/* Setinha apontando para cima */
+.settings-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-card);
+  border-left: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
+  transform: rotate(45deg);
+}
+
+/* --- Item padrão do menu --- */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  /* Cor padrão do texto */
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-hover);
+}
+
+/* --- Botão Sair (Danger) --- */
+.dropdown-item.danger {
+  color: #ef4444;
+}
+
+.dropdown-item.danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Destaque para o botão de Alterar Senha no hover */
+.dropdown-item.reset-action {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-item.reset-action:hover {
+  background: rgba(87, 197, 234, 0.12);
+  /* Fundo azul suave */
+  color: #133868;
+  /* Azul mais escuro para o texto no tema claro */
+}
+
+/* Ajuste do hover para o Modo Escuro */
+body.dark-mode .dropdown-item.reset-action:hover {
+  background: rgba(87, 197, 234, 0.18);
+  color: #ADE5F2;
+  /* Azul claro para o texto no tema escuro */
+}
+
+[hidden] {
+  display: none !important;
+}

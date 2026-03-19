@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sobre | AVANCE</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./sobre.css" />
+</head>
+
+<body>
+    <!-- Aplica o tema ANTES de qualquer renderização para evitar o flash de tema claro -->
+    <script>
+        (function () {
+            if (localStorage.getItem('theme') !== 'light') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
+
+    <header class="top-navbar">
+        <div class="logo-container">
+            <a href="/hub/hub.html">
+                <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" />
+                <img src="../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" />
+            </a>
+        </div>
+
+        <nav class="navbar-links">
+            <a href="/hub/hub.html" class="nav-link">Início</a>
+            <a href="/hub/hub.html#hub-grid" class="nav-link">Aplicativos</a>
+            <a href="sobre.html" class="nav-link active">Sobre</a>
+        </nav>
+
+        <div class="navbar-right">
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Abrir Menu" type="button">
+                <i class="ph ph-list"></i>
+            </button>
+
+            <button class="theme-toggle-top" id="theme-toggle" type="button" aria-label="Alternar tema">
+                <i class="ph ph-moon"></i>
+                <span style="display: none;">Modo escuro</span>
+            </button>
+
+            <div class="user-menu-container">
+                <button class="user-profile-btn" id="settings-btn" type="button">
+                    <i class="ph ph-user-circle"></i>
+                    <span id="user-email" class="nav-user-email">Carregando...</span>
+                    <i class="ph ph-caret-down" style="font-size: 14px;"></i>
+                </button>
+
+                <div class="settings-dropdown" id="settings-menu" hidden>
+                    <a href="../perfil/perfil.html" class="dropdown-item reset-action" id="perfil-user"
+                        style="text-decoration: none;">
+                        <i class="ph ph-user"></i>
+                        <span>Perfil</span>
+                    </a>
+
+                    <a href="../usuarios/usuarios.html" class="dropdown-item reset-action" id="menu-users"
+                        style="text-decoration: none;" hidden>
+                        <i class="ph ph-users-three"></i>
+                        <span>Usuários</span>
+                    </a>
+
+                    <a href="/redefinirSenha/redefinirSenha.html" class="dropdown-item reset-action"
+                        style="text-decoration: none;">
+                        <i class="ph ph-lock-key"></i>
+                        <span>Alterar Senha</span>
+                    </a>
+
+                    <button type="button" class="dropdown-item danger" id="menu-logout">
+                        <i class="ph ph-sign-out"></i>
+                        <span>Sair</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section about-hero">
+            <div class="hero-content">
+                <h1 class="hero-title">Nossa História</h1>
+                <p class="hero-subtitle">Conheça a visão e a tecnologia por trás do próximo nível da sua operação.</p>
+            </div>
+        </section>
+
+        <div class="showcase-wrapper">
+            <div class="showcase-content about-content">
+                <div class="about-text-area">
+                    <p>A <strong>Avance VIP</strong> nasceu com um propósito claro: simplificar o complexo e trazer
+                        tecnologia de ponta para as operações de empresas que querem escalar com inteligência.</p>
+
+                    <p>Nós entendemos que o maior gargalo das empresas hoje não é a falta de vontade, mas sim o uso de
+                        processos manuais, lentos e descentralizados. Por isso, reunimos uma equipe de especialistas
+                        apaixonados por <strong>Inteligência Artificial, automação e design de software</strong> para
+                        criar soluções que realmente funcionam no mundo real.</p>
+
+                    <p>Seja baseada em IA ou dos nossos sistemas de automação de
+                        dados, nosso compromisso é colocar o controle de volta nas suas mãos, de forma segura, rápida e
+                        com um visual que você tem orgulho de usar.</p>
+
+                    <p>Deixe o trabalho pesado com a tecnologia. Foque no que importa: <strong>o seu
+                            crescimento.</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="hub-section-title" id="contato">
+            <h2>Fale com a Avance</h2>
+        </div>
+
+        <div class="contact-grid">
+            <a href="mailto:contato@avance.com" class="contact-card">
+                <div class="contact-icon"><i class="ph ph-envelope-simple"></i></div>
+                <h3>E-mail</h3>
+                <p>contato@avance.com</p>
+            </a>
+
+            <a href="https://wa.me/22988124656" target="_blank" class="contact-card">
+                <div class="contact-icon"><i class="ph ph-whatsapp-logo"></i></div>
+                <h3>WhatsApp</h3>
+                <p>(22) 98812-4656</p>
+            </a>
+
+            <div class="contact-card">
+                <div class="contact-icon"><i class="ph ph-clock"></i></div>
+                <h3>Atendimento</h3>
+                <p>Seg a Sex - 08h às 18h</p>
+            </div>
+        </div>
+
+        <footer class="hub-footer">
+            <span>AVANCE • Hub de Distribuição</span>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabaseClient.js"></script>
+    <script src="../hub/hub.js" defer></script>
+
+    <!-- Animação de partículas (igual ao hub) -->
+    <script>
+        (function initParticles() {
+            let canvas = document.getElementById("global-particles");
+
+            if (!canvas) {
+                canvas = document.createElement("canvas");
+                canvas.id = "global-particles";
+                canvas.style.position = "fixed";
+                canvas.style.top = "0";
+                canvas.style.left = "0";
+                canvas.style.width = "100vw";
+                canvas.style.height = "100vh";
+                canvas.style.zIndex = "-10";
+                canvas.style.pointerEvents = "none";
+                document.body.prepend(canvas);
+            }
+
+            const ctx = canvas.getContext("2d");
+            let particlesArray = [];
+
+            function setCanvasSize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            setCanvasSize();
+
+            let resizeTimer;
+            window.addEventListener("resize", () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    setCanvasSize();
+                    init();
+                }, 200);
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 3 + 1.5;
+                    this.speedX = (Math.random() - 0.5) * 1.2;
+                    this.speedY = (Math.random() - 0.5) * 1.2;
+                    this.opacity = Math.random() * 0.7 + 0.3;
+                }
+
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(87, 197, 234, ${this.opacity})`;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "rgba(87, 197, 234, 1)";
+                    ctx.fill();
+                }
+            }
+
+            function init() {
+                particlesArray = [];
+                const count = Math.floor((canvas.width * canvas.height) / 8000);
+                for (let i = 0; i < count; i++) particlesArray.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < particlesArray.length; i++) {
+                    particlesArray[i].update();
+                    particlesArray[i].draw();
+                }
+                requestAnimationFrame(animate);
+            }
+
+            init();
+            animate();
+        })();
+    </script>
+</body>
+
+</html>

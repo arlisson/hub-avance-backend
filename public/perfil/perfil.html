@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil | AVANCE</title>
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="./perfil.css" />
+  <link rel="stylesheet" href="../ui/ui-feedback.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo-container">
+      <a href="/hub/hub.html">
+        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo" />
+      </a>
+    </div>
+
+    <div class="chat-list" style="margin-top: 20px;">
+      <div class="chat-item active">
+        <i class="ph ph-user-circle"></i>
+        <div class="chat-info">
+          <div class="chat-title">Meu perfil</div>
+          <div class="chat-date">Dados da conta</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-item user-info-item" id="sidebar-userbar">
+        <i class="ph ph-envelope-simple"></i>
+        <span class="user-email-text" id="user-email"></span>
+
+        <button class="settings-dots" id="settings-btn" type="button" aria-label="Configurações">
+          <i class="ph ph-dots-three-vertical"></i>
+        </button>
+
+        <div class="settings-dropdown" id="settings-menu" hidden>
+          <a
+            href="../usuarios/usuarios.html"
+            class="dropdown-item"
+            id="menu-users"
+            hidden
+          >
+            <i class="ph ph-users-three"></i>
+            <span>Usuários</span>
+          </a>
+
+          <button type="button" class="dropdown-item" id="menu-back-hub">
+            <i class="ph ph-house"></i>
+            <span>Voltar ao Hub</span>
+          </button>
+
+          <a
+            href="/redefinirSenha/redefinirSenha.html"
+            class="dropdown-item"
+            style="text-decoration: none;"
+          >
+            <i class="ph ph-lock-key"></i>
+            <span>Alterar Senha</span>
+          </a>
+
+          <button type="button" class="dropdown-item danger" id="menu-logout">
+            <i class="ph ph-sign-out"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="sidebar-footer-item" id="theme-toggle" type="button">
+        <i class="ph ph-moon"></i>
+        <span>Modo escuro</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="chat-header">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" type="button" aria-label="Abrir menu">
+        <i class="ph ph-list"></i>
+      </button>
+
+      <div class="assistant-info">
+        <div class="assistant-avatar">
+          <i class="ph ph-user-circle"></i>
+        </div>
+        <div class="assistant-details">
+          <span class="name">Perfil do usuário</span>
+          <span class="status">Visualize e atualize seus dados cadastrados</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="protocol-wrap">
+      <div class="protocol-card">
+        <h1 class="protocol-title">Meu perfil</h1>
+        <p class="protocol-subtitle">
+          Atualize seus dados pessoais. Alguns campos são somente leitura por segurança.
+        </p>
+
+        <div id="errorBox" class="error" hidden></div>
+
+        <form id="perfil-form" novalidate>
+          <div class="user-card-grid">
+            <div class="field">
+              <label for="name">Nome</label>
+              <input id="name" class="input-dark-lite" type="text" placeholder="Seu nome" />
+            </div>
+
+            <div class="field">
+              <label for="email">E-mail</label>
+              <input id="email" class="input-dark-lite" type="email" readonly />
+            </div>
+
+            <div class="field">
+              <label for="cpf">CPF/CNPJ</label>
+              <input id="cpf" class="input-dark-lite" type="text" readonly />
+            </div>
+
+            <div class="field">
+              <label for="whatsapp">WhatsApp</label>
+              <input id="whatsapp" class="input-dark-lite" type="text" placeholder="(00) 00000-0000" />
+            </div>
+
+            <div class="field">
+              <label for="cep">CEP</label>
+              <input
+                id="cep"
+                class="input-dark-lite"
+                type="text"
+                placeholder="00000-000"
+                inputmode="numeric"
+                maxlength="9"
+                autocomplete="postal-code"
+              />
+            </div>
+
+            <div class="field">
+              <label for="cidade">Cidade</label>
+              <input id="cidade" class="input-dark-lite" type="text" readonly />
+            </div>
+
+            <div class="field">
+              <label for="estado">Estado</label>
+              <input id="estado" class="input-dark-lite" type="text" readonly />
+            </div>
+
+            <div class="field">
+              <label for="has-mobile">Telefonia ativa</label>
+              <select id="has-mobile" class="input-dark-lite">
+                <option value="">Selecione</option>
+                <option value="true">Sim</option>
+                <option value="false">Não</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="contract-type">Tipo de contrato</label>
+              <select id="contract-type" class="input-dark-lite">
+                <option value="">Selecione</option>
+                <option value="CPF">CPF</option>
+                <option value="CNPJ">CNPJ</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="operator">Operadora</label>
+              <input id="operator" class="input-dark-lite" type="text" placeholder="Operadora" />
+            </div>
+
+            <div class="field">
+              <label for="active-lines">Linhas ativas</label>
+              <input id="active-lines" class="input-dark-lite" type="number" min="0" step="1" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="save-btn" type="submit" class="btn-primary">
+              <i class="ph ph-floppy-disk"></i>
+              <span>Salvar alterações</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabaseClient.js"></script>
+  <script src="../ui/ui-feedback.js"></script>
+  <script src="./perfil.js" defer></script>
+</body>
+</html>
