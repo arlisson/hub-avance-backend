@@ -20,8 +20,15 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/health", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT 1 AS ok");
-    res.json({ ok: true, db: rows[0].ok === 1 });
+    res.json({
+      ok: true,
+      env: {
+        DB_HOST: process.env.DB_HOST,
+        DB_PORT: process.env.DB_PORT,
+        DB_NAME: process.env.DB_NAME,
+        DB_USER: process.env.DB_USER
+      }
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
