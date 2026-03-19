@@ -50,10 +50,21 @@ export async function login(req, res) {
 
     const user = rows[0];
 
+    console.log("Email recebido:", email);
+    console.log("JWT secret existe:", Boolean(process.env.JWT_SECRET));
+    console.log("Rows retornadas:", rows);
+
     if (!user) {
       return res.status(401).json({
         ok: false,
         error: "Credenciais inválidas."
+      });
+    }
+
+    if (!user.password_hash) {
+      return res.status(500).json({
+        ok: false,
+        error: "Usuário sem password_hash."
       });
     }
 
