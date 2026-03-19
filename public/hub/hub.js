@@ -293,6 +293,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const user = sessionData.user;
+
     CURRENT_USER_ID = user.id || "";
     const email = user.email || "";
     const canAccessProtocol = !!user.protocol;
@@ -306,7 +307,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (userEmailEl) {
       userEmailEl.textContent = email;
       userEmailEl.title = email;
-      userEmailEl.style.cursor = "default";
     }
 
     const settingsBtn = document.getElementById("settings-btn");
