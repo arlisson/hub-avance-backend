@@ -104,14 +104,16 @@ export async function login(req, res) {
         nome: user.nome || null,
         role: user.role,
         protocol: Boolean(user.protocol),
-        cliente_avance: user.cliente_avance === null ? null : Boolean(user.cliente_avance)
+        cliente_avance:
+          user.cliente_avance === null ? null : Boolean(user.cliente_avance)
       }
     });
   } catch (error) {
     console.error("Erro em /api/login:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro interno ao realizar login."
+      error: error.message,
+      stack: error.stack
     });
   }
 }
@@ -157,7 +159,8 @@ export async function me(req, res) {
         ativo: Boolean(user.ativo),
         role: user.role,
         protocol: Boolean(user.protocol),
-        cliente_avance: user.cliente_avance === null ? null : Boolean(user.cliente_avance)
+        cliente_avance:
+          user.cliente_avance === null ? null : Boolean(user.cliente_avance)
       }
     });
   } catch (error) {
@@ -167,7 +170,7 @@ export async function me(req, res) {
       error: error.message,
       stack: error.stack
     });
-    }
+  }
 }
 
 export async function logout(req, res) {
@@ -197,7 +200,8 @@ export async function forgotPassword(req, res) {
     console.error("Erro em /api/forgot-password:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro interno ao solicitar redefinição."
+      error: error.message,
+      stack: error.stack
     });
   }
 }
