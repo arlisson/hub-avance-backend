@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Criar Conta</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body>
+    <!-- Aplica o tema ANTES do render para evitar flash de tela clara -->
+    <script>
+      (function () {
+        const isDark = localStorage.getItem('theme') !== 'light';
+        if (isDark) document.body.classList.add('dark-mode');
+        document.addEventListener('DOMContentLoaded', function () {
+          const icon = document.querySelector('#theme-toggle i');
+          if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
+        });
+      })();
+    </script>
+
+    <button class="theme-toggle-cadastro" id="theme-toggle" type="button" aria-label="Alternar tema">
+      <i class="ph ph-sun"></i>
+    </button>
+
+    <div class="register-container">
+      <div class="register-card">
+        <div class="register-header">
+          <div class="register-logo-container">
+            <img src="../../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" />
+            <img src="../../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" />
+          </div>
+          <h1>Crie sua conta</h1>
+          <p>Preencha os dados abaixo para começar</p>
+        </div>
+
+        <form id="register-form">
+          <div class="input-group">
+            <label for="name">Nome completo ou Razão Social</label>
+            <div class="input-wrapper">
+              <i class="ph ph-user input-icon"></i>
+              <input
+                type="text"
+                id="name"
+                placeholder="Ex: João Silva ou Empresa LTDA"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="document">CPF ou CNPJ</label>
+            <div class="input-wrapper">
+              <i class="ph ph-identification-card input-icon"></i>
+              <input
+                type="text"
+                id="document"
+                placeholder="000.000.000-00"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="whatsapp">WhatsApp</label>
+            <div class="input-wrapper">
+              <i class="ph ph-whatsapp-logo input-icon"></i>
+              <input
+                type="tel"
+                id="whatsapp"
+                placeholder="(00) 00000-0000"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="email">Seu melhor E-mail</label>
+            <div class="input-wrapper">
+              <i class="ph ph-envelope-simple input-icon"></i>
+              <input
+                type="email"
+                id="email"
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="cep">CEP</label>
+            <div class="input-wrapper">
+              <i class="ph ph-map-pin input-icon"></i>
+              <input
+                type="text"
+                id="cep"
+                placeholder="00000-000"
+                maxlength="9"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="cidade">Cidade</label>
+            <div class="input-wrapper">
+              <i class="ph ph-buildings input-icon"></i>
+              <input
+                type="text"
+                id="cidade"
+                placeholder="Cidade"
+                readonly
+              />
+            </div>
+          </div>
+
+        <div class="input-group">
+          <label for="estado">Estado</label>
+          <div class="input-wrapper">
+            <i class="ph ph-map-trifold input-icon"></i>
+            <input
+              type="text"
+              id="estado"
+              placeholder="UF"
+              readonly
+            />
+          </div>
+        </div>
+
+          <!-- 1. Sua empresa atualmente possui serviço de telefonia móvel ativo? -->
+            <div class="input-group">
+              <label>Sua empresa atualmente possui serviço de telefonia móvel ativo?</label>
+              <div class="radio-group" id="has-mobile-group">
+                <label class="radio-item">
+                  <input type="radio" name="has_mobile" id="has_mobile_yes" value="sim" required />
+                  <span>Sim</span>
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="has_mobile" id="has_mobile_no" value="nao" />
+                  <span>Não</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 2. O contrato está vinculado a qual tipo de cadastro? -->
+            <div class="input-group" id="contract-type-group">
+              <label>O contrato está vinculado a qual tipo de cadastro?</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input type="radio" name="contract_type" id="contract_type_cnpj" value="CNPJ" />
+                  <span>CNPJ</span>
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="contract_type" id="contract_type_cpf" value="CPF" />
+                  <span>CPF</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3. Qual operadora atende sua empresa hoje? -->
+            <div class="input-group" id="operator-group">
+              <label for="operator">Qual operadora de telefonia atende sua empresa hoje?</label>
+              <div class="input-wrapper">
+                <i class="ph ph-sim-card input-icon"></i>
+                <input type="text" id="operator" placeholder="Sua operadora" />
+              </div>
+            </div>
+
+            <!-- 4. Quantas linhas móveis estão ativas atualmente? -->
+            <div class="input-group" id="lines-group">
+              <label for="active_lines">Quantas linhas móveis estão ativas atualmente?</label>
+              <div class="input-wrapper">
+                <i class="ph ph-list-numbers input-icon"></i>
+                <input
+                  type="number"
+                  id="active_lines"
+                  placeholder="Ex: 10"
+                  min="0"
+                  step="1"
+                  inputmode="numeric"
+                />
+              </div>
+            </div>
+
+          <div class="input-group">
+            <label for="password">Senha</label>
+            <div class="input-wrapper">
+              <i class="ph ph-lock input-icon"></i>
+              <input
+                type="password"
+                id="password"
+                placeholder="Mínimo 8 caracteres"
+                required
+                minlength="8"
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                id="toggle-password"
+              >
+                <i class="ph ph-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="password-rules" id="password-rules">
+            <div class="rule" data-rule="len">• Mínimo de 8 caracteres</div>
+            <!-- <div class="rule" data-rule="upper">• Pelo menos 1 letra maiúscula</div> -->
+            <!-- <div class="rule" data-rule="lower">• Pelo menos 1 letra minúscula</div> -->
+            <div class="rule" data-rule="digit">• Pelo menos 1 número</div>
+            <!-- <div class="rule" data-rule="special">• Pelo menos 1 caractere especial (!@#$...)</div> -->
+          </div>
+            
+          <button type="submit" class="register-btn">Cadastrar</button>
+        </form>
+
+        <div class="register-footer">
+          <p>Já tem uma conta? <a href="../login/login.html">Fazer login</a></p>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabaseClient.js"></script>
+    <script src="./cadastro.js" defer></script>
+  </body>
+</html>

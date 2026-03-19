@@ -1,0 +1,128 @@
+<!-- em-producao.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Em produção • Hub AVANCE</title>
+
+    <!-- Reaproveite os mesmos imports do hub.html -->
+    <link rel="shortcut icon" href="../../img/avanceVip.png" type="image/png" />
+
+    <!-- Ícones (caso você use Phosphor no hub.html) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- CSS do Hub (ajuste o caminho conforme seu projeto) -->
+    <link rel="stylesheet" href="./hub.css" />
+  </head>
+
+  <body>
+    <!-- Sidebar (mesma estrutura do hub.html) -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <img
+            src="../../img/avanceVip.png"
+            alt="AVANCE"
+            class="brand-logo"
+            width="32"
+            height="32"
+          />
+          <div class="brand-text">
+            <div class="brand-title">AVANCE</div>
+            <div class="brand-subtitle">Hub</div>
+          </div>
+        </div>
+
+        <button id="mobile-menu-btn" class="icon-btn mobile-only" type="button" aria-label="Menu">
+          <i class="ph ph-list"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="sidebar-user-label">Logado como</div>
+        <div id="user-email" class="sidebar-user-email">—</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link" href="./hub.html">
+          <i class="ph ph-house"></i>
+          <span>Voltar ao Hub</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button id="theme-toggle" class="sidebar-link" type="button">
+          <i class="ph ph-moon"></i>
+          <span>Modo escuro</span>
+        </button>
+
+        <button id="logout-btn" class="sidebar-link danger" type="button">
+          <i class="ph ph-sign-out"></i>
+          <span>Sair</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="hub">
+      <header class="hub-header">
+        <div class="hub-header-left">
+          <div class="hub-title">Em produção</div>
+          <div class="hub-subtitle">
+            Esta funcionalidade está em implantação e ficará disponível em breve.
+          </div>
+        </div>
+      </header>
+
+      <section class="hub-grid">
+        <article class="hub-card">
+          <div class="hub-card-top">
+            <div class="hub-badge">Em produção</div>
+            <div class="hub-icon">
+              <i class="ph ph-gear-six"></i>
+            </div>
+          </div>
+
+          <h2 class="hub-card-title">Estamos finalizando</h2>
+          <p class="hub-card-desc">
+            Você já pode voltar ao Hub e continuar usando as aplicações disponíveis.
+            Caso precise de suporte, contate o time AVANCE.
+          </p>
+
+          <div class="hub-card-actions">
+            <a class="hub-btn hub-btn-primary" href="./hub.html" data-track="back_to_hub">
+              <i class="ph ph-arrow-left"></i>
+              <span>Voltar ao Hub</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="hub-card hub-card-disabled">
+          <div class="hub-card-top">
+            <div class="hub-badge">Status</div>
+            <div class="hub-icon">
+              <i class="ph ph-activity"></i>
+            </div>
+          </div>
+
+          <h2 class="hub-card-title">Disponibilidade</h2>
+          <p class="hub-card-desc">
+            Se você chegou aqui por um link do Hub, o módulo ainda está em implantação.
+          </p>
+
+          <div class="hub-card-actions">
+            <button class="hub-btn" type="button" disabled>
+              <i class="ph ph-lock"></i>
+              <span>Indisponível</span>
+            </button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <!-- Reaproveite o mesmo JS do Hub para sessão/tema/logout -->
+    <script src="../supabaseClient.js"></script>
+    <script src="./hub.js"></script>
+  </body>
+</html>

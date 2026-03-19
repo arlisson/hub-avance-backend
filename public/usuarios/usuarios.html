@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usuários do Sistema | AVANCE</title>
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="./usuarios.css" />
+  <link rel="stylesheet" href="../ui/ui-feedback.css" />
+  <link rel="stylesheet" href="../shared/loading.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo-container">
+      <a href="/hub/hub.html">
+        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo" />
+      </a>
+    </div>
+
+    <div class="chat-list" style="margin-top: 20px;">
+      <button class="chat-item active nav-card" type="button" data-view="users">
+        <i class="ph ph-users-three"></i>
+        <div class="chat-info">
+          <div class="chat-title">Usuários do sistema</div>
+          <div class="chat-date">Gestão e permissões</div>
+        </div>
+      </button>
+
+      <button class="chat-item nav-card" type="button" data-view="apps-usage">
+        <i class="ph ph-chart-bar"></i>
+        <div class="chat-info">
+          <div class="chat-title">Uso dos aplicativos</div>
+          <div class="chat-date">Painel interno de acessos</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-item user-info-item" id="sidebar-userbar">
+        <i class="ph ph-envelope-simple"></i>
+        <span class="user-email-text" id="user-email"></span>
+
+        <button class="settings-dots" id="settings-btn" type="button" aria-label="Configurações">
+          <i class="ph ph-dots-three-vertical"></i>
+        </button>
+         
+        <div class="settings-dropdown" id="settings-menu" hidden>
+           <a
+            href="../perfil/perfil.html"
+            class="dropdown-item"
+            id="menu-users"            
+          >
+            <i class="ph ph-user"></i>
+            <span>Perfil</span>
+          </a>
+          <button type="button" class="dropdown-item" id="menu-back-hub">
+            <i class="ph ph-house"></i>
+            <span>Voltar ao Hub</span>
+          </button>
+
+          <button type="button" class="dropdown-item danger" id="menu-logout">
+            <i class="ph ph-sign-out"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="sidebar-footer-item" id="theme-toggle" type="button">
+        <i class="ph ph-moon"></i>
+        <span>Modo escuro</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="chat-header">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" type="button" aria-label="Abrir menu">
+        <i class="ph ph-list"></i>
+      </button>
+
+      <div class="assistant-info" id="page-header-users">
+        <div class="assistant-avatar">
+          <i class="ph ph-users-three"></i>
+        </div>
+        <div class="assistant-details">
+          <span class="name">Gestão do sistema</span>
+          <span class="status">Permissões, dados e uso dos aplicativos</span>
+        </div>
+      </div>
+      
+    </header>
+
+    <section class="protocol-wrap view-section" id="view-users">
+      <div class="protocol-card">
+        <h1 class="protocol-title">Usuários cadastrados</h1>
+        <p class="protocol-subtitle">Gerencie permissões e dados do sistema.</p>
+
+        <div id="errorBox" class="error" hidden></div>
+
+        <div class="field" style="margin-bottom: 12px;">
+          <label for="search">Buscar</label>
+          <input
+            id="search"
+            class="input-dark-lite"
+            type="text"
+            placeholder="Nome, e-mail, CPF/CNPJ, Cidade, CEP, Estado..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="filter-bar" id="filter-bar">
+          <div class="filter-bar-header">
+            <button class="filter-bar-toggle" id="filter-bar-toggle" type="button">
+              <i class="ph ph-funnel"></i>
+              <span>Filtros</span>
+              <i class="ph ph-caret-down filter-caret" id="filter-caret"></i>
+            </button>
+            <span class="filter-active-count" id="filter-active-count" hidden></span>
+            <button class="btn-clear-filters" id="btn-clear-filters" type="button" hidden>
+              <i class="ph ph-x-circle"></i>
+              Limpar filtros
+            </button>
+          </div>
+
+          <div class="filter-bar-body" id="filter-bar-body" hidden>
+            <div class="filter-group">
+              <label class="filter-label">Cliente Avance</label>
+              <select id="filter-cliente" class="filter-select">
+                <option value="">Todos</option>
+                <option value="1">Sim</option>
+                <option value="0">Não</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Telefonia ativa</label>
+              <select id="filter-telefonia" class="filter-select">
+                <option value="">Todos</option>
+                <option value="1">Sim</option>
+                <option value="0">Não</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Linhas ativas</label>
+              <select id="filter-linhas" class="filter-select">
+                <option value="">Todas</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10+">10 ou mais</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Tipo de contrato</label>
+              <select id="filter-contrato" class="filter-select">
+                <option value="">Todos</option>
+                <option value="CPF">CPF</option>
+                <option value="CNPJ">CNPJ</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Operadora</label>
+              <select id="filter-operadora" class="filter-select">
+                <option value="">Todas</option>
+                <option value="VIVO">VIVO</option>
+                <option value="TIM">TIM</option>
+                <option value="CLARO">CLARO</option>
+                <option value="OI">OI</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-export-row">
+          <span class="filter-result-count" id="filter-result-count"></span>
+          <button class="btn-export-excel" id="btn-export-excel" type="button">
+            <i class="ph ph-microsoft-excel-logo"></i>
+            Exportar para Excel
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>CPF/CNPJ</th>
+                <th>WhatsApp</th>
+                <th>Cidade</th>
+                <th>Estado</th>
+                <th>Acesso Protocolo</th>
+                <th>Cliente Avance</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+        </div>
+
+        <div id="pagination-controls"></div>
+      </div>
+    </section>
+
+    <section class="protocol-wrap view-section" id="view-apps-usage" hidden>
+      <div class="protocol-card">
+        <div class="section-head-row">
+          <div>
+            <h1 class="protocol-title">Uso dos aplicativos</h1>
+            <p class="protocol-subtitle">
+              Painel interno para acompanhar acessos por produto.
+            </p>
+          </div>
+
+          <div class="actions compact-actions">
+            <button class="btn-secondary" id="btn-refresh-app-usage" type="button">
+              <i class="ph ph-arrow-clockwise"></i>
+              Atualizar painel
+            </button>
+          </div>
+        </div>
+
+        <div id="appUsageErrorBox" class="error" hidden></div>
+
+        <div class="usage-summary-grid" id="usage-summary-grid"></div>
+
+        <div class="usage-dashboard-card">
+          <div class="usage-dashboard-header">
+            <div>
+              <h2 class="expand-section-title" style="margin-bottom: 4px;">Detalhamento por aplicativo</h2>
+              <p class="hint">Mostra acessos totais e última atualização disponível.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="users-table usage-table">
+              <thead>
+                <tr>
+                  <th>Aplicativo</th>
+                  <th>Chave</th>
+                  <th>Acessos</th>
+                  <th>Última atualização</th>
+                </tr>
+              </thead>
+              <tbody id="app-usage-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="../shared/loading.js"></script>
+  <script src="../supabaseClient.js"></script>
+  <script src="./usuarios.js" defer></script>
+  <script src="../ui/ui-feedback.js"></script>
+</body>
+</html>

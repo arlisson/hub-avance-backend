@@ -1,0 +1,1503 @@
+/* ==========================================================
+   1. VARIÁVEIS DE COR (Baseadas na nova paleta)
+   ========================================================== */
+:root {
+  /* Cores de Fundo e Superfície */
+  --bg-main: #FAFEFF;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #131739;
+
+  /* Cores de Marca e Ação */
+  --brand-primary: #133868;
+  --brand-accent: #5AC3E8;
+  --brand-light: #ADE5F2;
+  --brand-action: #57C5EA;
+
+  /* Texto e Bordas */
+  --text-primary: #0F2C58;
+  --text-secondary: #5AC3E8;
+  --border-subtle: rgba(173, 229, 242, 0.4);
+  --border-color: rgba(87, 197, 234, 0.3);
+  --shadow-color: rgba(19, 56, 104, 0.08);
+}
+
+/* Modo Escuro */
+body.dark-mode {
+  --bg-main: #0B0E23;
+  --bg-card: #131739;
+  --text-primary: #FAFEFF;
+  --text-secondary: #ADE5F2;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(87, 197, 234, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================================
+   ESTRUTURA BASE E LAYOUT
+   ========================================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* --- CONTEÚDO PRINCIPAL --- */
+.main-content {
+  flex: 1;
+  /* Ocupa o resto da tela */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Previne quebra de layout */
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* ==========================================================
+   2. LAYOUT GERAL, GRID E CARDS (Novo Design)
+   ========================================================== */
+.hub-container {
+  padding: 40px 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+.hub-head {
+  margin-bottom: 24px;
+}
+
+.hub-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--brand-primary);
+  letter-spacing: -0.5px;
+}
+
+body.dark-mode .hub-title {
+  color: var(--brand-accent);
+}
+
+.hub-subtitle {
+  margin: 8px 0 0;
+  color: var(--text-primary);
+  opacity: 0.7;
+  font-size: 15px;
+}
+
+/* ==========================================================
+   HERO SECTION PRINCIPAL (TELA CHEIA)
+   ========================================================== */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Centraliza verticalmente na tela */
+  text-align: center;
+
+  /* Faz a seção ocupar 85% da altura da tela, empurrando os cards pra baixo */
+  min-height: 80vh;
+  padding: 20px;
+  position: relative;
+  margin-bottom: 0px;
+  background-color: transparent;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  /* Mantém o texto e o botão acima do brilho */
+  max-width: 900px;
+  margin-top: -5vh;
+  /* Dá um leve ajuste visual pra cima */
+}
+
+/* ==========================
+   BADGE "AVANCE VIP"
+   ========================== */
+.hero-badge {
+  display: inline-block;
+  font-size: 22px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  padding: 16px 44px;
+  border-radius: 50px;
+  background: rgba(87, 197, 234, 0.12);
+  color: var(--brand-action);
+  border: 1.5px solid rgba(87, 197, 234, 0.45);
+  margin: 0 0 28px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-badge {
+    animation: badgeGlow 2.8s ease-in-out infinite;
+  }
+
+  /* Faixa de shimmer que passa por cima */
+  .hero-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      transparent 100%
+    );
+    animation: badgeShimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes badgeGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(87, 197, 234, 0.25), 0 0 25px rgba(87, 197, 234, 0.08);
+    border-color: rgba(87, 197, 234, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(87, 197, 234, 0.65), 0 0 50px rgba(87, 197, 234, 0.25);
+    border-color: rgba(87, 197, 234, 0.95);
+  }
+}
+
+@keyframes badgeShimmer {
+  0%   { left: -100%; opacity: 0; }
+  20%  { opacity: 1; }
+  60%  { left: 160%; opacity: 1; }
+  100% { left: 160%; opacity: 0; }
+}
+
+body.dark-mode .hero-badge {
+  background: rgba(87, 197, 234, 0.1);
+  border-color: rgba(87, 197, 234, 0.3);
+}
+
+/* ==========================
+   TIPOGRAFIA (Elegante e Clean)
+   ========================== */
+.hero-title {
+  /* Fonte limpa e sofisticada */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 500;
+  /* Reduzido de 800 para 500 para ficar igual à sua imagem */
+  line-height: 1.1;
+  color: var(--brand-primary);
+  margin: 0 0 30px 0;
+  letter-spacing: -1.5px;
+}
+
+body.dark-mode .hero-title {
+  color: #FAFEFF;
+  /* Branco puro no modo escuro */
+}
+
+.hero-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-primary);
+  opacity: 0.7;
+  max-width: 600px;
+  margin: 0 auto 40px auto;
+}
+
+body.dark-mode .hero-subtitle {
+  color: var(--brand-light);
+  /* Azul pastel para não brigar com o título */
+  opacity: 0.8;
+}
+
+/* ==========================
+   BOTÃO "GLOW" (Neon Cyan)
+   ========================== */
+.hero-btn {
+  background-color: var(--brand-action);
+  color: #131739;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 16px 36px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 30px rgba(87, 197, 234, 0.3);
+}
+
+.hero-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(87, 197, 234, 0.6);
+  background-color: var(--brand-accent);
+}
+
+.hero-btn i {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.hero-btn:hover i {
+  transform: translate(2px, -2px);
+  /* Setinha aponta pra cima/direita no hover */
+}
+
+/* ==========================================================
+   TÍTULO DA SEÇÃO (Centralizado e Premium)
+   ========================================================== */
+.hub-section-title {
+  text-align: center;
+  margin: 60px auto 40px auto;
+  /* Dá um respiro grande em relação ao Hero */
+  max-width: 800px;
+}
+
+.hub-section-title h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(28px, 4vw, 42px);
+  /* Fica gigante no PC e adapta no celular */
+  font-weight: 600;
+  color: var(--brand-primary);
+  letter-spacing: -1px;
+  margin: 0;
+}
+
+body.dark-mode .hub-section-title h2 {
+  color: #FAFEFF;
+}
+
+/* ==========================================================
+   GRID DOS CARDS (Flexbox Centralizado)
+   ========================================================== */
+.hub-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  /* A MÁGICA AQUI: Centraliza os cards perfeitamente */
+  gap: 40px;
+  /* Aumenta o espaço entre eles para preencher a tela */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 100px;
+}
+
+/* ==========================================================
+   OS CARDS (Maiores, com Efeito Vidro e Hover Neon)
+   ========================================================== */
+.hub-card {
+  width: 340px;
+  /* Largura imponente */
+  height: 460px;
+  /* Altura de um poster */
+  border-radius: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  /* Joga o título do card lá pro fundo */
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dark-mode .hub-card {
+  background: rgba(255, 255, 255, 0.03);
+  /* Fundo de vidro translúcido */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* --- EFEITO AO PASSAR O MOUSE (HOVER) --- */
+.hub-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  /* Levanta e dá um leve zoom */
+  border-color: var(--brand-action);
+  /* A borda acende na cor ciano */
+  box-shadow: 0 20px 50px rgba(87, 197, 234, 0.2);
+  /* Sombra neon */
+}
+
+.hub-card img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  transition: transform 0.5s ease;
+}
+
+.hub-card:hover img {
+  transform: scale(1.05);
+  /* A imagem cresce suavemente por dentro */
+}
+
+/* Cria uma sombra escura embaixo para o texto branco sempre dar leitura */
+.hub-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70%;
+  background: linear-gradient(to top, rgba(11, 14, 35, 0.95) 0%, transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Container do texto do card (Ajuste a classe se necessário) */
+.hub-card-content {
+  position: relative;
+  z-index: 3;
+  padding: 30px 24px;
+  overflow: hidden;
+}
+
+/* Título sempre branco e em destaque */
+.hub-card-title {
+  color: #FAFEFF;
+  font-size: 20px;
+  /* Deixei um pouco maior pra combinar com o card grande */
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  text-align: left;
+  line-height: 1.3;
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* No hover o título sobe um pouco para dar espaço à descrição */
+.hub-card:hover .hub-card-title {
+  transform: translateY(-6px);
+}
+
+/* Descrição curta embaixo do título — escondida por padrão */
+.hub-card-short-desc {
+  color: rgba(250, 254, 255, 0.82);
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.5;
+  text-align: left;
+
+  /* Estado inicial: invisível e empurrada para baixo */
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.38s ease 0.06s, transform 0.38s cubic-bezier(0.4, 0, 0.2, 1) 0.06s;
+}
+
+/* No hover: desliza para cima e aparece */
+.hub-card:hover .hub-card-short-desc {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Foco visível via teclado nos cards (acessibilidade) */
+.hub-card:focus-visible {
+  outline: 2px solid var(--brand-action);
+  outline-offset: 3px;
+  border-color: var(--brand-action);
+  box-shadow: 0 20px 50px rgba(87, 197, 234, 0.2);
+}
+
+/* Cards desativados */
+.hub-card-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ==========================
+   SKELETON LOADER (cards de espera)
+   ========================== */
+.hub-card-skeleton {
+  width: 340px;
+  height: 460px;
+  border-radius: 24px;
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+body.dark-mode .hub-card-skeleton {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hub-card-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(87, 197, 234, 0.07) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hub-card-skeleton::after {
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+
+/* ==========================================================
+   3. BOTÕES
+   ========================================================== */
+.hub-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.hub-btn:hover {
+  background: rgba(87, 197, 234, 0.1);
+  border-color: var(--brand-action);
+}
+
+.hub-btn-primary {
+  background: var(--brand-primary);
+  color: #FAFEFF;
+  border-color: transparent;
+}
+
+.hub-btn-primary:hover {
+  background: var(--brand-action);
+  color: var(--bg-sidebar);
+  transform: scale(1.02);
+}
+
+.hub-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==========================================================
+   4. MODAL (Pop-up de Detalhes Premium)
+   ========================================================== */
+/* Fundo padão (Modo Claro) */
+.app-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(250, 254, 255, 0.95);
+  transition: opacity 0.25s ease;
+}
+
+.app-modal-backdrop[hidden] {
+  display: none;
+}
+
+/* Fundo quando ativar o Modo Escuro */
+body.dark-mode .app-modal-backdrop {
+  background: rgba(11, 14, 35, 0.95);
+  /* Azul escuro com opacidade */
+}
+
+.app-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  z-index: 9999;
+  width: min(1000px, 92vw);
+  max-height: 90vh;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(87, 197, 234, 0.1);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.app-modal.is-open {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal {
+    transition: opacity 0.15s ease;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* --- Cabeçalho do Modal --- */
+.app-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 30px 40px 20px 40px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.app-modal-titlewrap {
+  min-width: 0;
+}
+
+/* Tag/Badge lá em cima (Ex: "Consultora estratégica") */
+.app-modal-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 50px;
+  /* Mais arredondado */
+  background: rgba(87, 197, 234, 0.15);
+  color: var(--brand-action);
+  border: 1px solid rgba(87, 197, 234, 0.3);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.app-modal-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--brand-primary);
+}
+
+body.dark-mode .app-modal-title {
+  color: #FAFEFF;
+}
+
+/* Botão de Fechar (X) */
+.app-modal-close {
+  border: 0;
+  background: rgba(19, 56, 104, 0.06);
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 12px;
+  flex: 0 0 auto;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+body.dark-mode .app-modal-close {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-modal-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transform: scale(1.05);
+}
+
+/* --- Corpo do Modal --- */
+.app-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 30px 40px;
+  overflow-y: auto;
+  /* Cria barra de rolagem interna se a tela for pequena */
+}
+
+.app-modal-desc {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* Área do Vídeo */
+.app-modal-video {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  height: min(450px, 50vh);
+  flex: 0 0 auto;
+}
+
+.app-modal-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* --- Botão Principal (Acessar / Baixar) --- */
+.app-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  /* Joga o botão para a direita */
+  padding-top: 10px;
+}
+
+/* Remove a largura 100% que deixava o botão esticado e feio */
+.hub-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 30px;
+  border-radius: 12px;
+  text-decoration: none;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* O Botão de Destaque (Acessar) com cor Ciano/Neon */
+.hub-btn-primary {
+  background-color: var(--brand-action);
+  color: #131739;
+  border: none;
+  box-shadow: 0 8px 20px rgba(87, 197, 234, 0.2);
+}
+
+.hub-btn-primary:hover {
+  background-color: var(--brand-accent);
+  color: #131739;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 25px rgba(87, 197, 234, 0.5);
+}
+
+/* ==========================================================
+   OTIMIZAÇÕES DE PERFORMANCE DURANTE O MODAL
+   ========================================================== */
+
+/* Esconde as partículas e economiza 100% de processamento enquanto o modal está aberto */
+body.modal-open #global-particles,
+body.modal-open #hero-particles {
+  display: none !important;
+}
+
+/* Remove o backdrop-filter da navbar enquanto o modal está aberto.
+   O backdrop já cobre a tela inteira — manter o blur da navbar atrás
+   força o GPU a compor duas camadas de blur ao mesmo tempo. */
+body.modal-open .top-navbar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Pausa animações de box-shadow e marquee — são as operações mais
+   custosas do CSS (forçam repaint em cada frame). */
+body.modal-open .showcase-wrapper {
+  animation-play-state: paused !important;
+}
+
+body.modal-open .testimonials-track {
+  animation-play-state: paused !important;
+}
+
+body.modal-open .hero-badge {
+  animation: none !important;
+}
+
+body.modal-open .hero-badge::before {
+  animation: none !important;
+}
+
+/* Promove o modal e o backdrop para suas próprias camadas de composição,
+   isolando os repaints e evitando que afetem o resto da página. */
+.app-modal {
+  will-change: transform, opacity;
+}
+
+.app-modal-backdrop {
+  will-change: opacity;
+  /* Isola o contexto de renderização do backdrop do restante da página */
+  contain: strict;
+}
+
+/* ==========================================================
+   RODAPÉ DO CONTEÚDO
+   ========================================================== */
+.hub-footer {
+  text-align: center;
+  padding: 24px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.6;
+  /* Deixa o texto levemente apagado/discreto */
+  margin-top: auto;
+  /* Força o rodapé a ficar sempre no fundo da página */
+  width: 100%;
+}
+
+/* Opcional: Se quiser que ele fique ainda mais suave no dark mode */
+body.dark-mode .hub-footer {
+  opacity: 0.4;
+}
+
+/* ==========================================================
+   TOP NAVBAR (BARRA DE TOPO)
+   ========================================================== */
+.top-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background-color: var(--bg-main);
+  border-bottom: 1px solid var(--border-subtle);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+
+  background-color: rgba(250, 254, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+
+  /* A MÁGICA: Esconde a barra jogando ela 100% para cima da tela */
+  transform: translateY(-100%);
+  opacity: 0;
+
+  /* Animação suave para quando ela descer e subir */
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, background-color 0.3s ease;
+}
+
+body.dark-mode .top-navbar {
+  background-color: rgba(11, 14, 35, 0.85);
+}
+
+/* A barra desce quando:
+   1. A página for rolada para baixo (.scrolled)
+   2. O JS detectar o mouse no teto (.hover-active)
+   3. O mouse estiver fisicamente em cima da barra ou dos seus menus (:hover) 
+*/
+.top-navbar.scrolled,
+.top-navbar.hover-active,
+.top-navbar:hover {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.navbar-left,
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* --- LOGO DA EMPRESA --- */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  margin-right: 12px;
+}
+
+.navbar-logo {
+  height: 38px;
+  /* Controla a altura da logo. Aumente ou diminua se precisar! */
+  width: auto;
+  /* Mantém a proporção original da imagem */
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+  /* Leve efeito de zoom ao passar o mouse */
+}
+
+/* --- BOTÃO DE TEMA --- */
+.theme-toggle-top {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.2s;
+}
+
+.theme-toggle-top:hover {
+  background: rgba(87, 197, 234, 0.15);
+  color: var(--brand-action);
+}
+
+body.dark-mode .theme-toggle-top {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- LINKS CENTRAIS --- */
+.navbar-links {
+  display: flex;
+  gap: 32px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Centraliza perfeitamente no meio da tela */
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  opacity: 1;
+  color: var(--brand-primary);
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active {
+  color: var(--brand-action);
+}
+
+/* ==========================================================
+   MENU DO USUÁRIO (CORREÇÃO FINAL DE COLAPSO)
+   ========================================================== */
+.user-menu-container {
+  position: relative;
+}
+
+/* --- 1. Botão do Perfil (Sem bordas bizarras) --- */
+.user-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+}
+
+/* Mata de vez a borda feia de foco do navegador */
+.user-profile-btn:focus,
+.user-profile-btn:active {
+  outline: none;
+  border-color: var(--brand-action);
+  box-shadow: 0 0 0 2px rgba(87, 197, 234, 0.3);
+}
+
+.user-profile-btn:hover {
+  background: rgba(87, 197, 234, 0.05);
+}
+
+.nav-user-email {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- 2. A Caixa Branca do Menu --- */
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 15px);
+  /* Desce dando um respiro */
+  right: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  min-width: 140px;
+  z-index: 9999;
+
+  /* A CHAVE PARA NÃO ESMAGAR: Força o comportamento de bloco e um tamanho mínimo */
+  display: block;
+  height: auto;
+  min-height: 48px;
+}
+
+/* Se o JavaScript mandar esconder, esconde mesmo */
+.settings-dropdown[hidden] {
+  display: none;
+}
+
+/* --- 3. A Setinha apontando pra cima --- */
+.settings-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-card);
+  border-left: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
+  transform: rotate(45deg);
+}
+
+/* --- Item padrão do menu --- */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  /* Cor padrão do texto */
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-hover);
+}
+
+/* --- Botão Sair (Danger) --- */
+.dropdown-item.danger {
+  color: #ef4444;
+}
+
+.dropdown-item.danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Destaque para o botão de Alterar Senha no hover */
+.dropdown-item.reset-action {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-item.reset-action:hover {
+  background: rgba(87, 197, 234, 0.12);
+  /* Fundo azul suave */
+  color: #133868;
+  /* Azul mais escuro para o texto no tema claro */
+}
+
+/* Ajuste do hover para o Modo Escuro */
+body.dark-mode .dropdown-item.reset-action:hover {
+  background: rgba(87, 197, 234, 0.18);
+  color: #ADE5F2;
+  /* Azul claro para o texto no tema escuro */
+}
+
+/* ==========================================================
+   RESPONSIVIDADE (MOBILE) — CONSOLIDADO
+   ========================================================== */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  font-size: 24px;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+  .top-navbar {
+    padding: 12px 16px;
+  }
+
+  .company-logo {
+    max-width: 120px;
+  }
+
+  .navbar-logo {
+    height: 26px;
+  }
+
+  .navbar-right {
+    gap: 8px;
+  }
+
+  .user-profile-btn {
+    padding: 6px 10px;
+  }
+
+  .theme-toggle-top {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  /* Botão hambúrguer */
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    font-size: 26px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px;
+    transition: transform 0.2s ease;
+  }
+
+  /* Links de navegação: dropdown mobile */
+  .navbar-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    transform: none;
+    background-color: var(--bg-main);
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    gap: 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+  }
+
+  .navbar-links.active {
+    display: flex;
+  }
+
+  .nav-user-email {
+    display: none;
+  }
+
+  /* Reduz o cálculo do efeito vidro em celulares */
+  body.dark-mode .hub-card,
+  .top-navbar,
+  .app-modal-backdrop {
+    backdrop-filter: blur(4px);
+  }
+}
+
+@media (max-width: 680px) {
+  .hub-grid {
+    gap: 20px;
+    padding: 0 16px 60px;
+  }
+
+  .hub-card {
+    width: 100%;
+    max-width: 340px;
+    height: 400px;
+  }
+
+  .hub-card-skeleton {
+    width: 100%;
+    max-width: 340px;
+    height: 400px;
+  }
+}
+
+/* ==========================================================
+   PARTÍCULAS FLUTUANTES (BACKGROUND DO HERO)
+   ========================================================== */
+#hero-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -10;
+  /* Garante que fique no fundo */
+  pointer-events: none;
+  /* O mouse ignora as partículas, permitindo clicar nos botões */
+}
+
+/* IMPORTANTE: Garanta que o conteúdo do Hero fique acima das partículas */
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Apenas as seções de conteúdo ficam transparentes para mostrar as estrelas */
+.main-content,
+.hero-section {
+  background-color: transparent;
+}
+
+/* =========================================
+   BLOCO "SALTADO" COM LED NEON PULSANTE (BLOOM)
+   ========================================= */
+.showcase-wrapper {
+  position: relative;
+  width: 98%;
+  max-width: 1600px;
+  margin: 40px auto 100px auto;
+  border-radius: 20px;
+  overflow: visible;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  will-change: box-shadow;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .showcase-wrapper {
+    animation: pulseNeonLED 4s ease-in-out infinite;
+  }
+}
+
+/* O pseudo-element ::before agora vira apenas um "borda de metal" fina */
+.showcase-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  /* Fica 1px para fora para ser a bordinha */
+  background: var(--border-color);
+  /* Uma cor de borda fixa e fina */
+  border-radius: 21px;
+  z-index: -2;
+}
+
+/* O pseudo-element ::after vira o fundo sólido do quadro */
+.showcase-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Começa exatamente na borda */
+  background-color: var(--bg-card);
+  /* Cor interna do quadro (azul escuro) */
+  border-radius: 20px;
+  z-index: -1;
+  transition: background-color 0.3s ease;
+}
+
+/* Conteúdo interno */
+.showcase-content {
+  position: relative;
+  z-index: 1;
+  padding: 50px 30px;
+  /* Espaço para não grudar na borda de luz */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.showcase-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--text-primary);
+  /* Cor branca/gelo da sua paleta */
+}
+
+/* --------------------------------------
+   NOVA ANIMAÇÃO DO LED PULSANTE (PULSE NEON)
+   -------------------------------------- */
+/* Esta animação muda a cor e a difusão da box-shadow do .showcase-wrapper, 
+   fazendo a luz "crescer" e "diminuir" de forma suave e estática. */
+@keyframes pulseNeonLED {
+  0% {
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      /* Sombra de profundidade (fixa) */
+      0 0 10px 1px rgba(87, 197, 234, 0.3),
+      /* Borda neon ciano suave */
+      0 0 40px 5px rgba(87, 197, 234, 0.1),
+      /* Bloom neon ciano suave */
+      0 0 60px 10px rgba(15, 44, 88, 0.1);
+    /* Bloom azul suave */
+  }
+
+  50% {
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      /* Sombra de profundidade (fixa) */
+      0 0 15px 1px rgba(87, 197, 234, 0.6),
+      /* Borda neon ciano mais intensa */
+      0 0 70px 15px rgba(87, 197, 234, 0.3),
+      /* Bloom neon ciano mais intenso */
+      0 0 100px 30px rgba(15, 44, 88, 0.3);
+    /* Bloom azul mais intenso */
+  }
+
+  100% {
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.6),
+      /* Sombra de profundidade (fixa) */
+      0 0 10px 1px rgba(87, 197, 234, 0.3),
+      /* Borda neon ciano suave */
+      0 0 40px 5px rgba(87, 197, 234, 0.1),
+      /* Bloom neon ciano suave */
+      0 0 60px 10px rgba(15, 44, 88, 0.1);
+    /* Bloom azul suave */
+  }
+}
+
+/* =========================================
+   7. CONTROLE DA LOGO (TEMA CLARO / ESCURO)
+   ========================================= */
+
+/* Garante que ambas as logos tenham o mesmo tamanho */
+.company-logo {
+  max-width: 200px;
+  height: auto;
+}
+
+/* Quando o site está no MODO ESCURO (com a classe .dark-mode no body) */
+body.dark-mode .logo-escuro {
+  display: block;
+}
+
+body.dark-mode .logo-claro {
+  display: none;
+}
+
+/* Quando o site está no MODO CLARO (sem a classe .dark-mode no body) */
+body:not(.dark-mode) .logo-escuro {
+  display: none;
+}
+
+body:not(.dark-mode) .logo-claro {
+  display: block;
+}
+
+/* =========================================
+   OTIMIZAÇÃO DE PERFORMANCE PARA MOBILE
+   ========================================= */
+@media (max-width: 900px) {
+
+  /* Reduz o cálculo do efeito vidro em celulares para não travar a rolagem */
+  body.dark-mode .hub-card,
+  .top-navbar,
+  .app-modal-backdrop {
+    backdrop-filter: blur(4px) !important;
+  }
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ==========================================================
+   SEÇÃO DE AVALIAÇÕES / DEPOIMENTOS (MARQUEE)
+   ========================================================== */
+.hub-testimonials-section {
+  width: 100%;
+  max-width: 1600px;
+  margin: -60px auto 60px auto;
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+}
+
+.testimonials-container {
+  /* Habilita a rolagem real na horizontal */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 0;
+
+  /* Esconde a barra de rolagem feia do Windows/Mac (fica invisível, mas funciona) */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  scroll-behavior: auto;
+  /* IMPORTANTE: não use smooth aqui */
+
+  /* Fade suave nas bordas esquerda e direita */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 90px,
+    black calc(100% - 90px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 90px,
+    black calc(100% - 90px),
+    transparent 100%
+  );
+}
+
+.testimonials-container::-webkit-scrollbar {
+  display: none;
+  /* Esconde a barra no Chrome/Safari */
+}
+
+.testimonials-track {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+}
+
+/* Mostra a "mãozinha" para indicar que dá pra arrastar no PC */
+.testimonials-container.grab {
+  cursor: grab;
+}
+
+.testimonials-container.grabbing {
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .testimonials-track.iniciada {
+    animation: marquee 150s linear infinite;
+  }
+}
+
+/* Pausa a rolagem ao passar o mouse */
+.testimonials-track:hover {
+  animation-play-state: paused;
+}
+
+.testimonial-card {
+  flex-shrink: 0;
+  width: 360px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 10px 30px var(--shadow-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Efeito Vidro para o Modo Escuro */
+body.dark-mode .testimonial-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+}
+
+.testimonial-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--brand-action);
+  box-shadow: 0 15px 40px rgba(87, 197, 234, 0.2);
+}
+
+/* Aspas gigantes estilizadas ao fundo */
+.testimonial-card::before {
+  content: '"';
+  position: absolute;
+  top: 15px;
+  right: 25px;
+  font-size: 80px;
+  line-height: 1;
+  font-family: 'Inter', sans-serif;
+  color: var(--border-subtle);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.testimonial-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  opacity: 0.85;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.author-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #FAFEFF;
+}
+
+.author-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.author-role {
+  font-size: 13px;
+  color: var(--text-primary);
+  opacity: 0.6;
+}
+
+.stars {
+  color: #fbbf24;
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+/* Animação que move a esteira */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}

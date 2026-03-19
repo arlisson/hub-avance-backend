@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
-import { pool } from "./src/config/db.js";
+import authRoutes from "./src/routes/auth.routes.js";
 
 dotenv.config();
 
@@ -18,20 +18,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/api/health", async (req, res) => {
-  try {
-    res.json({
-      ok: true,
-      env: {
-        DB_HOST: process.env.DB_HOST,
-        DB_PORT: process.env.DB_PORT,
-        DB_NAME: process.env.DB_NAME,
-        DB_USER: process.env.DB_USER
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
-  }
+app.use("/api", authRoutes);
+
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, message: "Servidor funcionando" });
 });
 
 app.listen(process.env.PORT || 3000, () => {

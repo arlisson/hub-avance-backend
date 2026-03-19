@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente IA - Avance</title>
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="./agent.css" />
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="logo-container">
+      <a href="/hub/hub.html">
+        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" />
+
+        <img src="../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" />
+      </a>
+    </div>
+
+    <button class="new-chat-btn">
+      <i class="ph ph-plus"></i>
+      Resetar conversa
+    </button>
+
+    <nav class="chat-history">
+      <div class="chat-item active">
+        <span class="icon"></span>
+        <div class="chat-info">
+          <span class="title">Mentor Estratégico de Vendas</span>
+          <span class="subtitle">Apolo</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button id="btnAbrirModalSidebar" class="sidebar-footer-item">
+        <i class="ph ph-key"></i>
+        <span>Chave de API</span>
+      </button>
+
+      <div class="sidebar-footer-item user-info-item" id="sidebar-userbar">
+        <i class="ph ph-envelope-simple"></i>
+        <span class="user-email-text" id="user-email"></span>
+
+        <button class="settings-dots" id="settings-btn" type="button" aria-label="Configurações">
+          <i class="ph ph-dots-three-vertical"></i>
+        </button>
+
+        <div class="settings-dropdown" id="settings-menu" hidden>
+          <button type="button" class="dropdown-item" id="menu-back-hub">
+            <i class="ph ph-house"></i>
+            <span>Voltar ao Hub</span>
+          </button>
+          <button type="button" class="dropdown-item danger" id="menu-logout">
+            <i class="ph ph-sign-out"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="sidebar-footer-item" id="theme-toggle" type="button">
+        <i class="ph ph-moon"></i>
+        <span>Modo escuro</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="chat-container main-content">
+    <header class="chat-header">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" type="button">
+        <i class="ph ph-list"></i>
+      </button>
+
+      <div class="assistant-info">
+        <div class="assistant-avatar">
+          <i class="ph ph-robot"></i>
+        </div>
+        <div class="assistant-details">
+          <span class="name">Mentor Estratégico de Vendas</span>
+          <div class="status-container" id="agent-status-container">
+            <span class="status-dot offline" id="status-dot"></span>
+            <span class="status-text offline" id="status-text">Offline</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="messages-area chat-messages" id="chat-messages"></div>
+
+    <div class="input-wrapper">
+      <div class="input-container">
+        <textarea rows="1" placeholder="Digite sua mensagem para o Apolo..."></textarea>
+        <button class="send-btn">Enviar ➔</button>
+      </div>
+      <div class="footer-text">IA Avance</div>
+    </div>
+  </main>
+
+  <div id="modalApi" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Configurações de API</h3>
+        <button id="btnFecharModal" class="btn-fechar" aria-label="Fechar">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-description">Insira sua chave do Google Gemini para habilitar o Apolo.</p>
+
+        <form id="formApi">
+          <div class="input-group">
+            <label for="apiKey">Google Gemini API Key <span class="obrigatorio">*</span></label>
+            <div class="input-wrapper-api">
+              <i class="ph ph-key input-icon"></i>
+              <input type="password" id="apiKey" placeholder="Colar API Key (AIzaSy...)" required>
+              <button type="button" class="toggle-password" id="btnMostrarSenha" aria-label="Mostrar/Ocultar senha">
+                <i class="ph ph-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="btnSubmit" class="btn-salvar">Salvar Credencial</button>
+        </form>
+
+        <div id="mensagemApi" class="mensagem-feedback"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabaseClient.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script src="./agent.js"></script>
+  <script src="./cadastroApi.js"></script>
+</body>
+
+</html>
