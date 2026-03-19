@@ -153,9 +153,10 @@ export async function me(req, res) {
     console.error("Erro em /api/me:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro interno ao buscar sessão."
+      error: error.message,
+      stack: error.stack
     });
-  }
+    }
 }
 
 export async function logout(req, res) {
