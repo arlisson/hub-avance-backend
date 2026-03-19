@@ -1,10 +1,11 @@
 /**
- * hub.js — Hub AVANCE (cards dinâmicos + modal + menu de configurações)
+ * hub.js — Hub AVANCE (sem Supabase)
  *
  * Atualizações:
- * - Captura o user.id da sessão do Supabase
- * - Gera URLs dinâmicas do contador com app, user_id e metric
- * - Registra access para apps online e download para apps baixáveis
+ * - Remove dependência do Supabase
+ * - Usa JWT salvo em localStorage ("auth_token")
+ * - Valida sessão com GET /api/me
+ * - Faz logout com POST /api/logout
  * - Mantém menu, tema, modal, permissões e animações
  */
 
@@ -19,10 +20,6 @@ let CURRENT_USER_ID = "";
  * - app: nome do app para enviar ao contador
  * - metric: "access" | "download"
  * - requiresPermission: se true, o card só aparece para usuários com perfil autorizado
- *
- * ATENÇÃO SEGURANÇA: a visibilidade do card é apenas UI.
- * O acesso real aos recursos deve ser protegido por RLS no Supabase
- * e/ou autenticação server-side nas rotas de destino.
  */
 const APPS = [
   {
@@ -114,36 +111,77 @@ const APPS = [
 ];
 
 // -------------------------
-// Busca as avaliações no banco de dados
+// Auth helpers
 // -------------------------
-async function carregarAvaliacoes(sb) {
-  const section = document.querySelector('.hub-testimonials-section');
+function getAuthToken() {
+  return localStorage.getItem("auth_token") || "";
+}
+
+function clearAuthToken() {
+  localStorage.removeItem("auth_token");
+}
+
+async function apiFetch(url, options = {}) {
+  const token = getAuthToken();
+
+  const headers = {
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const resp = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  let data = null;
+  try {
+    data = await resp.json();
+  } catch {
+    data = null;
+  }
+
+  if (!resp.ok) {
+    const message =
+      data?.error ||
+      data?.message ||
+      `Erro na requisição (${resp.status})`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+async function getCurrentSession() {
+  return apiFetch("/api/me", { method: "GET" });
+}
+
+async function doLogout() {
+  try {
+    await apiFetch("/api/logout", { method: "POST" });
+  } catch {
+    // ignora erro do servidor no logout
+  } finally {
+    clearAuthToken();
+    clearAgentChatSessionStorage();
+  }
+}
+
+// -------------------------
+// Busca as avaliações no backend
+// -------------------------
+async function carregarAvaliacoes() {
+  const section = document.querySelector(".hub-testimonials-section");
   const track = document.getElementById("testimonials-track");
 
   if (!track || !section) return;
 
-  // 1. Mostra um aviso enquanto a internet busca os dados
-  track.innerHTML = '<div style="padding: 20px; color: var(--text-primary); opacity: 0.6; font-weight: 500;">Buscando avaliações...</div>';
-
-  try {
-    const { data: avaliacoes, error } = await sb
-      .from('avaliacoes')
-      .select('*')
-
-    if (error) throw error;
-
-    // 2. Se achou avaliações, desenha na tela. Se o banco estiver vazio, esconde a seção.
-    if (avaliacoes && avaliacoes.length > 0) {
-      renderTestimonials(avaliacoes);
-    } else {
-      section.style.display = 'none';
-    }
-
-  } catch (e) {
-    console.error("Falha na conexão com avaliações:", e);
-    // 3. Se a internet cair ou der erro, esconde a seção para não ficar um buraco no site
-    section.style.display = 'none';
-  }
+  // Enquanto a rota ainda não existir no backend, escondemos a seção com segurança.
+  // Quando você criar /api/avaliacoes, basta trocar esta função para consumir a rota.
+  section.style.display = "none";
 }
 
 // -------------------------
@@ -177,11 +215,7 @@ function renderTestimonials(avaliacoes) {
 
   track.innerHTML = html;
 
-  // Ativa a animação CSS de marquee infinita
-  // (a duplicação dos itens acima garante o loop perfeito em -50%)
   requestAnimationFrame(() => track.classList.add("iniciada"));
-
-  // Suporte a arrastar com o mouse
   iniciarCarrosselInterativo();
 }
 
@@ -212,15 +246,9 @@ function iniciarCarrosselInterativo() {
     container.classList.remove("grab");
     container.classList.add("grabbing");
 
-    // Captura a posição real do translateX da animação CSS antes de pausar.
-    // Sem isso, ao retomar, o track "pula" de volta para onde a animação estava
-    // internamente — causando o salto visual.
     const matrix = window.getComputedStyle(track).transform;
     if (matrix && matrix !== "none") {
-      // matrix("a,b,c,d,tx,ty") — tx é o índice 4
       const tx = parseFloat(matrix.split(",")[4]) || 0;
-      // Aplica a translação atual como scrollLeft equivalente,
-      // zerando o transform para evitar conflito
       track.style.animationPlayState = "paused";
       track.style.transform = `translateX(${tx}px)`;
     } else {
@@ -235,7 +263,6 @@ function iniciarCarrosselInterativo() {
     isDown = false;
     container.classList.remove("grabbing");
     container.classList.add("grab");
-    // Retoma a animação a partir da posição atual
     track.style.animationPlayState = "";
   });
 
@@ -249,56 +276,36 @@ function iniciarCarrosselInterativo() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Inicia imediatamente (não dependem de autenticação)
   initNavbarEffect();
   initParticles();
   renderSkeletonCards();
+  initMobileSidebar();
+  initAppModal();
 
   await loadPublicAgentConfig();
 
-  let sb;
   try {
-    sb = await window.getSupabaseClient();
-  } catch (e) {
-    console.error("Supabase client não carregado:", e);
-    window.location.href = normalizeLoginUrl(LOGIN_URL);
-    return;
-  }
+    const sessionData = await getCurrentSession();
 
-  try {
-    const { data: sessionData } = await sb.auth.getSession();
-
-    if (!sessionData?.session) {
+    if (!sessionData?.ok || !sessionData?.user) {
       window.location.href = normalizeLoginUrl(LOGIN_URL);
       return;
     }
 
-    CURRENT_USER_ID = sessionData.session.user.id;
-    const email = sessionData.session.user?.email || "";
-
-    const { data: profile, error } = await sb
-      .from("profiles")
-      .select("protocol")
-      .eq("id", CURRENT_USER_ID)
-      .single();
-
-    if (error) {
-      console.error("Erro ao buscar permissões:", error);
-    }
-
-    const canAccessProtocol = !!profile?.protocol;
+    const user = sessionData.user;
+    CURRENT_USER_ID = user.id || "";
+    const email = user.email || "";
+    const canAccessProtocol = !!user.protocol;
 
     const menuUsers = document.getElementById("menu-users");
-    //console.log("menuUsers encontrado?", !!menuUsers);
-
     if (menuUsers) {
       menuUsers.hidden = !canAccessProtocol;
     }
 
     const userEmailEl = document.getElementById("user-email");
     if (userEmailEl) {
-      userEmailEl.textContent = email || "";
-      userEmailEl.title = email || "";
+      userEmailEl.textContent = email;
+      userEmailEl.title = email;
       userEmailEl.style.cursor = "default";
     }
 
@@ -312,22 +319,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (menuLogout) {
       menuLogout.addEventListener("click", async () => {
-        try {
-          await sb.auth.signOut();
-        } finally {
-          clearAgentChatSessionStorage();
-          window.location.href = normalizeLoginUrl(LOGIN_URL);
-        }
+        await doLogout();
+        window.location.href = normalizeLoginUrl(LOGIN_URL);
       });
     }
 
-    initMobileSidebar();
-    initAppModal();
     renderHubCards({ canAccessProtocol });
-    await carregarAvaliacoes(sb);
-
+    await carregarAvaliacoes();
   } catch (e) {
     console.error("Erro ao inicializar Hub:", e);
+    clearAuthToken();
+    clearAgentChatSessionStorage();
     window.location.href = normalizeLoginUrl(LOGIN_URL);
   }
 });
@@ -337,7 +339,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // -------------------------
 function buildCounterUrl(app, metric = "access") {
   if (!CURRENT_USER_ID || !app) return "#";
-  
+
   const params = new URLSearchParams({
     app,
     user_id: CURRENT_USER_ID,
@@ -418,7 +420,8 @@ function renderHubCards({ canAccessProtocol = false } = {}) {
 const _focusTrapHandlers = new WeakMap();
 
 function createFocusTrap(modal) {
-  const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const FOCUSABLE =
+    'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
   function handler(e) {
     if (e.key !== "Tab") return;
@@ -426,6 +429,7 @@ function createFocusTrap(modal) {
       (el) => !el.closest("[hidden]")
     );
     if (els.length === 0) return;
+
     const first = els[0];
     const last = els[els.length - 1];
 
@@ -458,6 +462,7 @@ function removeFocusTrap(modal) {
 // Modal
 // -------------------------
 let _modalListenersInit = false;
+let _lastFocusedBeforeModal = null;
 
 function initAppModal() {
   const backdrop = document.getElementById("app-modal-backdrop");
@@ -479,8 +484,6 @@ function initAppModal() {
   });
 }
 
-let _lastFocusedBeforeModal = null;
-
 function openAppModal(appId) {
   const app = APPS.find((a) => a.id === appId);
   if (!app || !app.enabled) return;
@@ -495,7 +498,6 @@ function openAppModal(appId) {
 
   if (!backdrop || !modal) return;
 
-  // Guarda o elemento que tinha foco para restaurar depois
   _lastFocusedBeforeModal = document.activeElement;
 
   if (badgeEl) badgeEl.textContent = app.badge || "";
@@ -558,10 +560,6 @@ function openAppModal(appId) {
   modal.hidden = false;
   document.body.classList.add("modal-open");
 
-  // Dois requestAnimationFrame são necessários quando o elemento vem de display:none.
-  // O primeiro frame registra o estado inicial (opacity:0), o segundo dispara a transição.
-  // Com apenas um RAF o browser às vezes colapsa os dois estados no mesmo paint e
-  // a transição não acontece.
   requestAnimationFrame(() =>
     requestAnimationFrame(() => modal.classList.add("is-open"))
   );
@@ -582,16 +580,11 @@ function closeAppModal() {
     removeFocusTrap(modal);
     modal.classList.remove("is-open");
 
-    // backdrop.hidden e modal.hidden só são setados DEPOIS que a transição termina.
-    // Se fizermos backdrop.hidden = true antes, o modal (que é filho do backdrop no HTML)
-    // some imediatamente com display:none, cortando a animação e nunca disparando transitionend.
     const hideAll = () => {
       modal.hidden = true;
       if (backdrop) backdrop.hidden = true;
     };
 
-    // Escuta apenas a transição de opacity para não disparar duas vezes
-    // (opacity + transform são duas propriedades que transitam)
     const onTransitionEnd = (e) => {
       if (e.propertyName !== "opacity") return;
       modal.removeEventListener("transitionend", onTransitionEnd);
@@ -599,8 +592,6 @@ function closeAppModal() {
       hideAll();
     };
 
-    // Fallback: se transitionend não disparar (ex: prefers-reduced-motion, tab inativa),
-    // esconde depois de 300ms de qualquer forma
     const fallbackTimer = setTimeout(() => {
       modal.removeEventListener("transitionend", onTransitionEnd);
       hideAll();
@@ -611,7 +602,6 @@ function closeAppModal() {
 
   document.body.classList.remove("modal-open");
 
-  // Restaura o foco no elemento que estava ativo antes do modal abrir
   if (_lastFocusedBeforeModal) {
     _lastFocusedBeforeModal.focus();
     _lastFocusedBeforeModal = null;
@@ -624,7 +614,6 @@ function closeAppModal() {
 function initSettingsMenu(btn, menu) {
   if (!btn || !menu) return;
 
-  // Guard: evita acumulação de listeners se chamado mais de uma vez
   if (btn._settingsMenuInit) return;
   btn._settingsMenuInit = true;
 
@@ -681,7 +670,11 @@ async function loadPublicAgentConfig() {
 
 function normalizeLoginUrl(url) {
   if (!url) return "/login/login.html";
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) {
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("/")
+  ) {
     return url;
   }
   return "/" + url.replace(/^\.?\//, "");
@@ -694,12 +687,12 @@ function initTheme(themeToggle) {
   if (!themeToggle) return;
 
   if (localStorage.getItem("theme") === "light") {
-  document.body.classList.remove("dark-mode");
-  updateThemeIcon(themeToggle, false);
-} else {
-  document.body.classList.add("dark-mode");
-  updateThemeIcon(themeToggle, true);
-}
+    document.body.classList.remove("dark-mode");
+    updateThemeIcon(themeToggle, false);
+  } else {
+    document.body.classList.add("dark-mode");
+    updateThemeIcon(themeToggle, true);
+  }
 
   themeToggle.addEventListener("click", () => {
     document.body.classList.toggle("dark-mode");
@@ -717,16 +710,12 @@ function updateThemeIcon(btn, isDark) {
     icon.className = isDark ? "ph ph-sun" : "ph ph-moon";
   }
 
-  // aria-label descreve a AÇÃO (o que vai acontecer ao clicar), não o estado atual
   btn.setAttribute(
     "aria-label",
     isDark ? "Ativar modo claro" : "Ativar modo escuro"
   );
 }
 
-// -------------------------
-// Sidebar
-// -------------------------
 // -------------------------
 // Menu Mobile (Navbar)
 // -------------------------
@@ -736,11 +725,9 @@ function initMobileSidebar() {
 
   if (!mobileBtn || !navbarLinks) return;
 
-  // Quando clica no botão do menu
   mobileBtn.addEventListener("click", () => {
     navbarLinks.classList.toggle("active");
-    
-    // Altera o ícone de Hambúrguer (Lista) para um "X" (Fechar)
+
     const icon = mobileBtn.querySelector("i");
     if (navbarLinks.classList.contains("active")) {
       icon.className = "ph ph-x";
@@ -749,13 +736,12 @@ function initMobileSidebar() {
     }
   });
 
-  // Fecha o menu automaticamente se o utilizador clicar num dos links (ex: "Aplicações")
   const links = navbarLinks.querySelectorAll(".nav-link");
-  links.forEach(link => {
+  links.forEach((link) => {
     link.addEventListener("click", () => {
       navbarLinks.classList.remove("active");
       const icon = mobileBtn.querySelector("i");
-      if(icon) icon.className = "ph ph-list";
+      if (icon) icon.className = "ph ph-list";
     });
   });
 }
@@ -817,7 +803,6 @@ function initNavbarEffect() {
 // ANIMAÇÃO DE PARTÍCULAS
 // ==========================================================
 function initParticles() {
-  // Respeita preferência de movimento reduzido do sistema operacional
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   let canvas = document.getElementById("global-particles");
@@ -839,11 +824,8 @@ function initParticles() {
   let particlesArray = [];
   let rafId = null;
 
-  // Pré-renderiza a partícula com glow em um canvas offscreen.
-  // Isso evita recalcular ctx.shadowBlur por partícula por frame,
-  // que é a operação mais cara do Canvas 2D.
   function createParticleSprite(size) {
-    const diameter = Math.ceil((size + 15) * 2); // raio + blur + margem
+    const diameter = Math.ceil((size + 15) * 2);
     const oc = document.createElement("canvas");
     oc.width = diameter;
     oc.height = diameter;
@@ -860,7 +842,6 @@ function initParticles() {
     return oc;
   }
 
-  // Cache de sprites por tamanho (arredondado a 0.5px para limitar variantes)
   const spriteCache = new Map();
 
   function getSprite(size) {
@@ -874,7 +855,7 @@ function initParticles() {
   function setCanvasSize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    spriteCache.clear(); // Limpa cache ao redimensionar (DPR pode mudar)
+    spriteCache.clear();
   }
 
   setCanvasSize();
@@ -908,7 +889,6 @@ function initParticles() {
     }
 
     draw() {
-      // drawImage é muito mais rápido que arc + shadowBlur por frame
       const half = this.sprite.width / 2;
       ctx.globalAlpha = this.opacity;
       ctx.drawImage(this.sprite, this.x - half, this.y - half);
@@ -949,7 +929,6 @@ function initParticles() {
     }
   }
 
-  // Pausa o loop quando a aba fica inativa — economiza CPU/GPU sem benefício visual
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       stopAnimation();
