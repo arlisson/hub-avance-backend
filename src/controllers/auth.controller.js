@@ -419,14 +419,16 @@ export async function register(req, res) {
     if (error.message === "SHEETS_FAILED") {
       return res.status(502).json({
         ok: false,
-        error: "SHEETS_FAILED"
+        error: "SHEETS_FAILED",
+        detail: "Falha ao registrar licença no Apps Script"
       });
     }
 
     if (error.message === "SHEETS_NOT_CONFIGURED") {
       return res.status(500).json({
         ok: false,
-        error: "SHEETS_NOT_CONFIGURED"
+        error: "SHEETS_NOT_CONFIGURED",
+        detail: "Planilha não configurada"
       });
     }
 
