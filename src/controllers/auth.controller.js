@@ -5,6 +5,39 @@ import { pool } from "../config/db.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
+function gerarTokenResetSenha() {
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+  return { token, tokenHash, expiresAt };
+}
+
+async function enviarEmailResetSenha(email, token) {
+  const transporter = getMailer();
+
+  const appUrl = process.env.APP_URL;
+  if (!appUrl) {
+    throw new Error("APP_URL não configurado.");
+  }
+
+  const resetUrl = `${appUrl}/reset/reset.html?token=${encodeURIComponent(token)}`;
+
+  await transporter.sendMail({
+    from: `"AVANCE" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: "Redefinição de senha",
+    html: `
+      <p>Olá,</p>
+      <p>Recebemos uma solicitação para redefinir sua senha.</p>
+      <p>Para cadastrar uma nova senha, clique no link abaixo:</p>
+      <p><a href="${resetUrl}">Redefinir senha</a></p>
+      <p>Este link expira em 1 hora.</p>
+      <p>Se você não solicitou a redefinição, ignore este e-mail.</p>
+    `
+  });
+}
+
 function getMailer() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 465);
@@ -509,6 +542,9 @@ export async function logout(req, res) {
 }
 
 export async function forgotPassword(req, res) {
+  const conn = await pool.getConnection();
+  let startedTransaction = false;
+
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
 
@@ -519,17 +555,174 @@ export async function forgotPassword(req, res) {
       });
     }
 
+    const [rows] = await conn.query(
+      `
+      SELECT id, email, ativo
+      FROM users
+      WHERE email = ?
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    const user = rows[0];
+
+    if (!user || !user.ativo) {
+      return res.json({
+        ok: true,
+        message:
+          "Se esse e-mail existir e estiver cadastrado no sistema, enviaremos as instruções de redefinição."
+      });
+    }
+
+    const { token, tokenHash, expiresAt } = gerarTokenResetSenha();
+
+    await conn.beginTransaction();
+    startedTransaction = true;
+
+    await conn.query(
+      `
+      INSERT INTO password_resets (
+        user_id,
+        token_hash,
+        expires_at
+      ) VALUES (?, ?, ?)
+      `,
+      [user.id, tokenHash, expiresAt]
+    );
+
+    await conn.commit();
+    startedTransaction = false;
+
+    try {
+      await enviarEmailResetSenha(user.email, token);
+    } catch (mailError) {
+      console.error("Erro ao enviar e-mail de reset:", mailError);
+    }
+
     return res.json({
       ok: true,
       message:
         "Se esse e-mail existir e estiver cadastrado no sistema, enviaremos as instruções de redefinição."
     });
   } catch (error) {
+    if (startedTransaction) {
+      await conn.rollback();
+    }
+
     console.error("Erro em /api/forgot-password:", error);
+
     return res.status(500).json({
       ok: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
+  } finally {
+    conn.release();
+  }
+}
+
+export async function resetPassword(req, res) {
+  const conn = await pool.getConnection();
+  let startedTransaction = false;
+
+  try {
+    const token = String(req.body?.token || "").trim();
+    const password = String(req.body?.password || "");
+
+    if (!token || !password) {
+      return res.status(400).json({
+        ok: false,
+        error: "Token e senha são obrigatórios."
+      });
+    }
+
+    if (password.length < 8 || !/\d/.test(password)) {
+      return res.status(400).json({
+        ok: false,
+        error: "A senha deve ter no mínimo 8 caracteres e pelo menos 1 número."
+      });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const [rows] = await conn.query(
+      `
+      SELECT id, user_id, expires_at, used_at
+      FROM password_resets
+      WHERE token_hash = ?
+      LIMIT 1
+      `,
+      [tokenHash]
+    );
+
+    const resetRow = rows[0];
+
+    if (!resetRow) {
+      return res.status(400).json({
+        ok: false,
+        error: "Link inválido."
+      });
+    }
+
+    if (resetRow.used_at) {
+      return res.status(400).json({
+        ok: false,
+        error: "Este link já foi utilizado."
+      });
+    }
+
+    if (new Date(resetRow.expires_at) < new Date()) {
+      return res.status(400).json({
+        ok: false,
+        error: "Este link expirou."
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await conn.beginTransaction();
+    startedTransaction = true;
+
+    await conn.query(
+      `UPDATE users SET password_hash = ? WHERE id = ?`,
+      [passwordHash, resetRow.user_id]
+    );
+
+    await conn.query(
+      `UPDATE password_resets SET used_at = NOW() WHERE id = ?`,
+      [resetRow.id]
+    );
+
+    await conn.query(
+      `
+      UPDATE password_resets
+      SET used_at = NOW()
+      WHERE user_id = ?
+        AND used_at IS NULL
+        AND id <> ?
+      `,
+      [resetRow.user_id, resetRow.id]
+    );
+
+    await conn.commit();
+    startedTransaction = false;
+
+    return res.json({
+      ok: true,
+      message: "Senha redefinida com sucesso."
+    });
+  } catch (error) {
+    if (startedTransaction) {
+      await conn.rollback();
+    }
+
+    console.error("Erro em /api/reset-password:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
+  } finally {
+    conn.release();
   }
 }

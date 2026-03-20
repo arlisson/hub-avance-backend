@@ -219,14 +219,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+ 
   if (forgotLink) {
     forgotLink.addEventListener("click", async (e) => {
       e.preventDefault();
 
-      const email = (identifierInput.value || "").trim();
+      const email = (identifierInput.value || "").trim().toLowerCase();
 
       if (!validarEmail(email)) {
-        alert("Digite seu e-mail no campo acima para redefinir a senha.");
+        alert("Digite seu e-mail no campo acima para receber o link de redefinição.");
         return;
       }
 
@@ -236,7 +237,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({ email }),
         });
 
-        alert("Se esse e-mail existir e estiver cadastrado no sistema, enviaremos as instruções de redefinição.");
+        alert("Se esse e-mail existir e estiver cadastrado no sistema, enviaremos um link para redefinir a senha.");
       } catch (error) {
         alert(error?.message || "Não foi possível solicitar a redefinição de senha.");
       }
