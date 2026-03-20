@@ -1,9 +1,12 @@
+// routes/auth.routes.js
 import { Router } from "express";
 import {
   login,
   me,
   logout,
-  forgotPassword
+  forgotPassword,
+  register,
+  verifyEmail
 } from "../controllers/auth.controller.js";
 import { authenticateToken } from "../middlewares/auth.js";
 
@@ -13,5 +16,8 @@ router.post("/login", login);
 router.get("/me", authenticateToken, me);
 router.post("/logout", authenticateToken, logout);
 router.post("/forgot-password", forgotPassword);
+router.post("/register", register);
+router.get("/verify-email", verifyEmail);
+
 
 export default router;

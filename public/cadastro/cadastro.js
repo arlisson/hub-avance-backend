@@ -1,17 +1,3 @@
-// cadastro.js — Supabase (fluxo com confirmação de e-mail)
-// Mantém: máscaras, toggle senha, submit
-// Faz: validação em tempo real (CPF/CNPJ, e-mail e CEP) com destaque vermelho + mensagem abaixo
-// Chama endpoint server-side /api/register (Vercel Function)
-// Agora: ao sucesso, informa que foi enviado link de confirmação e redireciona para login
-// Novo: CEP obrigatório, busca automática de cidade/estado via ViaCEP e envio de regiao para o backend
-
-/**
- * Validates a Brazilian CPF (Cadastro de Pessoas Físicas) number.
- *
- * @param {string|number} cpf - The CPF number to validate. Can be a string or number,
- *                               with or without formatting characters.
- * @returns {boolean} Returns true if the CPF is valid, false otherwise.
- */
 function validarCPF(cpf) {
   const c = String(cpf || "").replace(/\D/g, "");
   if (c.length !== 11) return false;
@@ -32,12 +18,6 @@ function validarCPF(cpf) {
   return c === c.slice(0, 9) + String(dv1) + String(dv2);
 }
 
-/**
- * Validates a Brazilian CNPJ (Cadastro Nacional da Pessoa Jurídica) number.
- *
- * @param {string|number} cnpj - The CNPJ number to validate. Can be provided as a string or number.
- * @returns {boolean} True if the CNPJ is valid, false otherwise.
- */
 function validarCNPJ(cnpj) {
   const c = String(cnpj || "").replace(/\D/g, "");
   if (c.length !== 14) return false;
@@ -63,11 +43,6 @@ function validarCNPJ(cnpj) {
   return c === base12 + String(dv1) + String(dv2);
 }
 
-/**
- * Validates a CPF or CNPJ document number.
- * @param {string|number} doc - The CPF or CNPJ document number to validate (with or without formatting).
- * @returns {boolean} True if the document is a valid CPF (11 digits) or CNPJ (14 digits), false otherwise.
- */
 function validarCpfOuCnpj(doc) {
   const d = String(doc || "").replace(/\D/g, "");
   if (d.length === 11) return validarCPF(d);
@@ -75,22 +50,11 @@ function validarCpfOuCnpj(doc) {
   return false;
 }
 
-/**
- * Validates if a given string is a valid email address.
- * @param {string} email - The email address to validate.
- * @returns {boolean} True if the email is valid, false otherwise.
- */
 function validarEmail(email) {
   const v = String(email || "").trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-/**
- * Marks an input element as invalid and displays an error message.
- * @param {HTMLElement} inputEl - The input element to mark as invalid
- * @param {string} [message="Inválido"] - The error message to display
- * @returns {void}
- */
 function setInvalid(inputEl, message) {
   const group = inputEl?.closest?.(".input-group");
   if (!group) return;
@@ -106,11 +70,6 @@ function setInvalid(inputEl, message) {
   err.textContent = message || "Inválido";
 }
 
-/**
- * Removes the invalid state from an input group and clears any associated error message.
- * @param {HTMLElement} inputEl - The input element whose parent input group should be validated.
- * @returns {void}
- */
 function setValid(inputEl) {
   const group = inputEl?.closest?.(".input-group");
   if (!group) return;
@@ -120,92 +79,82 @@ function setValid(inputEl) {
   if (err) err.textContent = "";
 }
 
-/**
- * Converts authentication error messages into user-friendly Portuguese messages.
- * @param {string|*} detailOrMessage - The error message or detail to be converted.
- * @returns {string} A user-friendly error message in Portuguese.
- */
-function friendlyAuthMessage(detailOrMessage) {
-  const t = String(detailOrMessage || "").toLowerCase();
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem("auth_token");
 
-  if (t.includes("user already registered") || t.includes("already registered")) {
-    return "Este e-mail já está cadastrado.";
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
-  if (t.includes("invalid email")) {
-    return "E-mail inválido.";
+
+  const resp = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  const data = await resp.json().catch(() => null);
+
+  if (!resp.ok) {
+    throw new Error(data?.error || data?.message || `Erro ${resp.status}`);
   }
-  if (t.includes("password")) {
-    return "Senha inválida. Verifique os requisitos e tente novamente.";
-  }
-  if (t.includes("rate") || t.includes("too many")) {
-    return "Muitas tentativas. Aguarde um pouco e tente novamente.";
-  }
-  return "Não foi possível concluir o cadastro. Verifique os dados e tente novamente.";
+
+  return data;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // --- TEMA (padrão: escuro, igual ao Hub) ---
-  const themeToggle = document.getElementById('theme-toggle');
+  const themeToggle = document.getElementById("theme-toggle");
 
   function updateThemeIcon(isDark) {
-    const icon = themeToggle?.querySelector('i');
-    if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
+    const icon = themeToggle?.querySelector("i");
+    if (icon) icon.className = isDark ? "ph ph-sun" : "ph ph-moon";
   }
 
-  const savedTheme = localStorage.getItem('theme');
-  const isDarkOnLoad = savedTheme !== 'light';
-  document.body.classList.toggle('dark-mode', isDarkOnLoad);
+  const savedTheme = localStorage.getItem("theme");
+  const isDarkOnLoad = savedTheme !== "light";
+  document.body.classList.toggle("dark-mode", isDarkOnLoad);
   updateThemeIcon(isDarkOnLoad);
 
-  themeToggle?.addEventListener('click', () => {
-    const isDark = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  themeToggle?.addEventListener("click", () => {
+    const isDark = document.body.classList.toggle("dark-mode");
+    localStorage.setItem("theme", isDark ? "dark" : "light");
     updateThemeIcon(isDark);
   });
 
-  // --- ELEMENTOS ---
+  const form = document.getElementById("register-form");
+  const nameInput = document.getElementById("name");
   const docInput = document.getElementById("document");
   const phoneInput = document.getElementById("whatsapp");
   const emailInput = document.getElementById("email");
   const passInput = document.getElementById("password");
   const toggleBtn = document.getElementById("toggle-password");
-  const form = document.getElementById("register-form");
 
-  // --- CEP / REGIÃO ---
   const cepInput = document.getElementById("cep");
   const cidadeInput = document.getElementById("cidade");
   const estadoInput = document.getElementById("estado");
 
-  // --- NOVOS CAMPOS ---
-  const hasMobileYes = document.getElementById("has_mobile_yes");
-  const hasMobileNo = document.getElementById("has_mobile_no");
-  const contractTypeCnpj = document.getElementById("contract_type_cnpj");
-  const contractTypeCpf = document.getElementById("contract_type_cpf");
   const operatorInput = document.getElementById("operator");
   const activeLinesInput = document.getElementById("active_lines");
-
   const operatorGroup = document.getElementById("operator-group");
   const linesGroup = document.getElementById("lines-group");
   const contractGroup = document.getElementById("contract-type-group");
 
   let cepLookupController = null;
 
-  // --- REDIRECIONA SE JÁ ESTIVER LOGADO ---
   try {
-    const sb = await getSupabaseClient();
-    const { data } = await sb.auth.getSession();
-
-    if (data?.session) {
+    const me = await apiFetch("/api/me", { method: "GET" });
+    if (me?.ok && me?.user) {
       window.location.href = "../hub/hub.html";
       return;
     }
-  } catch (_) {
-    // se falhar, apenas segue (sem travar tela)
+  } catch {
   }
 
   if (!docInput || !phoneInput || !emailInput || !passInput || !form) return;
 
-  // --- HELPERS CEP ---
   function limparRegiaoUI() {
     if (cidadeInput) cidadeInput.value = "";
     if (estadoInput) estadoInput.value = "";
@@ -294,23 +243,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       setValid(cepInput);
       return true;
     } catch (error) {
-      if (error?.name === "AbortError") {
-        return false;
-      }
+      if (error?.name === "AbortError") return false;
 
       console.error("Erro ao consultar CEP:", error);
-
-      if (!silent) {
-        setInvalid(cepInput, "Não foi possível consultar o CEP");
-      }
-
+      if (!silent) setInvalid(cepInput, "Não foi possível consultar o CEP");
       limparRegiaoUI();
       return false;
     }
   }
 
-  // --- 1) MÁSCARAS ---
-  // Máscara CPF/CNPJ
   docInput.addEventListener("input", (e) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 14) value = value.slice(0, 14);
@@ -329,7 +270,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.target.value = value;
   });
 
-  // Máscara WhatsApp
   phoneInput.addEventListener("input", (e) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
@@ -338,7 +278,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.target.value = value;
   });
 
-  // Máscara CEP
   if (cepInput) {
     cepInput.addEventListener("input", (e) => {
       let value = e.target.value.replace(/\D/g, "");
@@ -361,7 +300,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // --- 2) VALIDAÇÃO EM TEMPO REAL (CPF/CNPJ e E-mail) ---
   const validateDocSoft = () => {
     const raw = docInput.value.replace(/\D/g, "");
 
@@ -426,18 +364,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   emailInput.addEventListener("input", validateEmailSoft);
   emailInput.addEventListener("blur", validateEmailHard);
 
-  // --- 2.1) VALIDAÇÃO DE SENHA (tempo real) ---
   const rulesBox = document.getElementById("password-rules");
 
   function passwordChecks(pw) {
     const v = String(pw || "");
-
     return {
       len: v.length >= 8,
-      upper: /[A-Z]/.test(v),
-      lower: /[a-z]/.test(v),
       digit: /\d/.test(v),
-      special: /[^A-Za-z0-9]/.test(v),
     };
   }
 
@@ -456,9 +389,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const missing = [];
     if (!checks.len) missing.push("mínimo 8 caracteres");
     if (!checks.digit) missing.push("1 número");
-
-    if (missing.length === 0) return "";
-    return `A senha precisa ter: ${missing.join(", ")}.`;
+    return missing.length ? `A senha precisa ter: ${missing.join(", ")}.` : "";
   }
 
   const validatePasswordSoft = () => {
@@ -486,8 +417,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const validatePasswordHard = () => {
-    const v = passInput.value || "";
-    const checks = passwordChecks(v);
+    const checks = passwordChecks(passInput.value || "");
     updatePasswordRulesUI(checks);
 
     const msg = passwordErrorMessage(checks);
@@ -503,7 +433,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   passInput.addEventListener("input", validatePasswordSoft);
   passInput.addEventListener("blur", validatePasswordHard);
 
-  // --- 3) MOSTRAR SENHA ---
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
       const type = passInput.getAttribute("type") === "password" ? "text" : "password";
@@ -517,7 +446,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // --- NOVAS FUNÇÕES (campos de telefonia) ---
   function getHasMobileValue() {
     const v = document.querySelector('input[name="has_mobile"]:checked')?.value;
     if (v === "sim") return true;
@@ -541,13 +469,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function toggleMobileFields() {
     const hasMobile = getHasMobileValue();
-
     const shouldShow = hasMobile === true;
+
     if (operatorGroup) operatorGroup.classList.toggle("is-hidden", !shouldShow);
     if (linesGroup) linesGroup.classList.toggle("is-hidden", !shouldShow);
     if (contractGroup) contractGroup.classList.toggle("is-hidden", !shouldShow);
 
-    setContractTypeRequired(hasMobile === true);
+    setContractTypeRequired(shouldShow);
 
     if (!shouldShow) {
       if (operatorInput) operatorInput.value = "";
@@ -584,7 +512,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return ok;
   };
 
-  // inicializa ocultando até escolher
   toggleMobileFields();
 
   document.querySelectorAll('input[name="has_mobile"]').forEach((el) => {
@@ -594,14 +521,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (operatorInput) operatorInput.addEventListener("blur", validateMobileExtrasHard);
   if (activeLinesInput) activeLinesInput.addEventListener("blur", validateMobileExtrasHard);
 
-  // --- 4) SUBMIT (via /api/register) ---
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const nameValue = (document.getElementById("name")?.value || "").trim();
-    const emailValue = emailInput.value.trim();
+    const nameValue = (nameInput?.value || "").trim();
+    const emailValue = emailInput.value.trim().toLowerCase();
     const passwordValue = passInput.value || "";
-
     const docRaw = docInput.value.replace(/\D/g, "");
     const whatsapp = phoneInput.value.replace(/\D/g, "");
     const cep = getCepLimpo();
@@ -615,6 +540,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const hasMobile = getHasMobileValue();
     const contractType =
       document.querySelector('input[name="contract_type"]:checked')?.value || "";
+
+    if (!nameValue) {
+      alert("Informe seu nome ou razão social.");
+      return;
+    }
 
     if (hasMobile === null) {
       alert("Responda se sua empresa possui telefonia móvel ativa.");
@@ -656,70 +586,43 @@ document.addEventListener("DOMContentLoaded", async () => {
         name: nameValue,
         email: emailValue,
         password: passwordValue,
-        cpf: docRaw,
-        whatsapp: whatsapp,
-
-        // NOVOS CAMPOS
+        cpf_cnpj: docRaw,
+        whatsapp,
+        cep,
+        cidade,
+        estado,
         has_mobile_service: hasMobile,
-        contract_type: contractType,
-        operator: (operatorInput?.value || "").trim(),
+        contract_type: contractType || null,
+        operator: (operatorInput?.value || "").trim() || null,
         active_lines: activeLinesInput?.value === "" ? null : Number(activeLinesInput?.value),
-
-        // CEP / REGIÃO
-        cep: cep,
-        regiao: {
-          cep: cep,
-          cidade: cidade,
-          estado: estado,
-        },
       };
 
-      const r = await fetch("/api/register", {
+      const out = await apiFetch("/api/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const out = await r.json().catch(() => null);
-
-      if (!r.ok || !out?.ok) {
-        const err = out?.error || "unknown_error";
-
-        if (err === "cpf_exists") {
-          setInvalid(docInput, "CPF/CNPJ já cadastrado");
-          alert("Este CPF/CNPJ já está cadastrado.");
-          return;
-        }
-
-        if (err === "auth_error") {
-          const msg = friendlyAuthMessage(out?.detail || out?.message);
-          setInvalid(emailInput, msg);
-          alert(msg);
-          return;
-        }
-
-        if (err === "missing_fields") {
-          alert("Preencha os campos obrigatórios.");
-          return;
-        }
-
-        if (err === "sheets_failed") {
-          alert("Cadastro indisponível no momento. Tente novamente em instantes.");
-          return;
-        }
-
-        alert("Erro ao cadastrar. Verifique os dados e tente novamente.");
+      if (!out?.ok) {
+        alert("Não foi possível concluir o cadastro.");
         return;
       }
 
-      alert(
-        "Cadastro realizado. Enviamos um link de confirmação para seu e-mail. " +
-          "Confirme o link para liberar o login. Verifique também a caixa de spam."
-      );
+      alert("Cadastro realizado. Enviamos um link de confirmação para seu e-mail. " +
+  "Confirme o link para liberar o login. Verifique também a caixa de spam.");
       window.location.href = "../login/login.html";
     } catch (error) {
-      console.error("Erro:", error);
-      alert("Erro de conexão. Tente novamente.");
+      const msg = String(error?.message || "");
+
+      if (msg.includes("EMAIL_EXISTS")) {
+        setInvalid(emailInput, "Este e-mail já está cadastrado");
+        alert("Este e-mail já está cadastrado.");
+      } else if (msg.includes("DOCUMENT_EXISTS")) {
+        setInvalid(docInput, "CPF/CNPJ já cadastrado");
+        alert("Este CPF/CNPJ já está cadastrado.");
+      } else {
+        console.error("Erro:", error);
+        alert("Erro ao cadastrar. Verifique os dados e tente novamente.");
+      }
     } finally {
       if (btn) {
         btn.innerText = originalText;

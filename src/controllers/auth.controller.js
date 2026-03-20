@@ -1,6 +1,273 @@
+// controllers/auth.controller.js
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+
+function getMailer() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !port || !user || !pass) {
+    throw new Error("SMTP não configurado.");
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass }
+  });
+}
+
+function gerarTokenVerificacao() {
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+  return { token, tokenHash, expiresAt };
+}
+
+async function enviarEmailVerificacao(email, token) {
+  const transporter = getMailer();
+
+  const appUrl = process.env.APP_URL;
+  if (!appUrl) {
+    throw new Error("APP_URL não configurado.");
+  }
+
+  const verifyUrl = `${appUrl}/api/verify-email?token=${encodeURIComponent(token)}`;
+
+  await transporter.sendMail({
+    from: `"AVANCE" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: "Confirme seu cadastro",
+    html: `
+      <p>Olá,</p>
+      <p>Seu cadastro foi criado com sucesso.</p>
+      <p>Para liberar o login, confirme seu e-mail clicando no link abaixo:</p>
+      <p><a href="${verifyUrl}">Confirmar e-mail</a></p>
+      <p>Este link expira em 24 horas.</p>
+    `
+  });
+}
+
+export async function register(req, res) {
+  const conn = await pool.getConnection();
+
+  try {
+    const {
+      name,
+      email,
+      password,
+      cpf_cnpj,
+      whatsapp,
+      cep,
+      cidade,
+      estado,
+      has_mobile_service,
+      contract_type,
+      operator,
+      active_lines
+    } = req.body || {};
+
+    const emailNorm = String(email || "").trim().toLowerCase();
+    const passwordNorm = String(password || "");
+
+    if (!name || !emailNorm || !passwordNorm || !cpf_cnpj) {
+      return res.status(400).json({
+        ok: false,
+        error: "Campos obrigatórios ausentes."
+      });
+    }
+
+    const [emailRows] = await conn.query(
+      `SELECT id FROM users WHERE email = ? LIMIT 1`,
+      [emailNorm]
+    );
+
+    if (emailRows.length) {
+      return res.status(409).json({
+        ok: false,
+        error: "EMAIL_EXISTS"
+      });
+    }
+
+    const [docRows] = await conn.query(
+      `SELECT id FROM profiles WHERE cpf_cnpj = ? LIMIT 1`,
+      [cpf_cnpj]
+    );
+
+    if (docRows.length) {
+      return res.status(409).json({
+        ok: false,
+        error: "DOCUMENT_EXISTS"
+      });
+    }
+
+    const [roleRows] = await conn.query(
+      `SELECT id FROM roles WHERE nome = ? LIMIT 1`,
+      ["user"]
+    );
+
+    if (!roleRows.length) {
+      return res.status(500).json({
+        ok: false,
+        error: "Role padrão não encontrada."
+      });
+    }
+
+    const roleId = roleRows[0].id;
+    const passwordHash = await bcrypt.hash(passwordNorm, 10);
+    const { token, tokenHash, expiresAt } = gerarTokenVerificacao();
+
+    await conn.beginTransaction();
+
+    const [userResult] = await conn.query(
+      `
+      INSERT INTO users (
+        email,
+        password_hash,
+        ativo,
+        role_id,
+        email_confirmado
+      ) VALUES (?, ?, ?, ?, ?)
+      `,
+      [emailNorm, passwordHash, 1, roleId, 0]
+    );
+
+    const userId = userResult.insertId;
+
+    await conn.query(
+      `
+      INSERT INTO profiles (
+        id,
+        nome,
+        cpf_cnpj,
+        whatsapp,
+        cep,
+        cidade,
+        estado,
+        protocol,
+        cliente_avance,
+        has_mobile_service,
+        contract_type,
+        operator,
+        active_lines
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        userId,
+        name,
+        cpf_cnpj,
+        whatsapp || null,
+        cep || null,
+        cidade || null,
+        estado || null,
+        0,
+        1,
+        has_mobile_service === true ? 1 : 0,
+        contract_type || null,
+        operator || null,
+        active_lines ?? null
+      ]
+    );
+
+    await conn.query(
+      `
+      INSERT INTO email_verifications (
+        user_id,
+        token_hash,
+        expires_at
+      ) VALUES (?, ?, ?)
+      `,
+      [userId, tokenHash, expiresAt]
+    );
+
+    await conn.commit();
+
+    await enviarEmailVerificacao(emailNorm, token);
+
+    return res.status(201).json({
+      ok: true,
+      message: "Cadastro realizado. Verifique seu e-mail para liberar o login."
+    });
+  } catch (error) {
+    await conn.rollback();
+    console.error("Erro em /api/register:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message,
+      stack: error.stack
+    });
+  } finally {
+    conn.release();
+  }
+}
+
+export async function verifyEmail(req, res) {
+  const conn = await pool.getConnection();
+
+  try {
+    const token = String(req.query?.token || "").trim();
+
+    if (!token) {
+      return res.status(400).send("Token inválido.");
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const [rows] = await conn.query(
+      `
+      SELECT id, user_id, expires_at, used_at
+      FROM email_verifications
+      WHERE token_hash = ?
+      LIMIT 1
+      `,
+      [tokenHash]
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      return res.status(400).send("Link inválido.");
+    }
+
+    if (row.used_at) {
+      return res.status(400).send("Este link já foi utilizado.");
+    }
+
+    if (new Date(row.expires_at) < new Date()) {
+      return res.status(400).send("Este link expirou.");
+    }
+
+    await conn.beginTransaction();
+
+    await conn.query(
+      `UPDATE users SET email_confirmado = 1 WHERE id = ?`,
+      [row.user_id]
+    );
+
+    await conn.query(
+      `UPDATE email_verifications SET used_at = NOW() WHERE id = ?`,
+      [row.id]
+    );
+
+    await conn.commit();
+
+    return res.redirect("/login/login.html?verified=1");
+  } catch (error) {
+    await conn.rollback();
+    console.error("Erro em /api/verify-email:", error);
+    return res.status(500).send("Erro ao verificar e-mail.");
+  } finally {
+    conn.release();
+  }
+}
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -35,6 +302,7 @@ export async function login(req, res) {
         u.email,
         u.password_hash,
         u.ativo,
+        u.email_confirmado,
         r.nome AS role,
         p.nome,
         p.protocol,
@@ -72,6 +340,13 @@ export async function login(req, res) {
       return res.status(403).json({
         ok: false,
         error: "Usuário desativado."
+      });
+    }
+
+    if (!user.email_confirmado) {
+      return res.status(403).json({
+        ok: false,
+        error: "Confirme seu e-mail antes de fazer login."
       });
     }
 
