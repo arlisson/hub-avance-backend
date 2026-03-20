@@ -43,11 +43,11 @@ async function registrarLicencaNoSheets(email) {
   console.log("Sheets raw response:", rawText);
 
   if (!resp.ok) {
-    throw new Error("SHEETS_FAILED");
+    throw new Error(`SHEETS_FAILED:${rawText || `HTTP_${resp.status}`}`);
   }
 
   if (!data?.ok) {
-    throw new Error(`SHEETS_FAILED:${rawText || "empty_response"}`);
+    throw new Error(`SHEETS_FAILED:${rawText || "invalid_response"}`);
   }
 
   return data;
@@ -423,21 +423,21 @@ export async function register(req, res) {
       });
     }
 
-    // if (error.message === "SHEETS_FAILED") {
-    //   return res.status(502).json({
-    //     ok: false,
-    //     error: "SHEETS_FAILED",
-    //     detail: "Falha ao registrar licença no Apps Script"
-    //   });
-    // }
+    if (error.message === "SHEETS_FAILED") {
+      return res.status(502).json({
+        ok: false,
+        error: "SHEETS_FAILED",
+        detail: "Falha ao registrar licença no Apps Script"
+      });
+    }
 
-    // if (error.message === "SHEETS_NOT_CONFIGURED") {
-    //   return res.status(500).json({
-    //     ok: false,
-    //     error: "SHEETS_NOT_CONFIGURED",
-    //     detail: "Planilha não configurada"
-    //   });
-    // }
+    if (error.message === "SHEETS_NOT_CONFIGURED") {
+      return res.status(500).json({
+        ok: false,
+        error: "SHEETS_NOT_CONFIGURED",
+        detail: "Planilha não configurada"
+      });
+    }
 
     return res.status(500).json({
       ok: false,
