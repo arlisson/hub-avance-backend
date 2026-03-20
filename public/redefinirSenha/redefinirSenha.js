@@ -1,3 +1,4 @@
+// redefinirSenha.js
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("reset-form");
   const pass = document.getElementById("new-password");
@@ -66,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       el.classList.toggle("bad", !ok);
     });
   }
+
 
   function clearPasswordRulesUI() {
     if (!rulesBox) return;
