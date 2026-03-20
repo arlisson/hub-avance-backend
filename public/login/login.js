@@ -60,11 +60,15 @@ async function fetchComErroTratado(url, options = {}) {
   }
 
   if (!resp.ok) {
-    const message =
+    const error = new Error(
       data?.error ||
       data?.message ||
-      `Erro na requisição (${resp.status})`;
-    throw new Error(message);
+      `Erro na requisição (${resp.status})`
+    );
+
+    error.status = resp.status;
+    error.data = data;
+    throw error;
   }
 
   return data;
@@ -196,6 +200,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       salvarToken(data.token);
       window.location.href = "/hub/hub.html";
     } catch (error) {
+      if (error?.status === 403) {
+        alert("Confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada e também o spam.");
+        return;
+      }
+
+      if (error?.status === 401) {
+        alert("E-mail ou senha inválidos.");
+        return;
+      }
+
       alert(`Erro: ${error?.message || "Falha no login."}`);
     } finally {
       if (btn) {
