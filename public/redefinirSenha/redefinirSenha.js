@@ -7,23 +7,45 @@ document.addEventListener("DOMContentLoaded", async () => {
   const toggleBtn = document.getElementById("toggle-new-password");
   const toggleCurrentBtn = document.getElementById("toggle-current-password");
 
-  // [NOVO] Verifica se o utilizador já tem sessão iniciada para adaptar o botão "Voltar"
-  try {
-    const sb = await window.getSupabaseClient();
-    const { data } = await sb.auth.getSession();
-    
-    if (data?.session) {
-      const backLink = document.querySelector(".back-link");
-      if (backLink) {
-        backLink.href = "../hub/hub.html";
-        backLink.textContent = "Voltar para o Início";
-      }
+  if (!form || !pass || !currentPassInput) return;
+
+  async function apiFetch(url, options = {}) {
+    const token = localStorage.getItem("auth_token");
+
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
-  } catch (err) {
-    console.warn("Não foi possível verificar a sessão no carregamento.", err);
+
+    const resp = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    const data = await resp.json().catch(() => null);
+
+    if (!resp.ok) {
+      throw new Error(data?.error || data?.message || `Erro ${resp.status}`);
+    }
+
+    return data;
   }
 
-  if (!form || !pass) return;
+  try {
+    const me = await apiFetch("/api/me", { method: "GET" });
+    if (!me?.ok || !me?.user) {
+      throw new Error("Sessão inválida.");
+    }
+  } catch (err) {
+    alert("Sua sessão expirou. Faça login novamente.");
+    localStorage.removeItem("auth_token");
+    window.location.href = "../login/login.html";
+    return;
+  }
 
   function passwordChecks(pw) {
     const value = String(pw || "");
@@ -99,11 +121,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const currentPass = currentPassInput ? currentPassInput.value : "";
-    const newPass = pass.value;
+    const currentPass = currentPassInput.value || "";
+    const newPass = pass.value || "";
 
     if (!currentPass) {
-      alert("Por favor, digite a sua senha atual.");
+      alert("Por favor, digite sua senha atual.");
       return;
     }
 
@@ -111,64 +133,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    let supabase;
-    try {
-      supabase = await window.getSupabaseClient();
-    } catch (err) {
-      alert(err?.message || "Cliente Supabase não inicializado.");
-      return;
-    }
-
-    if (btn) {
-      btn.disabled = true;
-      btn.innerText = "Verificando...";
-    }
+    const originalText = btn?.innerText || "Salvar";
 
     try {
-      // 1. Pega o email do utilizador com sessão iniciada
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        throw new Error("Sessão expirada. Inicie sessão novamente.");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Atualizando...";
       }
 
-      const userEmail = session.user.email;
-
-      // 2. Tenta "iniciar sessão" novamente apenas para validar se a senha atual está correta
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: userEmail,
-        password: currentPass,
+      const out = await apiFetch("/api/change-password", {
+        method: "POST",
+        body: JSON.stringify({
+          currentPassword: currentPass,
+          newPassword: newPass,
+        }),
       });
 
-      if (signInError) {
-        throw new Error("A senha atual está incorreta.");
-      }
+      alert(out?.message || "Senha atualizada com sucesso. Faça login novamente.");
 
-      // 3. Se a senha atual estiver correta, atualizamos para a nova
-      if (btn) btn.innerText = "Atualizando...";
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPass,
-      });
-
-      if (updateError) throw updateError;
-
-      alert("Senha atualizada com sucesso! Inicie sessão com a sua nova senha.");
-      
-      // Termina a sessão do utilizador e envia para o ecrã de login
-      await supabase.auth.signOut();
+      localStorage.removeItem("auth_token");
       window.location.href = "../login/login.html";
-
     } catch (err) {
       alert(err?.message || "Falha ao atualizar a senha.");
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Salvar";
+        btn.innerText = originalText;
       }
     }
   });
 
-  // Toggle do campo da NOVA senha
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
       const isPassword = pass.type === "password";
@@ -180,8 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Toggle do campo da SENHA ATUAL
-  if (toggleCurrentBtn && currentPassInput) {
+  if (toggleCurrentBtn) {
     toggleCurrentBtn.addEventListener("click", () => {
       const isPassword = currentPassInput.type === "password";
       currentPassInput.type = isPassword ? "text" : "password";

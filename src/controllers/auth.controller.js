@@ -5,6 +5,108 @@ import { pool } from "../config/db.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
+export async function changePassword(req, res) {
+  try {
+    const userId = req.user?.id;
+    const currentPassword = String(req.body?.currentPassword || "");
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!userId) {
+      return res.status(401).json({
+        ok: false,
+        error: "Não autenticado."
+      });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "Senha atual e nova senha são obrigatórias."
+      });
+    }
+
+    if (newPassword.length < 8 || !/\d/.test(newPassword)) {
+      return res.status(400).json({
+        ok: false,
+        error: "A nova senha deve ter no mínimo 8 caracteres e pelo menos 1 número."
+      });
+    }
+
+    const [rows] = await pool.query(
+      `
+      SELECT id, password_hash, ativo
+      FROM users
+      WHERE id = ?
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    const user = rows[0];
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        error: "Usuário não encontrado."
+      });
+    }
+
+    if (!user.ativo) {
+      return res.status(403).json({
+        ok: false,
+        error: "Usuário desativado."
+      });
+    }
+
+    if (!user.password_hash) {
+      return res.status(500).json({
+        ok: false,
+        error: "Usuário sem senha cadastrada."
+      });
+    }
+
+    const passwordOk = await bcrypt.compare(currentPassword, user.password_hash);
+
+    if (!passwordOk) {
+      return res.status(401).json({
+        ok: false,
+        error: "A senha atual está incorreta."
+      });
+    }
+
+    const samePassword = await bcrypt.compare(newPassword, user.password_hash);
+
+    if (samePassword) {
+      return res.status(400).json({
+        ok: false,
+        error: "A nova senha deve ser diferente da senha atual."
+      });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    await pool.query(
+      `
+      UPDATE users
+      SET password_hash = ?
+      WHERE id = ?
+      `,
+      [newHash, userId]
+    );
+
+    return res.json({
+      ok: true,
+      message: "Senha atualizada com sucesso."
+    });
+  } catch (error) {
+    console.error("Erro em /api/change-password:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
+  }
+}
+
 function gerarTokenResetSenha() {
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
