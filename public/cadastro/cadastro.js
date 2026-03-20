@@ -625,7 +625,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       window.location.href = "../login/login.html";
     } catch (error) {
-     const msg = String(error?.message || "");
+      const msg = String(error?.message || "");
 
       console.error("Erro completo de cadastro:", msg);
 
