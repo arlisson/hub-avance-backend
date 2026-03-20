@@ -6,48 +6,46 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 
 async function registrarLicencaNoSheets(email) {
-  const gsWebAppUrl = process.env.GS_WEBAPP_URL;
-  const hubSecret = process.env.HUB_SECRET;
+  const url = process.env.GS_WEBAPP_URL;
+  const secret = process.env.HUB_SECRET;
 
-  if (!gsWebAppUrl || !hubSecret) {
-    throw new Error("SHEETS_NOT_CONFIGURED");
-  }
+  console.log("[SHEETS] URL:", url);
+  console.log("[SHEETS] HUB_SECRET length:", secret ? secret.length : 0);
+  console.log("[SHEETS] HUB_SECRET preview:", secret ? `${secret.slice(0, 4)}...${secret.slice(-4)}` : "(vazio)");
 
   const payload = {
     action: "upsert_license",
-    secret: hubSecret,
+    secret,
     email,
     status: "ACTIVE",
     max_devices: 1,
-    created_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
   };
 
-  const resp = await fetch(gsWebAppUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+  console.log("[SHEETS] payload:", {
+    ...payload,
+    secret: secret ? `${secret.slice(0, 4)}...${secret.slice(-4)}` : "(vazio)"
   });
 
-  const rawText = await resp.text();
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
 
-  let data = null;
+  const text = await resp.text();
+  console.log("[SHEETS] status:", resp.status);
+  console.log("[SHEETS] raw response:", text);
+
+  let data;
   try {
-    data = rawText ? JSON.parse(rawText) : null;
+    data = JSON.parse(text);
   } catch {
-    data = null;
+    throw new Error(`SHEETS_INVALID_JSON:${text}`);
   }
 
-  console.log("Sheets HTTP status:", resp.status);
-  console.log("Sheets raw response:", rawText);
-
-  if (!resp.ok) {
-    throw new Error(`SHEETS_FAILED:${rawText || `HTTP_${resp.status}`}`);
-  }
-
-  if (!data?.ok) {
-    throw new Error(`SHEETS_FAILED:${rawText || "invalid_response"}`);
+  if (!resp.ok || !data?.ok) {
+    throw new Error(`SHEETS_FAILED:${JSON.stringify(data)}`);
   }
 
   return data;
