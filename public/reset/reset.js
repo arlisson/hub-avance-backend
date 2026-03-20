@@ -1,20 +1,4 @@
-document.addEventListener("DOMContentLoaded", async () => {
-
-  try {
-    const sb = await window.getSupabaseClient();
-    const { data } = await sb.auth.getSession();
-    
-    if (data?.session) {
-      const backLink = document.querySelector(".back-link");
-      if (backLink) {
-        backLink.href = "../hub/hub.html";
-        backLink.textContent = "Voltar para o Início";
-      }
-    }
-  } catch (err) {
-    console.warn("Não foi possível verificar a sessão no carregamento.", err);
-  }
-
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("reset-form");
   const pass = document.getElementById("new-password");
   const btn = document.getElementById("save-btn");
@@ -22,6 +6,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   const toggleBtn = document.getElementById("toggle-new-password");
 
   if (!form || !pass) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const token = String(params.get("token") || "").trim();
+
+  if (!token) {
+    alert("Link de redefinição inválido.");
+    window.location.href = "../login/login.html";
+    return;
+  }
+
+  async function apiFetch(url, options = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
+    const resp = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    const data = await resp.json().catch(() => null);
+
+    if (!resp.ok) {
+      throw new Error(data?.error || data?.message || `Erro ${resp.status}`);
+    }
+
+    return data;
+  }
 
   function passwordChecks(pw) {
     const value = String(pw || "");
@@ -101,29 +114,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    let supabase;
-    try {
-      supabase = await window.getSupabaseClient();
-    } catch (err) {
-      alert(err?.message || "Cliente Supabase não inicializado.");
-      return;
-    }
-
-    if (btn) btn.disabled = true;
+    const originalText = btn?.innerText || "Salvar";
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: pass.value,
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Salvando...";
+      }
+
+      const out = await apiFetch("/api/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          token,
+          password: pass.value,
+        }),
       });
 
-      if (error) throw error;
-
-      alert("Senha atualizada com sucesso. Faça login novamente.");
+      alert(out?.message || "Senha atualizada com sucesso. Faça login novamente.");
       window.location.href = "../login/login.html";
     } catch (err) {
       alert(err?.message || "Falha ao atualizar senha.");
     } finally {
-      if (btn) btn.disabled = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }
     }
   });
 
