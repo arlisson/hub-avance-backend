@@ -5,6 +5,41 @@ import { pool } from "../config/db.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
+async function registrarLicencaNoSheets(email) {
+  const gsWebAppUrl = process.env.GS_WEBAPP_URL;
+  const hubSecret = process.env.HUB_SECRET;
+
+  if (!gsWebAppUrl || !hubSecret) {
+    throw new Error("SHEETS_NOT_CONFIGURED");
+  }
+
+  const payload = {
+    action: "upsert_license",
+    secret: hubSecret,
+    email,
+    status: "ACTIVE",
+    max_devices: 1,
+    created_at: new Date().toISOString(),
+  };
+
+  const resp = await fetch(gsWebAppUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await resp.json().catch(() => null);
+
+  if (!resp.ok || !data?.ok) {
+    console.error("Sheets failed:", data);
+    throw new Error("SHEETS_FAILED");
+  }
+
+  return data;
+}
+
 export async function changePassword(req, res) {
   try {
     const userId = req.user?.id;
@@ -340,6 +375,7 @@ export async function register(req, res) {
       [userId, tokenHash, expiresAt]
     );
 
+    await registrarLicencaNoSheets(emailNorm);
     await conn.commit();
     committed = true;
 
@@ -366,6 +402,20 @@ export async function register(req, res) {
     }
 
     console.error("Erro em /api/register:", error);
+
+    if (error.message === "SHEETS_FAILED") {
+      return res.status(502).json({
+        ok: false,
+        error: "SHEETS_FAILED"
+      });
+    }
+
+    if (error.message === "SHEETS_NOT_CONFIGURED") {
+      return res.status(500).json({
+        ok: false,
+        error: "SHEETS_NOT_CONFIGURED"
+      });
+    }
 
     return res.status(500).json({
       ok: false,

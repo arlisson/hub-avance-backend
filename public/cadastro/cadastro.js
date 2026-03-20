@@ -629,6 +629,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else if (msg.includes("DOCUMENT_EXISTS")) {
         setInvalid(docInput, "CPF/CNPJ já cadastrado");
         alert("Este CPF/CNPJ já está cadastrado.");
+      } else if (msg.includes("SHEETS_FAILED")) {
+        alert("Cadastro indisponível no momento. Tente novamente em instantes.");
+      } else if (msg.includes("SHEETS_NOT_CONFIGURED")) {
+        alert("Integração de cadastro indisponível no momento.");
       } else {
         console.error("Erro:", error);
         alert("Erro ao cadastrar. Verifique os dados e tente novamente.");
