@@ -10,7 +10,6 @@
  */
 
 let LOGIN_URL = "/login/login.html";
-let CURRENT_USER_ID = "";
 
 /**
  * Defina seus cards aqui.
@@ -155,6 +154,26 @@ async function apiFetch(url, options = {}) {
   return data;
 }
 
+async function registrarUsoEIrParaDestino(app, metric = "access", targetBlank = false) {
+  const out = await apiFetch("/api/contador", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ app, metric }),
+  });
+
+  if (!out?.ok || !out?.target) {
+    throw new Error("Não foi possível registrar o uso do aplicativo.");
+  }
+
+  if (targetBlank) {
+    window.open(out.target, "_blank", "noopener,noreferrer");
+  } else {
+    window.location.href = out.target;
+  }
+}
+
 async function getCurrentSession() {
   return apiFetch("/api/me", { method: "GET" });
 }
@@ -294,7 +313,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const user = sessionData.user;
 
-    CURRENT_USER_ID = user.id || "";
+
     const email = user.email || "";
     const canAccessProtocol = !!user.protocol;
 
@@ -334,20 +353,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// -------------------------
-// URLs do contador
-// -------------------------
-function buildCounterUrl(app, metric = "access") {
-  if (!CURRENT_USER_ID || !app) return "#";
-
-  const params = new URLSearchParams({
-    app,
-    user_id: CURRENT_USER_ID,
-    metric,
-  });
-
-  return `/api/contador?${params.toString()}`;
-}
 
 // -------------------------
 // Skeleton Loader
@@ -505,32 +510,41 @@ function openAppModal(appId) {
   if (descEl) descEl.textContent = app.longDesc || "";
 
   if (actionsEl) {
-    actionsEl.innerHTML = "";
+  actionsEl.innerHTML = "";
 
-    (app.actions || []).forEach((a) => {
-      const el = document.createElement("a");
-      el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
-      el.innerHTML = `
-        <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
-        <span>${escapeHtml(a.label || "Abrir")}</span>
-      `;
+  (app.actions || []).forEach((a) => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
+    el.innerHTML = `
+      <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
+      <span>${escapeHtml(a.label || "Abrir")}</span>
+    `;
 
-      if (a.app) {
-        el.href = buildCounterUrl(a.app, a.metric || "access");
-      } else if (a.href) {
-        el.href = a.href;
-      } else {
-        el.href = "#";
+    el.addEventListener("click", async () => {
+      try {
+        if (a.app) {
+          await registrarUsoEIrParaDestino(
+            a.app,
+            a.metric || "access",
+            !!a.targetBlank
+          );
+        } else if (a.href) {
+          if (a.targetBlank) {
+            window.open(a.href, "_blank", "noopener,noreferrer");
+          } else {
+            window.location.href = a.href;
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao registrar uso do app:", err);
+        alert("Não foi possível abrir a aplicação agora.");
       }
-
-      if (a.targetBlank) {
-        el.target = "_blank";
-        el.rel = "noopener noreferrer";
-      }
-
-      actionsEl.appendChild(el);
     });
-  }
+
+    actionsEl.appendChild(el);
+  });
+}
 
   if (videoEl) {
     videoEl.innerHTML = "";
