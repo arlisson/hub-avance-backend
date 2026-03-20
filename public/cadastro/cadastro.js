@@ -100,7 +100,10 @@ async function apiFetch(url, options = {}) {
   const data = await resp.json().catch(() => null);
 
   if (!resp.ok) {
-    throw new Error(data?.error || data?.message || `Erro ${resp.status}`);
+    const detail = data?.detail ? ` | ${data.detail}` : "";
+    throw new Error(
+      `${data?.error || data?.message || `Erro ${resp.status}`}${detail}`
+    );
   }
 
   return data;
