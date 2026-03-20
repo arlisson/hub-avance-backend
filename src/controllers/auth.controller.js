@@ -19,7 +19,10 @@ function getMailer() {
     host,
     port,
     secure: port === 465,
-    auth: { user, pass }
+    auth: {
+      user,
+      pass
+    }
   });
 }
 
@@ -57,6 +60,7 @@ async function enviarEmailVerificacao(email, token) {
 
 export async function register(req, res) {
   const conn = await pool.getConnection();
+  let committed = false;
 
   try {
     const {
@@ -124,7 +128,6 @@ export async function register(req, res) {
     const roleId = roleRows[0].id;
     const passwordHash = await bcrypt.hash(passwordNorm, 10);
     const { token, tokenHash, expiresAt } = gerarTokenVerificacao();
-
     const userId = crypto.randomUUID();
 
     const regiaoJson =
@@ -203,24 +206,57 @@ export async function register(req, res) {
     );
 
     await conn.commit();
+    committed = true;
 
-    await enviarEmailVerificacao(emailNorm, token);
+    try {
+      await enviarEmailVerificacao(emailNorm, token);
 
-    return res.status(201).json({
-      ok: true,
-      message: "Cadastro realizado. Verifique seu e-mail para liberar o login."
-    });
+      return res.status(201).json({
+        ok: true,
+        message: "Cadastro realizado. Verifique seu e-mail para liberar o login."
+      });
+    } catch (mailError) {
+      console.error("Erro ao enviar e-mail de verificação:", mailError);
+
+      return res.status(201).json({
+        ok: true,
+        emailSent: false,
+        message:
+          "Cadastro realizado, mas não foi possível enviar o e-mail de confirmação agora."
+      });
+    }
   } catch (error) {
-    await conn.rollback();
+    if (!committed) {
+      await conn.rollback();
+    }
+
     console.error("Erro em /api/register:", error);
 
     return res.status(500).json({
       ok: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   } finally {
     conn.release();
+  }
+}
+
+export async function testSmtp(req, res) {
+  try {
+    const transporter = getMailer();
+    await transporter.verify();
+
+    return res.json({
+      ok: true,
+      message: "SMTP autenticado com sucesso."
+    });
+  } catch (error) {
+    console.error("Erro em /api/test-smtp:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
   }
 }
 
@@ -283,6 +319,8 @@ export async function verifyEmail(req, res) {
     conn.release();
   }
 }
+
+
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
