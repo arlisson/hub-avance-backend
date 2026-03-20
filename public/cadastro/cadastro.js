@@ -1,3 +1,4 @@
+// cadastro.js
 function validarCPF(cpf) {
   const c = String(cpf || "").replace(/\D/g, "");
   if (c.length !== 11) return false;
