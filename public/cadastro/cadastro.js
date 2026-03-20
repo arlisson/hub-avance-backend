@@ -625,7 +625,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       window.location.href = "../login/login.html";
     } catch (error) {
-      const msg = String(error?.message || "");
+     const msg = String(error?.message || "");
+
+      console.error("Erro completo de cadastro:", msg);
 
       if (msg.includes("EMAIL_EXISTS")) {
         setInvalid(emailInput, "Este e-mail já está cadastrado");
@@ -634,12 +636,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         setInvalid(docInput, "CPF/CNPJ já cadastrado");
         alert("Este CPF/CNPJ já está cadastrado.");
       } else if (msg.includes("SHEETS_FAILED")) {
-        alert("Cadastro indisponível no momento. Tente novamente em instantes.");
+        alert(`Erro no Sheets: ${msg}`);
       } else if (msg.includes("SHEETS_NOT_CONFIGURED")) {
         alert("Integração de cadastro indisponível no momento.");
       } else {
         console.error("Erro:", error);
-        alert("Erro ao cadastrar. Verifique os dados e tente novamente.");
+        alert(`Erro ao cadastrar: ${msg}`);
       }
     } finally {
       if (btn) {
