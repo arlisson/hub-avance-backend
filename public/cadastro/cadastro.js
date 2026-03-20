@@ -145,10 +145,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   let cepLookupController = null;
 
   try {
-    const me = await apiFetch("/api/me", { method: "GET" });
-    if (me?.ok && me?.user) {
-      window.location.href = "../hub/hub.html";
-      return;
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      const me = await apiFetch("/api/me", { method: "GET" });
+      if (me?.ok && me?.user) {
+        window.location.href = "../hub/hub.html";
+        return;
+      }
     }
   } catch {
   }

@@ -76,8 +76,9 @@ export async function register(req, res) {
 
     const emailNorm = String(email || "").trim().toLowerCase();
     const passwordNorm = String(password || "");
+    const cpfCnpjNorm = String(cpf_cnpj || "").trim();
 
-    if (!name || !emailNorm || !passwordNorm || !cpf_cnpj) {
+    if (!name || !emailNorm || !passwordNorm || !cpfCnpjNorm) {
       return res.status(400).json({
         ok: false,
         error: "Campos obrigatórios ausentes."
@@ -98,7 +99,7 @@ export async function register(req, res) {
 
     const [docRows] = await conn.query(
       `SELECT id FROM profiles WHERE cpf_cnpj = ? LIMIT 1`,
-      [cpf_cnpj]
+      [cpfCnpjNorm]
     );
 
     if (docRows.length) {
@@ -124,55 +125,69 @@ export async function register(req, res) {
     const passwordHash = await bcrypt.hash(passwordNorm, 10);
     const { token, tokenHash, expiresAt } = gerarTokenVerificacao();
 
+    const userId = crypto.randomUUID();
+
+    const regiaoJson =
+      cep || cidade || estado
+        ? JSON.stringify({
+            cep: cep || null,
+            cidade: cidade || null,
+            estado: estado || null
+          })
+        : null;
+
+    const appUsageJson = JSON.stringify({});
+
     await conn.beginTransaction();
 
-    const [userResult] = await conn.query(
+    await conn.query(
       `
       INSERT INTO users (
+        id,
         email,
         password_hash,
         ativo,
         role_id,
         email_confirmado
-      ) VALUES (?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?)
       `,
-      [emailNorm, passwordHash, 1, roleId, 0]
+      [userId, emailNorm, passwordHash, 1, roleId, 0]
     );
-
-    const userId = userResult.insertId;
 
     await conn.query(
       `
       INSERT INTO profiles (
         id,
-        nome,
+        email,
         cpf_cnpj,
+        nome,
         whatsapp,
-        cep,
-        cidade,
-        estado,
-        protocol,
-        cliente_avance,
         has_mobile_service,
         contract_type,
-        operator,
-        active_lines
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        operador,
+        active_lines,
+        protocol,
+        cliente_avance,
+        app_usage,
+        regiao,
+        cep
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         userId,
+        emailNorm,
+        cpfCnpjNorm,
         name,
-        cpf_cnpj,
         whatsapp || null,
-        cep || null,
-        cidade || null,
-        estado || null,
-        0,
-        1,
         has_mobile_service === true ? 1 : 0,
         contract_type || null,
         operator || null,
-        active_lines ?? null
+        active_lines ?? null,
+        0,
+        1,
+        appUsageJson,
+        regiaoJson,
+        cep || null
       ]
     );
 
