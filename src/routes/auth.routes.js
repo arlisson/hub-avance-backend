@@ -8,8 +8,9 @@ import {
   register,
   verifyEmail,  
   resetPassword,
-  changePassword
+  changePassword,
 } from "../controllers/auth.controller.js";
+import {registerAppUsage} from "../controllers/counter.controller.js"
 import { authenticateToken } from "../middlewares/auth.js";
 
 const router = Router();
@@ -22,5 +23,6 @@ router.post("/reset-password", resetPassword);
 router.post("/register", register);
 router.get("/verify-email", verifyEmail);
 router.post("/change-password", authenticateToken, changePassword);
+router.post("/contador", authenticateToken, registerAppUsage);
 
 export default router;
