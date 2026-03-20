@@ -610,8 +610,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      alert("Cadastro realizado. Enviamos um link de confirmação para seu e-mail. " +
-  "Confirme o link para liberar o login. Verifique também a caixa de spam.");
+      if (out.emailSent === false) {
+        alert(
+          "Cadastro realizado, mas não foi possível enviar o e-mail de confirmação agora. Entre em contato com o suporte para reenviar a confirmação."
+        );
+      } else {
+        alert(
+          "Cadastro realizado. Enviamos um link de confirmação para seu e-mail. Confirme o link para liberar o login. Verifique também a caixa de spam."
+        );
+      }
       window.location.href = "../login/login.html";
     } catch (error) {
       const msg = String(error?.message || "");
