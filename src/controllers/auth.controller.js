@@ -30,10 +30,23 @@ async function registrarLicencaNoSheets(email) {
     body: JSON.stringify(payload),
   });
 
-  const data = await resp.json().catch(() => null);
+  const rawText = await resp.text();
+  let data = null;
 
-  if (!resp.ok || !data?.ok) {
-    console.error("Sheets failed:", data);
+  try {
+    data = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    data = null;
+  }
+
+  console.log("Sheets status:", resp.status);
+  console.log("Sheets raw response:", rawText);
+
+  if (!resp.ok) {
+    throw new Error("SHEETS_FAILED");
+  }
+
+  if (!data || data.ok !== true) {
     throw new Error("SHEETS_FAILED");
   }
 
