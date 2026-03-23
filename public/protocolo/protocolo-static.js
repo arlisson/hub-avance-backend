@@ -1,60 +1,11 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const LOGIN_URL = "/login/login.html";
   const HUB_URL = "/hub/hub.html";
-
-  let sb;
-  let session;
-
-  // Supabase guard
-  try {
-    sb = await window.getSupabaseClient();
-  } catch {
-    window.location.href = LOGIN_URL;
-    return;
-  }
-
-  try {
-    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
-
-    if (sessionError || !sessionData?.session) {
-      window.location.href = LOGIN_URL;
-      return;
-    }
-
-    session = sessionData.session;
-  } catch {
-    window.location.href = LOGIN_URL;
-    return;
-  }
-
-  const user = session.user;
-  const email = user?.email || "";
+  const PROFILE_URL = "/api/profile";
 
   const userEmailEl = document.getElementById("user-email");
-  if (userEmailEl) {
-    userEmailEl.textContent = email;
-    userEmailEl.title = email;
-  }
-
-  // Menus e tema
-  initSettingsMenu(
-    document.getElementById("settings-btn"),
-    document.getElementById("settings-menu")
-  );
-  initMobileSidebar(document.getElementById("mobile-menu-btn"));
-  initTheme(document.getElementById("theme-toggle"));
-
-  // Logout
+  const menuBackHub = document.getElementById("menu-back-hub");
   const menuLogout = document.getElementById("menu-logout");
-  if (menuLogout) {
-    menuLogout.addEventListener("click", async () => {
-      try {
-        await sb.auth.signOut();
-      } finally {
-        window.location.href = LOGIN_URL;
-      }
-    });
-  }
 
   const btnGenerate = document.getElementById("btn-generate");
   const btnClear = document.getElementById("btn-clear");
@@ -67,15 +18,84 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnCopyProto = document.getElementById("btn-copy-proto");
   const btnCopyMsg = document.getElementById("btn-copy-msg");
 
-  const menuBackHub = document.getElementById("menu-back-hub");
-  if (menuBackHub) {
-    menuBackHub.addEventListener("click", () => {
-      window.location.href = HUB_URL;
+  let authToken = "";
+  let profile = {};
+
+  initSettingsMenu(
+    document.getElementById("settings-btn"),
+    document.getElementById("settings-menu")
+  );
+  initMobileSidebar(document.getElementById("mobile-menu-btn"));
+  initTheme(document.getElementById("theme-toggle"));
+
+  menuBackHub?.addEventListener("click", () => {
+    window.location.href = HUB_URL;
+  });
+
+  menuLogout?.addEventListener("click", () => {
+    clearAuthData();
+    window.location.href = LOGIN_URL;
+  });
+
+  try {
+    authToken = getAuthToken();
+
+    if (!authToken) {
+      window.location.href = LOGIN_URL;
+      return;
+    }
+
+    const profileResponse = await fetch(PROFILE_URL, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
+
+    if (profileResponse.status === 401 || profileResponse.status === 403) {
+      clearAuthData();
+      window.location.href = LOGIN_URL;
+      return;
+    }
+
+    const profileData = await profileResponse.json().catch(() => ({}));
+    profile = profileData?.user || {};
+
+    if (!profileResponse.ok || !profileData?.ok) {
+      throw new Error(profileData?.error || "Não foi possível carregar o perfil.");
+    }
+
+    const canAccessProtocol =
+      profile?.role === "admin" ||
+      profile?.role === "Administrador" ||
+      profile?.protocol === true;
+
+    if (!canAccessProtocol) {
+      alert("Você não tem permissão para acessar o Gerador de Protocolo.");
+      window.location.href = HUB_URL;
+      return;
+    }
+
+    const email =
+      profile?.email ||
+      profile?.user_email ||
+      profile?.usuario_email ||
+      "";
+
+    if (userEmailEl) {
+      userEmailEl.textContent = email;
+      userEmailEl.title = email;
+    }
+  } catch (error) {
+    console.error("Erro ao inicializar página de protocolo:", error);
+    alert(error?.message || "Não foi possível validar seu acesso.");
+    window.location.href = HUB_URL;
+    return;
   }
 
   function clearFeedback() {
     if (resultBox) resultBox.hidden = true;
+
     if (errorBox) {
       errorBox.hidden = true;
       errorBox.textContent = "";
@@ -112,9 +132,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (resultBox) {
         resultBox.hidden = false;
       }
-    } catch (e) {
+    } catch (error) {
       if (errorBox) {
-        errorBox.textContent = e?.message || "Erro ao gerar protocolo.";
+        errorBox.textContent =
+          error?.message || "Erro ao gerar protocolo.";
         errorBox.hidden = false;
       }
     }
@@ -142,6 +163,74 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 });
+
+function getAuthToken() {
+  const directKeys = [
+    "token",
+    "authToken",
+    "accessToken",
+    "jwt",
+    "jwtToken",
+  ];
+
+  for (const key of directKeys) {
+    const value = localStorage.getItem(key);
+    if (value && typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  const jsonKeys = [
+    "auth",
+    "user",
+    "session",
+    "login",
+    "currentUser",
+  ];
+
+  for (const key of jsonKeys) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+
+      const nestedToken =
+        parsed?.token ||
+        parsed?.accessToken ||
+        parsed?.authToken ||
+        parsed?.jwt ||
+        parsed?.access_token;
+
+      if (nestedToken && typeof nestedToken === "string" && nestedToken.trim()) {
+        return nestedToken.trim();
+      }
+    } catch {
+      // ignora JSON inválido
+    }
+  }
+
+  return "";
+}
+
+function clearAuthData() {
+  const keysToRemove = [
+    "token",
+    "authToken",
+    "accessToken",
+    "jwt",
+    "jwtToken",
+    "auth",
+    "user",
+    "session",
+    "login",
+    "currentUser",
+  ];
+
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key);
+  }
+}
 
 function generateProtocol() {
   const now = new Date();
