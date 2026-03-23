@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.__USER_ACCESS_TOKEN__ = token;
 
-        const profileResponse = await apiFetch("/api/profile", {
+        const profileResponse = await apiFetch("/api/me", {
           method: "GET",
         });
 
