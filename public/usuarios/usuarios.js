@@ -274,6 +274,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         const hasAccess =
+          profile?.protocol === true ||
+          profile?.protocol === 1 ||
           profile?.role === "admin" ||
           profile?.role === "Administrador";
 
