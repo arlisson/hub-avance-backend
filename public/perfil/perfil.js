@@ -1,13 +1,14 @@
 const LOGIN_URL = "/login/login.html";
 const HUB_URL = "/hub/hub.html";
 
+const API_ME_URL = "/api/profile";
+const API_PROFILE_URL = "/api/profile";
+const API_LOGOUT_URL = "/api/logout";
+
 let CURRENT_PROFILE = null;
 let cepLookupController = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  let sb;
-  let session;
-
   const form = document.getElementById("perfil-form");
   const errorBox = document.getElementById("errorBox");
 
@@ -24,77 +25,63 @@ document.addEventListener("DOMContentLoaded", async () => {
   const activeLinesInput = document.getElementById("active-lines");
   const saveBtn = document.getElementById("save-btn");
 
-  try {
-    sb = await window.getSupabaseClient();
-  } catch (e) {
-    console.error("Supabase client não carregado:", e);
+  const token = getAccessToken();
+
+  if (!token) {
     window.location.href = LOGIN_URL;
     return;
   }
 
   try {
-    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    const meResp = await apiFetch(API_ME_URL, {
+      method: "GET",
+      token,
+    });
 
-    if (sessionError || !sessionData?.session) {
-      window.location.href = LOGIN_URL;
-      return;
+    if (!meResp?.ok || !meResp?.user) {
+      throw new Error("Usuário não autenticado.");
     }
 
-    session = sessionData.session;
-    window.__USER_ACCESS_TOKEN__ = session.access_token;
-  } catch {
-    window.location.href = LOGIN_URL;
-    return;
-  }
+    const user = meResp.user;
+    CURRENT_PROFILE = normalizeProfileFromApi(user);
 
-  const user = session.user;
-  const email = user?.email || "";
-
-  const userEmailEl = document.getElementById("user-email");
-  if (userEmailEl) {
-    userEmailEl.textContent = email;
-    userEmailEl.title = email;
-  }
-
-  try {
-    const { data: profile, error } = await sb
-      .from("profiles")
-      .select(`
-        id,
-        name,
-        email,
-        cpf,
-        whatsapp,
-        cep,
-        regiao,
-        protocol,
-        has_mobile_service,
-        contract_type,
-        operator,
-        active_lines
-      `)
-      .eq("id", user.id)
-      .single();
-
-    if (error) throw error;
-
-    CURRENT_PROFILE = profile || null;
+    const userEmailEl = document.getElementById("user-email");
+    if (userEmailEl) {
+      userEmailEl.textContent = user.email || "";
+      userEmailEl.title = user.email || "";
+    }
 
     const menuUsers = document.getElementById("menu-users");
     if (menuUsers) {
-      const shouldShow = !!profile?.protocol;
+      const shouldShow = !!user?.protocol;
       menuUsers.hidden = !shouldShow;
       menuUsers.style.display = shouldShow ? "" : "none";
     }
 
-    fillProfileForm(profile);
+    fillProfileForm(CURRENT_PROFILE);
+
+    if (emailInput) {
+      emailInput.value = user.email || "";
+      emailInput.readOnly = true;
+    }
+
+    if (cpfInput) {
+      cpfInput.readOnly = true;
+    }
   } catch (err) {
     console.error("Erro ao carregar perfil:", err);
+
+    clearAuthToken();
 
     if (errorBox) {
       errorBox.textContent = "Não foi possível carregar seu perfil.";
       errorBox.hidden = false;
     }
+
+    setTimeout(() => {
+      window.location.href = LOGIN_URL;
+    }, 800);
+
     return;
   }
 
@@ -116,15 +103,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (menuLogout) {
     menuLogout.addEventListener("click", async () => {
       try {
-        await sb.auth.signOut();
+        const currentToken = getAccessToken();
+        if (currentToken) {
+          await apiFetch(API_LOGOUT_URL, {
+            method: "POST",
+            token: currentToken,
+          });
+        }
+      } catch (err) {
+        console.warn("Falha no logout remoto:", err);
       } finally {
+        clearAuthToken();
         window.location.href = LOGIN_URL;
       }
     });
   }
 
   whatsappInput?.addEventListener("input", (e) => {
-    let value = e.target.value.replace(/\D/g, "");
+    let value = String(e.target.value || "").replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
     value = value.replace(/^(\d{2})(\d)/, "($1) $2");
     value = value.replace(/(\d)(\d{4})$/, "$1-$2");
@@ -149,20 +145,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-
     hideError(errorBox);
 
-    const nameValue = (nameInput?.value || "").trim();
+    const token = getAccessToken();
+    if (!token) {
+      window.location.href = LOGIN_URL;
+      return;
+    }
+
+    const nomeValue = (nameInput?.value || "").trim();
     const whatsappValue = (whatsappInput?.value || "").replace(/\D/g, "");
     const cepValue = (cepInput?.value || "").replace(/\D/g, "");
     const cidadeValue = (cidadeInput?.value || "").trim();
     const estadoValue = (estadoInput?.value || "").trim();
     const hasMobileRaw = hasMobileInput?.value || "";
     const contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
-    const operatorValue = (operatorInput?.value || "").trim();
+    const operadorValue = (operatorInput?.value || "").trim();
     const activeLinesRaw = String(activeLinesInput?.value || "").trim();
 
-    if (!nameValue) {
+    if (!nomeValue) {
       showError(errorBox, "Informe seu nome.");
       return;
     }
@@ -193,7 +194,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (!operatorValue) {
+    if (!operadorValue) {
       showError(errorBox, "Informe a operadora.");
       return;
     }
@@ -218,13 +219,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const payload = {
-      name: nameValue,
+      nome: nomeValue,
       whatsapp: whatsappValue,
       cep: cepValue,
       regiao: regiaoPayload,
       has_mobile_service: hasMobileRaw === "true",
       contract_type: contractTypeValue,
-      operator: operatorValue,
+      operador: operadorValue,
       active_lines: activeLinesValue,
     };
 
@@ -237,30 +238,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-      const { error } = await sb
-        .from("profiles")
-        .update(payload)
-        .eq("id", user.id);
+      const result = await apiFetch(API_PROFILE_URL, {
+        method: "PUT",
+        token,
+        body: payload,
+      });
 
-      if (error) throw error;
-
-      if (CURRENT_PROFILE) {
-        CURRENT_PROFILE.name = payload.name;
-        CURRENT_PROFILE.whatsapp = payload.whatsapp;
-        CURRENT_PROFILE.cep = payload.cep;
-        CURRENT_PROFILE.regiao = payload.regiao;
-        CURRENT_PROFILE.has_mobile_service = payload.has_mobile_service;
-        CURRENT_PROFILE.contract_type = payload.contract_type;
-        CURRENT_PROFILE.operator = payload.operator;
-        CURRENT_PROFILE.active_lines = payload.active_lines;
+      if (!result?.ok) {
+        throw new Error(result?.error || "Falha ao atualizar perfil.");
       }
+
+      CURRENT_PROFILE = normalizeProfileFromApi({
+        ...(CURRENT_PROFILE || {}),
+        ...(result.user || payload),
+        email: emailInput?.value || CURRENT_PROFILE?.email || "",
+        protocol: CURRENT_PROFILE?.protocol,
+        cliente_avance: CURRENT_PROFILE?.cliente_avance,
+      });
+
+      fillProfileForm(CURRENT_PROFILE);
 
       if (typeof showFeedback === "function") {
         showFeedback("Perfil atualizado com sucesso.", "success");
       }
     } catch (err) {
       console.error("Erro ao salvar perfil:", err);
-      showError(errorBox, "Não foi possível salvar as alterações.");
+      showError(errorBox, extractApiError(err) || "Não foi possível salvar as alterações.");
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
@@ -335,9 +338,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   function fillProfileForm(profile) {
     const regiao = parseRegiao(profile?.regiao);
 
-    if (nameInput) nameInput.value = profile?.name || "";
-    if (emailInput) emailInput.value = profile?.email || email || "";
-    if (cpfInput) cpfInput.value = profile?.cpf || "";
+    if (nameInput) nameInput.value = profile?.nome || "";
+    if (emailInput) emailInput.value = profile?.email || "";
+    if (cpfInput) cpfInput.value = profile?.cpf_cnpj || "";
     if (whatsappInput) whatsappInput.value = formatWhatsapp(profile?.whatsapp || "");
     if (cepInput) cepInput.value = formatCep(regiao?.cep || profile?.cep || "");
     if (cidadeInput) cidadeInput.value = regiao?.cidade || "";
@@ -358,14 +361,112 @@ document.addEventListener("DOMContentLoaded", async () => {
       contractTypeInput.value = contract === "CPF" || contract === "CNPJ" ? contract : "";
     }
 
-    if (operatorInput) operatorInput.value = profile?.operator || "";
+    if (operatorInput) operatorInput.value = profile?.operador || "";
 
     if (activeLinesInput) {
+      const raw = profile?.active_lines;
       activeLinesInput.value =
-        Number.isFinite(profile?.active_lines) ? String(profile.active_lines) : "";
+        raw === 0 || Number.isFinite(Number(raw)) ? String(raw) : "";
     }
   }
 });
+
+function normalizeProfileFromApi(user = {}) {
+  return {
+    id: user.id || "",
+    email: user.email || "",
+    nome: user.nome || user.name || "",
+    cpf_cnpj: user.cpf_cnpj || "",
+    whatsapp: user.whatsapp || "",
+    cep: user.cep || "",
+    regiao: parseRegiao(user.regiao),
+    protocol: !!user.protocol,
+    cliente_avance: !!user.cliente_avance,
+    has_mobile_service:
+      typeof user.has_mobile_service === "boolean"
+        ? user.has_mobile_service
+        : null,
+    contract_type: user.contract_type || "",
+    operador: user.operador || user.operator || "",
+    active_lines:
+      user.active_lines === 0 || Number.isFinite(Number(user.active_lines))
+        ? Number(user.active_lines)
+        : "",
+  };
+}
+
+function getAccessToken() {
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("access_token") ||
+    ""
+  );
+}
+
+function clearAuthToken() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("access_token");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("access_token");
+}
+
+async function apiFetch(url, { method = "GET", token = "", body } = {}) {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const resp = await fetch(url, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await resp.text();
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { ok: false, error: text || "Resposta inválida do servidor." };
+  }
+
+  if (resp.status === 401) {
+    clearAuthToken();
+    window.location.href = LOGIN_URL;
+    return null;
+  }
+
+  if (!resp.ok) {
+    const err = new Error(data?.error || "Erro na requisição.");
+    err.response = data;
+    err.status = resp.status;
+    throw err;
+  }
+
+  return data;
+}
+
+function extractApiError(err) {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err?.response?.error) return String(err.response.error);
+  if (err?.message) return String(err.message);
+  return "";
+}
 
 function parseRegiao(regiao) {
   if (regiao && typeof regiao === "object") return regiao;
