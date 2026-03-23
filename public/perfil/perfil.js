@@ -158,6 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
     let operadorValue = (operatorInput?.value || "").trim();
     let activeLinesRaw = String(activeLinesInput?.value || "").trim();
+    const activeLinesValue = Number(activeLinesRaw);
 
     if (!nomeValue) {
       showError(errorBox, "Informe seu nome.");
@@ -207,7 +208,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const activeLinesValue = Number(activeLinesRaw);
+     
 
       if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
         showError(errorBox, "Informe um número válido de linhas ativas.");
