@@ -1,7 +1,10 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const LOGIN_URL = "/login/login.html";
-  const HUB_URL = "/hub/hub.html";
+const LOGIN_URL = "/login/login.html";
+const HUB_URL = "/hub/hub.html";
 
+const API_ME_URL = "/api/profile";
+const API_LOGOUT_URL = "/api/logout";
+
+document.addEventListener("DOMContentLoaded", async () => {
   const userEmailEl = document.getElementById("user-email");
   const menuBackHub = document.getElementById("menu-back-hub");
   const menuLogout = document.getElementById("menu-logout");
@@ -17,22 +20,77 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnCopyProto = document.getElementById("btn-copy-proto");
   const btnCopyMsg = document.getElementById("btn-copy-msg");
 
+  try {
+    const token = getAccessToken();
+
+    if (!token) {
+      window.location.href = LOGIN_URL;
+      return;
+    }
+
+    const meResp = await apiFetch(API_ME_URL, {
+      method: "GET",
+      token,
+    });
+
+    if (!meResp?.ok || !meResp?.user) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const user = meResp.user;
+
+    if (userEmailEl) {
+      userEmailEl.textContent = user.email || "";
+      userEmailEl.title = user.email || "";
+    }
+  } catch (err) {
+    console.error("Erro ao carregar usuário:", err);
+
+    if (errorBox) {
+      errorBox.textContent =
+        extractApiError(err) || "Não foi possível carregar os dados do usuário.";
+      errorBox.hidden = false;
+    }
+
+    const status = err?.status;
+    if (status === 401) {
+      clearAuthToken();
+      window.location.href = LOGIN_URL;
+      return;
+    }
+  }
+
   initSettingsMenu(
     document.getElementById("settings-btn"),
     document.getElementById("settings-menu")
   );
   initMobileSidebar(document.getElementById("mobile-menu-btn"));
   initTheme(document.getElementById("theme-toggle"));
-  loadUserEmail(userEmailEl);
 
-  menuBackHub?.addEventListener("click", () => {
-    window.location.href = HUB_URL;
-  });
+  if (menuBackHub) {
+    menuBackHub.addEventListener("click", () => {
+      window.location.href = HUB_URL;
+    });
+  }
 
-  menuLogout?.addEventListener("click", () => {
-    clearAuthData();
-    window.location.href = LOGIN_URL;
-  });
+  if (menuLogout) {
+    menuLogout.addEventListener("click", async () => {
+      try {
+        const currentToken = getAccessToken();
+        if (currentToken) {
+          await apiFetch(API_LOGOUT_URL, {
+            method: "POST",
+            token: currentToken,
+          });
+        }
+      } catch (err) {
+        console.warn("Falha no logout remoto:", err);
+      } finally {
+        clearAuthToken();
+        window.location.href = LOGIN_URL;
+      }
+    });
+  }
 
   function clearFeedback() {
     if (resultBox) {
@@ -55,145 +113,150 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  btnClear?.addEventListener("click", () => {
-    clearResultFields();
-    clearFeedback();
-  });
-
-  btnGenerate?.addEventListener("click", (e) => {
-    e.preventDefault();
-
-    try {
-      clearFeedback();
+  if (btnClear) {
+    btnClear.addEventListener("click", () => {
       clearResultFields();
+      clearFeedback();
+    });
+  }
 
-      const protocol = generateProtocol();
+  if (btnGenerate) {
+    btnGenerate.addEventListener("click", (e) => {
+      e.preventDefault();
 
-      if (protoEl) {
-        protoEl.textContent = protocol;
+      try {
+        clearFeedback();
+        clearResultFields();
+
+        const protocol = generateProtocol();
+
+        if (protoEl) {
+          protoEl.textContent = protocol;
+        }
+
+        if (msgEl) {
+          msgEl.value = buildMessage(protocol);
+        }
+
+        if (resultBox) {
+          resultBox.hidden = false;
+        }
+      } catch (error) {
+        console.error("Erro ao gerar protocolo:", error);
+
+        if (errorBox) {
+          errorBox.textContent =
+            error?.message || "Erro ao gerar protocolo.";
+          errorBox.hidden = false;
+        }
       }
+    });
+  }
 
-      if (msgEl) {
-        msgEl.value = buildMessage(protocol);
+  if (btnCopyProto) {
+    btnCopyProto.addEventListener("click", async () => {
+      const text = protoEl?.textContent || "";
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        fallbackCopy(text);
       }
+    });
+  }
 
-      if (resultBox) {
-        resultBox.hidden = false;
+  if (btnCopyMsg) {
+    btnCopyMsg.addEventListener("click", async () => {
+      const text = msgEl?.value || "";
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        fallbackCopy(text);
       }
-    } catch (error) {
-      if (errorBox) {
-        errorBox.textContent =
-          error?.message || "Erro ao gerar protocolo.";
-        errorBox.hidden = false;
-      }
-    }
-  });
-
-  btnCopyProto?.addEventListener("click", async () => {
-    const text = protoEl?.textContent || "";
-    if (!text) return;
-
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      fallbackCopy(text);
-    }
-  });
-
-  btnCopyMsg?.addEventListener("click", async () => {
-    const text = msgEl?.value || "";
-    if (!text) return;
-
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      fallbackCopy(text);
-    }
-  });
+    });
+  }
 });
 
-function loadUserEmail(userEmailEl) {
-  if (!userEmailEl) return;
-
-  const possibleDirectKeys = [
-    "userEmail",
-    "email",
-    "usuarioEmail",
-    "user_email",
-  ];
-
-  for (const key of possibleDirectKeys) {
-    const value = localStorage.getItem(key);
-    if (value && String(value).trim()) {
-      const email = String(value).trim();
-      userEmailEl.textContent = email;
-      userEmailEl.title = email;
-      return;
-    }
-  }
-
-  const possibleJsonKeys = [
-    "auth",
-    "user",
-    "session",
-    "login",
-    "currentUser",
-    "profile",
-  ];
-
-  for (const key of possibleJsonKeys) {
-    const raw = localStorage.getItem(key);
-    if (!raw) continue;
-
-    try {
-      const parsed = JSON.parse(raw);
-
-      const email =
-        parsed?.email ||
-        parsed?.user?.email ||
-        parsed?.usuario?.email ||
-        parsed?.profile?.email ||
-        parsed?.user_email ||
-        parsed?.usuario_email ||
-        "";
-
-      if (email && String(email).trim()) {
-        const finalEmail = String(email).trim();
-        userEmailEl.textContent = finalEmail;
-        userEmailEl.title = finalEmail;
-        return;
-      }
-    } catch {
-      // ignora JSON inválido
-    }
-  }
-
-  userEmailEl.textContent = "Usuário";
-  userEmailEl.title = "Usuário";
+function getAccessToken() {
+  return (
+    localStorage.getItem("auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("auth_token") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("access_token") ||
+    ""
+  );
 }
 
-function clearAuthData() {
-  const keysToRemove = [
-    "token",
-    "authToken",
-    "accessToken",
-    "jwt",
-    "jwtToken",
-    "auth",
-    "user",
-    "session",
-    "login",
-    "currentUser",
-    "profile",
-    "userEmail",
-    "email",
-    "usuarioEmail",
-    "user_email",
-  ];
+function clearAuthToken() {
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("access_token");
 
-  for (const key of keysToRemove) {
-    localStorage.removeItem(key);
+  sessionStorage.removeItem("auth_token");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("access_token");
+}
+
+async function apiFetch(url, { method = "GET", token = "", body } = {}) {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
+
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const resp = await fetch(url, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await resp.text();
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { ok: false, error: text || "Resposta inválida do servidor." };
+  }
+
+  if (resp.status === 401) {
+    const err = new Error(data?.error || "Não autorizado.");
+    err.response = data;
+    err.status = resp.status;
+    throw err;
+  }
+
+  if (!resp.ok) {
+    const err = new Error(data?.error || "Erro na requisição.");
+    err.response = data;
+    err.status = resp.status;
+    throw err;
+  }
+
+  return data;
+}
+
+function extractApiError(err) {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err?.response?.error) return String(err.response.error);
+  if (err?.message) return String(err.message);
+  return "";
 }
 
 function generateProtocol() {
@@ -236,23 +299,16 @@ function initSettingsMenu(btn, menu) {
 
   const close = () => {
     menu.hidden = true;
-    btn.setAttribute("aria-expanded", "false");
   };
 
   const open = () => {
     menu.hidden = false;
-    btn.setAttribute("aria-expanded", "true");
   };
 
   const toggle = () => {
-    if (menu.hidden) {
-      open();
-    } else {
-      close();
-    }
+    if (menu.hidden) open();
+    else close();
   };
-
-  btn.setAttribute("aria-expanded", "false");
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -326,8 +382,8 @@ function updateThemeIcon(btn) {
   }
 
   if (logo) {
-    logo.src = isLight
-      ? "../img/LogoClaraSemFundo.png"
-      : "../img/LogoEscuroSemFundo.png";
+    logo.src = !isLight
+      ? "../img/LogoEscuroSemFundo.png"
+      : "../img/LogoClaraSemFundo.png";
   }
 }
