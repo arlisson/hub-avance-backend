@@ -70,19 +70,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } catch (err) {
     console.error("Erro ao carregar perfil:", err);
-    alert("Não foi possível carregar seu perfil.", err);
-
-    clearAuthToken();
-
+   
+   
     if (errorBox) {
-      errorBox.textContent =
-        extractApiError(err) || "Não foi possível carregar seu perfil.";
-      errorBox.hidden = false;
-    }
-
-    setTimeout(() => {
-      window.location.href = LOGIN_URL;
-    }, 800);
+    errorBox.textContent =
+      extractApiError(err) || "Não foi possível carregar seu perfil.";
+    errorBox.hidden = false;
+  }   
 
     return;
   }
@@ -399,9 +393,11 @@ function normalizeProfileFromApi(user = {}) {
 
 function getAccessToken() {
   return (
+    localStorage.getItem("auth_token") ||
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
     localStorage.getItem("access_token") ||
+    sessionStorage.getItem("auth_token") ||
     sessionStorage.getItem("token") ||
     sessionStorage.getItem("authToken") ||
     sessionStorage.getItem("access_token") ||
@@ -410,9 +406,12 @@ function getAccessToken() {
 }
 
 function clearAuthToken() {
+  localStorage.removeItem("auth_token");
   localStorage.removeItem("token");
   localStorage.removeItem("authToken");
   localStorage.removeItem("access_token");
+
+  sessionStorage.removeItem("auth_token");
   sessionStorage.removeItem("token");
   sessionStorage.removeItem("authToken");
   sessionStorage.removeItem("access_token");
@@ -447,11 +446,10 @@ async function apiFetch(url, { method = "GET", token = "", body } = {}) {
   }
 
   if (resp.status === 401) {
-  const err = new Error(data?.error || "Não autorizado.");
-  err.response = data;
-  err.status = resp.status;
-  throw err;
-}
+    clearAuthToken();
+    window.location.href = LOGIN_URL;
+    return null;
+  }
 
   if (!resp.ok) {
     const err = new Error(data?.error || "Erro na requisição.");
