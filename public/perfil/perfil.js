@@ -190,12 +190,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (!operadorValue) {
+    if (!operadorValue && hasMobileRaw === "true") {
       showError(errorBox, "Informe a operadora.");
       return;
     }
 
-    if (activeLinesRaw === "") {
+    if (activeLinesRaw === "" && hasMobileRaw === "true") {
       showError(errorBox, "Informe a quantidade de linhas ativas.");
       return;
     }
