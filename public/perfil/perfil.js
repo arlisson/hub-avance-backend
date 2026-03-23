@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
+    if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ" && hasMobileRaw === "true") {
       showError(errorBox, "Selecione um tipo de contrato válido.");
       return;
     }
