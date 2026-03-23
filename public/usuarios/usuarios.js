@@ -127,7 +127,6 @@ async function apiFetch(url, options = {}) {
   return data;
 }
 
-// Monta os query params com base nos filtros e busca ativos
 function buildQueryParams(page, limit) {
   const params = new URLSearchParams();
   params.set("page", String(page));
@@ -275,9 +274,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const profile = profileResponse?.user || profileResponse || {};
 
-        const hasAccess =        
+        const hasAccess =
           profile?.role === "admin" ||
-          profile?.role === "Administrador";
+          profile?.role === "Administrador" ||
+          profile?.protocol === true;
 
         if (!hasAccess) {
           alert("Você não tem permissão para acessar esta tela.");
@@ -285,7 +285,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
-        
         const email = profile?.email || "";
 
         const userEmailEl = document.getElementById("user-email");
@@ -552,6 +551,7 @@ function renderUsers(users) {
     const cep = u.cep || regiao.cep || "";
     const cidade = u.cidade || regiao.cidade || "";
     const estado = u.estado || regiao.estado || "";
+    const hasMobile = u.has_mobile_service === true;
 
     const summaryRow = document.createElement("tr");
     summaryRow.className = "user-summary-row";
@@ -624,25 +624,25 @@ function renderUsers(users) {
             <div class="field">
               <label>Telefonia ativa</label>
               <select class="input-dark-lite edit-has-mobile-service">
-                <option value="true" ${u.has_mobile_service ? "selected" : ""}>Sim</option>
-                <option value="false" ${!u.has_mobile_service ? "selected" : ""}>Não</option>
+                <option value="true" ${hasMobile ? "selected" : ""}>Sim</option>
+                <option value="false" ${!hasMobile ? "selected" : ""}>Não</option>
               </select>
             </div>
 
             <div class="field">
               <label>Tipo de contrato</label>
-              <input class="input-dark-lite edit-contract-type" value="${escapeAttr(u.contract_type || "")}" />
+              <input class="input-dark-lite edit-contract-type" value="${hasMobile ? escapeAttr(u.contract_type || "") : ""}" />
             </div>
 
             <div class="field">
               <label>Operadora</label>
-              <input class="input-dark-lite edit-operador" value="${escapeAttr(operador)}" />
+              <input class="input-dark-lite edit-operador" value="${hasMobile ? escapeAttr(operador) : ""}" />
             </div>
 
             <div class="field">
               <label>Linhas ativas</label>
               <input class="input-dark-lite edit-active-lines" type="number" value="${
-                Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : ""
+                hasMobile && Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : ""
               }" />
             </div>
           </div>
@@ -704,25 +704,25 @@ function renderUsers(users) {
     const activeLinesField = activeLinesEl?.closest(".field");
 
     function syncMobileFieldsForRow() {
-      const hasMobile =
+      const hasMobileSelected =
         String(hasMobileServiceEl?.value || "").trim().toLowerCase() === "true";
 
       if (contractTypeField) {
-        contractTypeField.hidden = !hasMobile;
-        contractTypeField.style.display = hasMobile ? "" : "none";
+        contractTypeField.hidden = !hasMobileSelected;
+        contractTypeField.style.display = hasMobileSelected ? "" : "none";
       }
 
       if (operadorField) {
-        operadorField.hidden = !hasMobile;
-        operadorField.style.display = hasMobile ? "" : "none";
+        operadorField.hidden = !hasMobileSelected;
+        operadorField.style.display = hasMobileSelected ? "" : "none";
       }
 
       if (activeLinesField) {
-        activeLinesField.hidden = !hasMobile;
-        activeLinesField.style.display = hasMobile ? "" : "none";
+        activeLinesField.hidden = !hasMobileSelected;
+        activeLinesField.style.display = hasMobileSelected ? "" : "none";
       }
 
-      if (!hasMobile) {
+      if (!hasMobileSelected) {
         if (contractTypeEl) contractTypeEl.value = "";
         if (operadorEl) operadorEl.value = "";
         if (activeLinesEl) activeLinesEl.value = "";
@@ -733,76 +733,76 @@ function renderUsers(users) {
     syncMobileFieldsForRow();
 
     btnSave?.addEventListener("click", async () => {
-    btnSave.disabled = true;
-    if (btnDelete) btnDelete.disabled = true;
+      btnSave.disabled = true;
+      if (btnDelete) btnDelete.disabled = true;
 
-    try {
-      const hasMobileRaw = String(hasMobileServiceEl?.value || "").trim().toLowerCase();
-      const hasMobile = hasMobileRaw === "true";
+      try {
+        const hasMobileRaw = String(hasMobileServiceEl?.value || "").trim().toLowerCase();
+        const hasMobileSelected = hasMobileRaw === "true";
 
-      if (hasMobileRaw !== "true" && hasMobileRaw !== "false") {
-        throw new Error("Selecione se a telefonia está ativa.");
+        if (hasMobileRaw !== "true" && hasMobileRaw !== "false") {
+          throw new Error("Selecione se a telefonia está ativa.");
+        }
+
+        const payload = {
+          id: u.id,
+          nome: (nomeEl?.value || "").trim(),
+          cpf_cnpj: (cpfCnpjEl?.value || "").trim(),
+          whatsapp: (whatsappEl?.value || "").trim(),
+          cep: (cepEl?.value || "").trim(),
+          cidade: (cidadeEl?.value || "").trim(),
+          estado: (estadoEl?.value || "").trim(),
+          has_mobile_service: hasMobileSelected,
+          protocol: !!protocolEl?.checked,
+          cliente_avance: !!clienteEl?.checked,
+        };
+
+        if (hasMobileSelected) {
+          const contractTypeValue = (contractTypeEl?.value || "").trim().toUpperCase();
+          const operadorValue = (operadorEl?.value || "").trim();
+          const activeLinesRaw = String(activeLinesEl?.value || "").trim();
+
+          if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
+            throw new Error("Selecione um tipo de contrato válido.");
+          }
+
+          if (!operadorValue) {
+            throw new Error("Informe a operadora.");
+          }
+
+          if (activeLinesRaw === "") {
+            throw new Error("Informe a quantidade de linhas ativas.");
+          }
+
+          const activeLinesValue = Number(activeLinesRaw);
+
+          if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
+            throw new Error("Informe uma quantidade válida de linhas ativas.");
+          }
+
+          payload.contract_type = contractTypeValue;
+          payload.operador = operadorValue;
+          payload.active_lines = activeLinesValue;
+        }
+
+        await apiFetch("/api/admin/update-user", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        await loadUsers(currentPage, false);
+        await loadAppUsageDashboard(false);
+
+        if (typeof showFeedback === "function") {
+          showFeedback("Usuário atualizado com sucesso.", "success");
+        }
+      } catch (e) {
+        alert(e?.message || "Erro ao salvar usuário.");
+      } finally {
+        btnSave.disabled = false;
+        if (btnDelete) btnDelete.disabled = false;
       }
-
-      const payload = {
-        id: u.id,
-        nome: (nomeEl?.value || "").trim(),
-        cpf_cnpj: (cpfCnpjEl?.value || "").trim(),
-        whatsapp: (whatsappEl?.value || "").trim(),
-        cep: (cepEl?.value || "").trim(),
-        cidade: (cidadeEl?.value || "").trim(),
-        estado: (estadoEl?.value || "").trim(),
-        has_mobile_service: hasMobile,
-        protocol: !!protocolEl?.checked,
-        cliente_avance: !!clienteEl?.checked,
-      };
-
-      if (hasMobile) {
-        const contractTypeValue = (contractTypeEl?.value || "").trim().toUpperCase();
-        const operadorValue = (operadorEl?.value || "").trim();
-        const activeLinesRaw = String(activeLinesEl?.value || "").trim();
-
-        if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
-          throw new Error("Selecione um tipo de contrato válido.");
-        }
-
-        if (!operadorValue) {
-          throw new Error("Informe a operadora.");
-        }
-
-        if (activeLinesRaw === "") {
-          throw new Error("Informe a quantidade de linhas ativas.");
-        }
-
-        const activeLinesValue = Number(activeLinesRaw);
-
-        if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
-          throw new Error("Informe uma quantidade válida de linhas ativas.");
-        }
-
-        payload.contract_type = contractTypeValue;
-        payload.operador = operadorValue;
-        payload.active_lines = activeLinesValue;
-      }
-
-      await apiFetch("/api/admin/update-user", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      await loadUsers(currentPage, false);
-      await loadAppUsageDashboard(false);
-
-      if (typeof showFeedback === "function") {
-        showFeedback("Usuário atualizado com sucesso.", "success");
-      }
-    } catch (e) {
-      alert(e?.message || "Erro ao salvar usuário.");
-    } finally {
-      btnSave.disabled = false;
-      if (btnDelete) btnDelete.disabled = false;
-    }
-  });
+    });
 
     btnDelete?.addEventListener("click", async () => {
       const confirmed = window.confirm(
@@ -822,7 +822,7 @@ function renderUsers(users) {
 
         await loadUsers(currentPage, false);
         await loadAppUsageDashboard(false);
-        
+
         if (typeof showFeedback === "function") {
           showFeedback("Usuário excluído com sucesso.", "success");
         }
@@ -1057,7 +1057,6 @@ function setError(element, message, hidden = false) {
   element.hidden = hidden || !message;
 }
 
-
 async function exportFilteredUsersToExcel() {
   const exportBtn = document.getElementById("btn-export-excel");
   if (exportBtn) {
@@ -1075,6 +1074,7 @@ async function exportFilteredUsersToExcel() {
 
     const buildRow = (u) => {
       const regiao = parseRegion(u.regiao);
+      const hasMobile = u.has_mobile_service === true;
 
       return {
         "Nome": u.nome || "",
@@ -1086,10 +1086,10 @@ async function exportFilteredUsersToExcel() {
         "Estado": u.estado || regiao.estado || "",
         "Acesso Protocolo": u.protocol ? "Sim" : "Não",
         "Cliente Avance": u.cliente_avance ? "Sim" : "Não",
-        "Telefonia ativa": u.has_mobile_service ? "Sim" : "Não",
-        "Tipo de contrato": u.contract_type || "",
-        "Operadora": u.operador || "",
-        "Linhas ativas": Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : "",
+        "Telefonia ativa": hasMobile ? "Sim" : "Não",
+        "Tipo de contrato": hasMobile ? (u.contract_type || "") : "",
+        "Operadora": hasMobile ? (u.operador || "") : "",
+        "Linhas ativas": hasMobile && Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : "",
       };
     };
 

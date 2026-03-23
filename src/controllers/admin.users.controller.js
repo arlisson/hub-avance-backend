@@ -225,11 +225,12 @@ export async function updateUser(req, res) {
     const cidade = String(req.body?.cidade || "").trim();
     const estado = String(req.body?.estado || "").trim();
     const has_mobile_service = req.body?.has_mobile_service;
-    const contract_type = String(req.body?.contract_type || "").trim().toUpperCase();
-    const operador = String(req.body?.operador || "").trim();
-    const active_lines = Number(req.body?.active_lines);
     const protocol = !!req.body?.protocol;
     const cliente_avance = !!req.body?.cliente_avance;
+
+    let contract_type = null;
+    let operador = null;
+    let active_lines = null;
 
     if (!id) {
       return res.status(400).json({ ok: false, error: "ID do usuário é obrigatório." });
@@ -252,19 +253,46 @@ export async function updateUser(req, res) {
     }
 
     if (has_mobile_service !== true && has_mobile_service !== false) {
-      return res.status(400).json({ ok: false, error: "Selecione se a telefonia está ativa." });
+      return res.status(400).json({
+        ok: false,
+        error: "Selecione se a telefonia está ativa.",
+      });
     }
 
-    if (contract_type !== "CPF" && contract_type !== "CNPJ") {
-      return res.status(400).json({ ok: false, error: "Tipo de contrato inválido." });
-    }
+    if (has_mobile_service === true) {
+      contract_type = String(req.body?.contract_type || "").trim().toUpperCase();
+      operador = String(req.body?.operador || "").trim();
+      const activeLinesRaw = req.body?.active_lines;
+      const activeLinesNumber = Number(activeLinesRaw);
 
-    if (!operador) {
-      return res.status(400).json({ ok: false, error: "Operadora é obrigatória." });
-    }
+      if (contract_type !== "CPF" && contract_type !== "CNPJ") {
+        return res.status(400).json({
+          ok: false,
+          error: "Tipo de contrato inválido.",
+        });
+      }
 
-    if (!Number.isInteger(active_lines) || active_lines < 0) {
-      return res.status(400).json({ ok: false, error: "Quantidade de linhas inválida." });
+      if (!operador) {
+        return res.status(400).json({
+          ok: false,
+          error: "Operadora é obrigatória.",
+        });
+      }
+
+      if (
+        activeLinesRaw === "" ||
+        activeLinesRaw === null ||
+        activeLinesRaw === undefined ||
+        !Number.isInteger(activeLinesNumber) ||
+        activeLinesNumber < 0
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: "Quantidade de linhas inválida.",
+        });
+      }
+
+      active_lines = activeLinesNumber;
     }
 
     const regiaoJson = JSON.stringify({
