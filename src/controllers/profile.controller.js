@@ -53,36 +53,53 @@ function validateProfilePayload(body) {
   const nome = String(body.nome || "").trim();
   const whatsapp = String(body.whatsapp || "").replace(/\D/g, "");
   const cep = String(body.cep || "").replace(/\D/g, "");
-  const contractType = String(body.contract_type || "").trim().toUpperCase();
-  const operador = String(body.operador || "").trim();
-  const activeLinesRaw = body.active_lines;
   const hasMobileService = body.has_mobile_service;
   const regiaoInput = body.regiao && typeof body.regiao === "object" ? body.regiao : {};
 
-  if (!nome) errors.push("Informe seu nome.");
+  if (!nome) {
+    errors.push("Informe seu nome.");
+  }
+
   if (!whatsapp || whatsapp.length < 10 || whatsapp.length > 11) {
     errors.push("Informe um WhatsApp válido.");
   }
+
   if (!cep || cep.length !== 8) {
     errors.push("Informe um CEP válido.");
   }
+
   if (hasMobileService !== true && hasMobileService !== false) {
     errors.push("Selecione se a telefonia está ativa.");
   }
-  if (contractType !== "CPF" && contractType !== "CNPJ") {
-    errors.push("Selecione um tipo de contrato válido.");
-  }
-  if (!operador) {
-    errors.push("Informe a operadora.");
-  }
-  if (
-    activeLinesRaw === "" ||
-    activeLinesRaw === null ||
-    activeLinesRaw === undefined ||
-    !Number.isInteger(Number(activeLinesRaw)) ||
-    Number(activeLinesRaw) < 0
-  ) {
-    errors.push("Informe uma quantidade válida de linhas ativas.");
+
+  let contractType = null;
+  let operador = null;
+  let activeLines = null;
+
+  if (hasMobileService === true) {
+    contractType = String(body.contract_type || "").trim().toUpperCase();
+    operador = String(body.operador || "").trim();
+    const activeLinesRaw = body.active_lines;
+
+    if (contractType !== "CPF" && contractType !== "CNPJ") {
+      errors.push("Selecione um tipo de contrato válido.");
+    }
+
+    if (!operador) {
+      errors.push("Informe a operadora.");
+    }
+
+    if (
+      activeLinesRaw === "" ||
+      activeLinesRaw === null ||
+      activeLinesRaw === undefined ||
+      !Number.isInteger(Number(activeLinesRaw)) ||
+      Number(activeLinesRaw) < 0
+    ) {
+      errors.push("Informe uma quantidade válida de linhas ativas.");
+    } else {
+      activeLines = Number(activeLinesRaw);
+    }
   }
 
   const regiao = {
@@ -100,7 +117,7 @@ function validateProfilePayload(body) {
       has_mobile_service: hasMobileService,
       contract_type: contractType,
       operador,
-      active_lines: Number(activeLinesRaw),
+      active_lines: activeLines,
       regiao,
     },
   };

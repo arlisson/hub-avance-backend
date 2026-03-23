@@ -231,11 +231,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     has_mobile_service: hasMobile,
   };
 
-  console.log({
-    hasMobileRaw: String(hasMobileInput?.value || ""),
-    normalized: String(hasMobileInput?.value || "").trim().toLowerCase(),
-  });
-
   if (hasMobile) {
     const contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
     const operadorValue = (operatorInput?.value || "").trim();
