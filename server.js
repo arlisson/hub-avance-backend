@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./src/routes/auth.routes.js";
+import profileRoutes from "./src/routes/profile.routes.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api", authRoutes);
+app.use("/api", profileRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });
