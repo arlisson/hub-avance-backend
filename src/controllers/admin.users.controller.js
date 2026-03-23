@@ -54,13 +54,37 @@ function normalizeUserRow(row) {
   };
 }
 
-function ensureAdmin(req, res) {
-  const role = String(req.user?.role || "").toLowerCase();
-  if (role !== "admin" && role !== "administrador") {
+async function ensureAdmin(req, res) {
+  try {
+    const role = String(req.user?.role || "").toLowerCase();
+
+    if (role === "admin" || role === "administrador") {
+      return true;
+    }
+
+    const [rows] = await pool.query(
+      `
+      SELECT protocol
+      FROM profiles
+      WHERE id = ?
+      LIMIT 1
+      `,
+      [req.user.id]
+    );
+
+    const protocol = rows?.[0]?.protocol;
+
+    if (protocol === 1 || protocol === true) {
+      return true;
+    }
+
     res.status(403).json({ ok: false, error: "Acesso negado." });
     return false;
+  } catch (error) {
+    console.error("Erro ao validar permissão:", error);
+    res.status(500).json({ ok: false, error: "INTERNAL_SERVER_ERROR" });
+    return false;
   }
-  return true;
 }
 
 function buildListFilters(query) {
@@ -124,7 +148,7 @@ function buildListFilters(query) {
 
 export async function listUsers(req, res) {
   try {
-    if (!ensureAdmin(req, res)) return;
+    if (!await ensureAdmin(req, res)) return;
 
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 200);
@@ -191,7 +215,7 @@ export async function listUsers(req, res) {
 
 export async function updateUser(req, res) {
   try {
-    if (!ensureAdmin(req, res)) return;
+    if (!await ensureAdmin(req, res)) return;
 
     const id = String(req.body?.id || "").trim();
     const nome = String(req.body?.nome || "").trim();
@@ -333,7 +357,7 @@ export async function deleteUser(req, res) {
   const connection = await pool.getConnection();
 
   try {
-    if (!ensureAdmin(req, res)) {
+    if (!await ensureAdmin(req, res)) {
       connection.release();
       return;
     }
