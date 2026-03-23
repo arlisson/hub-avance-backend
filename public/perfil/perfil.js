@@ -70,11 +70,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } catch (err) {
     console.error("Erro ao carregar perfil:", err);
+    alert("Não foi possível carregar seu perfil.", err);
 
     clearAuthToken();
 
     if (errorBox) {
-      errorBox.textContent = "Não foi possível carregar seu perfil.";
+      errorBox.textContent =
+        extractApiError(err) || "Não foi possível carregar seu perfil.";
       errorBox.hidden = false;
     }
 
@@ -445,10 +447,11 @@ async function apiFetch(url, { method = "GET", token = "", body } = {}) {
   }
 
   if (resp.status === 401) {
-    clearAuthToken();
-    window.location.href = LOGIN_URL;
-    return null;
-  }
+  const err = new Error(data?.error || "Não autorizado.");
+  err.response = data;
+  err.status = resp.status;
+  throw err;
+}
 
   if (!resp.ok) {
     const err = new Error(data?.error || "Erro na requisição.");
