@@ -231,6 +231,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     has_mobile_service: hasMobile,
   };
 
+  console.log({
+    hasMobileRaw: String(hasMobileInput?.value || ""),
+    normalized: String(hasMobileInput?.value || "").trim().toLowerCase(),
+  });
+
   if (hasMobile) {
     const contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
     const operadorValue = (operatorInput?.value || "").trim();
@@ -258,12 +263,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    payload = {
-      ...payload,
-      contract_type: contractTypeValue,
-      operador: operadorValue,
-      active_lines: activeLinesValue,
-    };
+    payload.contract_type = contractTypeValue;
+    payload.operador = operadorValue;
+    payload.active_lines = activeLinesValue;
   }
 
   if (saveBtn) {
