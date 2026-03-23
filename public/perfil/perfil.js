@@ -25,6 +25,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   const activeLinesInput = document.getElementById("active-lines");
   const saveBtn = document.getElementById("save-btn");
 
+  const contractTypeField = contractTypeInput?.closest(".field");
+  const operatorField = operatorInput?.closest(".field");
+  const activeLinesField = activeLinesInput?.closest(".field");
+
+  function syncMobileFields() {
+    const hasMobile =
+      String(hasMobileInput?.value || "").trim().toLowerCase() === "true";
+
+    if (contractTypeField) {
+      contractTypeField.hidden = !hasMobile;
+      contractTypeField.style.display = hasMobile ? "" : "none";
+    }
+
+    if (operatorField) {
+      operatorField.hidden = !hasMobile;
+      operatorField.style.display = hasMobile ? "" : "none";
+    }
+
+    if (activeLinesField) {
+      activeLinesField.hidden = !hasMobile;
+      activeLinesField.style.display = hasMobile ? "" : "none";
+    }
+
+    if (!hasMobile) {
+      if (contractTypeInput) contractTypeInput.value = "";
+      if (operatorInput) operatorInput.value = "";
+      if (activeLinesInput) activeLinesInput.value = "";
+    }
+  }
+
   const token = getAccessToken();
 
   if (!token) {
@@ -70,13 +100,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } catch (err) {
     console.error("Erro ao carregar perfil:", err);
-   
-   
+
     if (errorBox) {
-    errorBox.textContent =
-      extractApiError(err) || "Não foi possível carregar seu perfil.";
-    errorBox.hidden = false;
-  }   
+      errorBox.textContent =
+        extractApiError(err) || "Não foi possível carregar seu perfil.";
+      errorBox.hidden = false;
+    }
 
     return;
   }
@@ -139,6 +168,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.target.value = value;
   });
 
+  hasMobileInput?.addEventListener("change", () => {
+    syncMobileFields();
+    hideError(errorBox);
+  });
+
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     hideError(errorBox);
@@ -156,10 +190,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const estadoValue = (estadoInput?.value || "").trim();
 
     const hasMobileRaw = String(hasMobileInput?.value || "").trim().toLowerCase();
+    const hasMobile = hasMobileRaw === "true";
 
-    let contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
-    let operadorValue = (operatorInput?.value || "").trim();
-    let activeLinesRaw = String(activeLinesInput?.value || "").trim();
+    let contractTypeValue = "";
+    let operadorValue = "";
     let activeLinesValue = null;
 
     if (!nomeValue) {
@@ -188,12 +222,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (hasMobileRaw === "false") {
-      contractTypeValue = "";
-      operadorValue = "";
-      activeLinesRaw = "";
-      activeLinesValue = 0;
-    } else {
+    if (hasMobile) {
+      contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
+      operadorValue = (operatorInput?.value || "").trim();
+      const activeLinesRaw = String(activeLinesInput?.value || "").trim();
+
       if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
         showError(errorBox, "Selecione um tipo de contrato válido.");
         return;
@@ -217,8 +250,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    
-
     const regiaoPayload = {
       ...(parseRegiao(CURRENT_PROFILE?.regiao)),
       cep: cepValue,
@@ -231,10 +262,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       whatsapp: whatsappValue,
       cep: cepValue,
       regiao: regiaoPayload,
-      has_mobile_service: hasMobileRaw === "true",
-      contract_type: contractTypeValue,
-      operador: operadorValue,
-      active_lines: activeLinesValue,
+      has_mobile_service: hasMobile,
+      ...(hasMobile
+        ? {
+            contract_type: contractTypeValue,
+            operador: operadorValue,
+            active_lines: activeLinesValue,
+          }
+        : {}),
     };
 
     if (saveBtn) {
@@ -271,7 +306,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (err) {
       console.error("Erro ao salvar perfil:", err);
-      showError(errorBox, extractApiError(err) || "Não foi possível salvar as alterações.");
+      showError(
+        errorBox,
+        extractApiError(err) || "Não foi possível salvar as alterações."
+      );
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
@@ -366,16 +404,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (contractTypeInput) {
       const contract = String(profile?.contract_type || "").trim().toUpperCase();
-      contractTypeInput.value = contract === "CPF" || contract === "CNPJ" ? contract : "";
+      contractTypeInput.value =
+        contract === "CPF" || contract === "CNPJ" ? contract : "";
     }
 
-    if (operatorInput) operatorInput.value = profile?.operador || "";
+    if (operatorInput) {
+      operatorInput.value = profile?.operador || "";
+    }
 
     if (activeLinesInput) {
       const raw = profile?.active_lines;
       activeLinesInput.value =
         raw === 0 || Number.isFinite(Number(raw)) ? String(raw) : "";
     }
+
+    syncMobileFields();
   }
 });
 
