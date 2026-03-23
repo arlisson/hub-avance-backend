@@ -9,10 +9,6 @@ async function registrarLicencaNoSheets(email) {
   const url = process.env.GS_WEBAPP_URL;
   const secret = process.env.HUB_SECRET;
 
-  console.log("[SHEETS] URL:", url);
-  console.log("[SHEETS] HUB_SECRET length:", secret ? secret.length : 0);
-  console.log("[SHEETS] HUB_SECRET preview:", secret ? `${secret.slice(0, 4)}...${secret.slice(-4)}` : "(vazio)");
-
   const payload = {
     action: "upsert_license",
     secret,

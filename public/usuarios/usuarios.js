@@ -269,9 +269,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         window.__USER_ACCESS_TOKEN__ = token;
 
-        const profile = await apiFetch("/api/profile", {
+        const profileResponse = await apiFetch("/api/profile", {
           method: "GET",
         });
+
+        const profile = profileResponse?.user || profileResponse || {};
 
         const hasAccess =
           profile?.protocol === true ||
@@ -285,6 +287,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
+        
         const email = profile?.email || "";
 
         const userEmailEl = document.getElementById("user-email");
