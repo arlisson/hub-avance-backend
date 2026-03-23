@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
     let operadorValue = (operatorInput?.value || "").trim();
     let activeLinesRaw = String(activeLinesInput?.value || "").trim();
-    const activeLinesValue = Number(activeLinesRaw);
+    let activeLinesValue = Number(activeLinesRaw);
 
     if (!nomeValue) {
       showError(errorBox, "Informe seu nome.");
