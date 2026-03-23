@@ -154,11 +154,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const cepValue = (cepInput?.value || "").replace(/\D/g, "");
     const cidadeValue = (cidadeInput?.value || "").trim();
     const estadoValue = (estadoInput?.value || "").trim();
-    const hasMobileRaw = hasMobileInput?.value || "";
+
+    const hasMobileRaw = String(hasMobileInput?.value || "").trim().toLowerCase();
+
     let contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
     let operadorValue = (operatorInput?.value || "").trim();
     let activeLinesRaw = String(activeLinesInput?.value || "").trim();
-    let activeLinesValue = Number(activeLinesRaw);
+    let activeLinesValue = null;
 
     if (!nomeValue) {
       showError(errorBox, "Informe seu nome.");
@@ -190,9 +192,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       contractTypeValue = "";
       operadorValue = "";
       activeLinesRaw = "";
-    }
-
-    if (hasMobileRaw === "true") {
+      activeLinesValue = 0;
+    } else {
       if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
         showError(errorBox, "Selecione um tipo de contrato válido.");
         return;
@@ -208,7 +209,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-     
+      activeLinesValue = Number(activeLinesRaw);
 
       if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
         showError(errorBox, "Informe um número válido de linhas ativas.");
