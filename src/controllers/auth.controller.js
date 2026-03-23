@@ -211,7 +211,7 @@ function gerarTokenVerificacao() {
   return { token, tokenHash, expiresAt };
 }
 
-async function enviarEmailVerificacao(email, token) {
+async function enviarEmailVerificacao(email, token, name) {
   const transporter = getMailer();
 
   const appUrl = process.env.APP_URL;
@@ -226,7 +226,7 @@ async function enviarEmailVerificacao(email, token) {
     to: email,
     subject: "Confirme seu cadastro",
     html: `
-      <p>Olá,</p>
+      <p>Olá, ${name}</p>
       <p>Seu cadastro foi criado com sucesso.</p>
       <p>Para liberar o login, confirme seu e-mail clicando no link abaixo:</p>
       <p><a href="${verifyUrl}">Confirmar e-mail</a></p>
@@ -387,7 +387,7 @@ export async function register(req, res) {
     committed = true;
 
     try {
-      await enviarEmailVerificacao(emailNorm, token);
+      await enviarEmailVerificacao(emailNorm, token, name);
 
       return res.status(201).json({
         ok: true,
