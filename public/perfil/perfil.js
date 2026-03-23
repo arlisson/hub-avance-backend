@@ -185,21 +185,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ" && hasMobileRaw === "true") {
-      showError(errorBox, "Selecione um tipo de contrato válido.");
-      return;
+    if (hasMobileRaw === "false") {
+      contractTypeValue = "";
+      operadorValue = "";
+      activeLinesRaw = "";
     }
 
-    if (!operadorValue && hasMobileRaw === "true") {
-      showError(errorBox, "Informe a operadora.");
-      return;
-    }
+    if (hasMobileRaw === "true") {
+      if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
+        showError(errorBox, "Selecione um tipo de contrato válido.");
+        return;
+      }
 
-    if (activeLinesRaw === "" && hasMobileRaw === "true") {
-      showError(errorBox, "Informe a quantidade de linhas ativas.");
-      return;
-    }
+      if (!operadorValue) {
+        showError(errorBox, "Informe a operadora.");
+        return;
+      }
 
+      if (activeLinesRaw === "") {
+        showError(errorBox, "Informe a quantidade de linhas ativas.");
+        return;
+      }
+    }
     const activeLinesValue = Number(activeLinesRaw);
 
     if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
