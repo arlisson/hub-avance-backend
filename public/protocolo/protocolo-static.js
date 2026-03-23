@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const LOGIN_URL = "/login/login.html";
   const HUB_URL = "/hub/hub.html";
-  const PROFILE_URL = "/api/profile";
 
   const userEmailEl = document.getElementById("user-email");
   const menuBackHub = document.getElementById("menu-back-hub");
@@ -17,9 +16,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const btnCopyProto = document.getElementById("btn-copy-proto");
   const btnCopyMsg = document.getElementById("btn-copy-msg");
-
-  let authToken = "";
-  let profile = {};
 
   initSettingsMenu(
     document.getElementById("settings-btn"),
@@ -37,61 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = LOGIN_URL;
   });
 
-  try {
-    authToken = getAuthToken();
-
-    if (!authToken) {
-      window.location.href = LOGIN_URL;
-      return;
-    }
-
-    const profileResponse = await fetch(PROFILE_URL, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
-
-    if (profileResponse.status === 401 || profileResponse.status === 403) {
-      clearAuthData();
-      window.location.href = LOGIN_URL;
-      return;
-    }
-
-    const profileData = await profileResponse.json().catch(() => ({}));
-    profile = profileData?.user || {};
-
-    if (!profileResponse.ok || !profileData?.ok) {
-      throw new Error(profileData?.error || "Não foi possível carregar o perfil.");
-    }
-
-    const canAccessProtocol =
-      profile?.role === "admin" ||
-      profile?.role === "Administrador" ||
-      profile?.protocol === true;
-
-    if (!canAccessProtocol) {
-      alert("Você não tem permissão para acessar o Gerador de Protocolo.");
-      window.location.href = HUB_URL;
-      return;
-    }
-
-    const email =
-      profile?.email ||
-      profile?.user_email ||
-      profile?.usuario_email ||
-      "";
-
-    if (userEmailEl) {
-      userEmailEl.textContent = email;
-      userEmailEl.title = email;
-    }
-  } catch (error) {
-    console.error("Erro ao inicializar página de protocolo:", error);
-    alert(error?.message || "Não foi possível validar seu acesso.");
-    window.location.href = HUB_URL;
-    return;
-  }
+  loadUserEmail(userEmailEl);
 
   function clearFeedback() {
     if (resultBox) resultBox.hidden = true;
@@ -164,29 +106,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 });
 
-function getAuthToken() {
-  const directKeys = [
-    "token",
-    "authToken",
-    "accessToken",
-    "jwt",
-    "jwtToken",
+function loadUserEmail(userEmailEl) {
+  if (!userEmailEl) return;
+
+  const possibleKeys = [
+    "userEmail",
+    "email",
+    "usuarioEmail",
   ];
 
-  for (const key of directKeys) {
+  for (const key of possibleKeys) {
     const value = localStorage.getItem(key);
-    if (value && typeof value === "string" && value.trim()) {
-      return value.trim();
+    if (value && value.trim()) {
+      userEmailEl.textContent = value.trim();
+      userEmailEl.title = value.trim();
+      return;
     }
   }
 
-  const jsonKeys = [
-    "auth",
-    "user",
-    "session",
-    "login",
-    "currentUser",
-  ];
+  const jsonKeys = ["auth", "user", "session", "login", "currentUser"];
 
   for (const key of jsonKeys) {
     const raw = localStorage.getItem(key);
@@ -194,23 +132,25 @@ function getAuthToken() {
 
     try {
       const parsed = JSON.parse(raw);
+      const email =
+        parsed?.email ||
+        parsed?.user?.email ||
+        parsed?.usuario?.email ||
+        parsed?.user_email ||
+        "";
 
-      const nestedToken =
-        parsed?.token ||
-        parsed?.accessToken ||
-        parsed?.authToken ||
-        parsed?.jwt ||
-        parsed?.access_token;
-
-      if (nestedToken && typeof nestedToken === "string" && nestedToken.trim()) {
-        return nestedToken.trim();
+      if (email && String(email).trim()) {
+        userEmailEl.textContent = String(email).trim();
+        userEmailEl.title = String(email).trim();
+        return;
       }
     } catch {
       // ignora JSON inválido
     }
   }
 
-  return "";
+  userEmailEl.textContent = "Usuário";
+  userEmailEl.title = "Usuário";
 }
 
 function clearAuthData() {
@@ -225,6 +165,9 @@ function clearAuthData() {
     "session",
     "login",
     "currentUser",
+    "userEmail",
+    "email",
+    "usuarioEmail",
   ];
 
   for (const key of keysToRemove) {
@@ -261,18 +204,17 @@ function fallbackCopy(text) {
   document.body.removeChild(temp);
 }
 
-// -------------------------
-// Padrões do Hub/Agente
-// -------------------------
 function initSettingsMenu(btn, menu) {
   if (!btn || !menu) return;
 
   const close = () => {
     menu.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
   };
 
   const open = () => {
     menu.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
   };
 
   const toggle = () => {
@@ -352,10 +294,8 @@ function updateThemeIcon(btn) {
   }
 
   if (logo) {
-    if (!isLight) {
-      logo.src = "../img/LogoEscuroSemFundo.png";
-    } else {
-      logo.src = "../img/LogoClaraSemFundo.png";
-    }
+    logo.src = isLight
+      ? "../img/LogoClaraSemFundo.png"
+      : "../img/LogoEscuroSemFundo.png";
   }
 }
