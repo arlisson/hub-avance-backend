@@ -699,46 +699,110 @@ function renderUsers(users) {
     const operadorEl = detailsRow.querySelector(".edit-operador");
     const activeLinesEl = detailsRow.querySelector(".edit-active-lines");
 
-    btnSave?.addEventListener("click", async () => {
-      btnSave.disabled = true;
-      if (btnDelete) btnDelete.disabled = true;
+    const contractTypeField = contractTypeEl?.closest(".field");
+    const operadorField = operadorEl?.closest(".field");
+    const activeLinesField = activeLinesEl?.closest(".field");
 
-      try {
-        await apiFetch("/api/admin/update-user", {
-          method: "POST",
-          body: JSON.stringify({
-            id: u.id,
-            nome: (nomeEl?.value || "").trim(),
-            cpf_cnpj: (cpfCnpjEl?.value || "").trim(),
-            whatsapp: (whatsappEl?.value || "").trim(),
-            cep: (cepEl?.value || "").trim(),
-            cidade: (cidadeEl?.value || "").trim(),
-            estado: (estadoEl?.value || "").trim(),
-            has_mobile_service: hasMobileServiceEl?.value === "true",
-            contract_type: (contractTypeEl?.value || "").trim(),
-            operador: (operadorEl?.value || "").trim(),
-            active_lines:
-              activeLinesEl?.value === ""
-                ? 0
-                : Number(activeLinesEl.value),
-            protocol: !!protocolEl?.checked,
-            cliente_avance: !!clienteEl?.checked,
-          }),
-        });
+    function syncMobileFieldsForRow() {
+      const hasMobile =
+        String(hasMobileServiceEl?.value || "").trim().toLowerCase() === "true";
 
-        await loadUsers(currentPage, false);
-        await loadAppUsageDashboard(false);
-        
-        if (typeof showFeedback === "function") {
-          showFeedback("Usuário atualizado com sucesso.", "success");
-        }
-      } catch (e) {
-        alert(e?.message || "Erro ao salvar usuário.");
-      } finally {
-        btnSave.disabled = false;
-        if (btnDelete) btnDelete.disabled = false;
+      if (contractTypeField) {
+        contractTypeField.hidden = !hasMobile;
+        contractTypeField.style.display = hasMobile ? "" : "none";
       }
-    });
+
+      if (operadorField) {
+        operadorField.hidden = !hasMobile;
+        operadorField.style.display = hasMobile ? "" : "none";
+      }
+
+      if (activeLinesField) {
+        activeLinesField.hidden = !hasMobile;
+        activeLinesField.style.display = hasMobile ? "" : "none";
+      }
+
+      if (!hasMobile) {
+        if (contractTypeEl) contractTypeEl.value = "";
+        if (operadorEl) operadorEl.value = "";
+        if (activeLinesEl) activeLinesEl.value = "";
+      }
+    }
+
+    hasMobileServiceEl?.addEventListener("change", syncMobileFieldsForRow);
+    syncMobileFieldsForRow();
+
+    btnSave?.addEventListener("click", async () => {
+    btnSave.disabled = true;
+    if (btnDelete) btnDelete.disabled = true;
+
+    try {
+      const hasMobileRaw = String(hasMobileServiceEl?.value || "").trim().toLowerCase();
+      const hasMobile = hasMobileRaw === "true";
+
+      if (hasMobileRaw !== "true" && hasMobileRaw !== "false") {
+        throw new Error("Selecione se a telefonia está ativa.");
+      }
+
+      const payload = {
+        id: u.id,
+        nome: (nomeEl?.value || "").trim(),
+        cpf_cnpj: (cpfCnpjEl?.value || "").trim(),
+        whatsapp: (whatsappEl?.value || "").trim(),
+        cep: (cepEl?.value || "").trim(),
+        cidade: (cidadeEl?.value || "").trim(),
+        estado: (estadoEl?.value || "").trim(),
+        has_mobile_service: hasMobile,
+        protocol: !!protocolEl?.checked,
+        cliente_avance: !!clienteEl?.checked,
+      };
+
+      if (hasMobile) {
+        const contractTypeValue = (contractTypeEl?.value || "").trim().toUpperCase();
+        const operadorValue = (operadorEl?.value || "").trim();
+        const activeLinesRaw = String(activeLinesEl?.value || "").trim();
+
+        if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
+          throw new Error("Selecione um tipo de contrato válido.");
+        }
+
+        if (!operadorValue) {
+          throw new Error("Informe a operadora.");
+        }
+
+        if (activeLinesRaw === "") {
+          throw new Error("Informe a quantidade de linhas ativas.");
+        }
+
+        const activeLinesValue = Number(activeLinesRaw);
+
+        if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
+          throw new Error("Informe uma quantidade válida de linhas ativas.");
+        }
+
+        payload.contract_type = contractTypeValue;
+        payload.operador = operadorValue;
+        payload.active_lines = activeLinesValue;
+      }
+
+      await apiFetch("/api/admin/update-user", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      await loadUsers(currentPage, false);
+      await loadAppUsageDashboard(false);
+
+      if (typeof showFeedback === "function") {
+        showFeedback("Usuário atualizado com sucesso.", "success");
+      }
+    } catch (e) {
+      alert(e?.message || "Erro ao salvar usuário.");
+    } finally {
+      btnSave.disabled = false;
+      if (btnDelete) btnDelete.disabled = false;
+    }
+  });
 
     btnDelete?.addEventListener("click", async () => {
       const confirmed = window.confirm(
