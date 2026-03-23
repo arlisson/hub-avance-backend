@@ -174,152 +174,146 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   form?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    hideError(errorBox);
+  e.preventDefault();
+  hideError(errorBox);
 
-    const token = getAccessToken();
-    if (!token) {
-      window.location.href = LOGIN_URL;
-      return;
-    }
+  const token = getAccessToken();
+  if (!token) {
+    window.location.href = LOGIN_URL;
+    return;
+  }
 
-    const nomeValue = (nameInput?.value || "").trim();
-    const whatsappValue = (whatsappInput?.value || "").replace(/\D/g, "");
-    const cepValue = (cepInput?.value || "").replace(/\D/g, "");
-    const cidadeValue = (cidadeInput?.value || "").trim();
-    const estadoValue = (estadoInput?.value || "").trim();
+  const nomeValue = (nameInput?.value || "").trim();
+  const whatsappValue = (whatsappInput?.value || "").replace(/\D/g, "");
+  const cepValue = (cepInput?.value || "").replace(/\D/g, "");
+  const cidadeValue = (cidadeInput?.value || "").trim();
+  const estadoValue = (estadoInput?.value || "").trim();
 
-    const hasMobileRaw = String(hasMobileInput?.value || "").trim().toLowerCase();
-    const hasMobile = hasMobileRaw === "true";
+  const hasMobileRaw = String(hasMobileInput?.value || "").trim().toLowerCase();
+  const hasMobile = hasMobileRaw === "true";
 
-    let contractTypeValue = "";
-    let operadorValue = "";
-    let activeLinesValue = null;
+  if (!nomeValue) {
+    showError(errorBox, "Informe seu nome.");
+    return;
+  }
 
-    if (!nomeValue) {
-      showError(errorBox, "Informe seu nome.");
-      return;
-    }
+  if (!whatsappValue || whatsappValue.length < 10) {
+    showError(errorBox, "Informe um WhatsApp válido.");
+    return;
+  }
 
-    if (!whatsappValue || whatsappValue.length < 10) {
-      showError(errorBox, "Informe um WhatsApp válido.");
-      return;
-    }
+  if (cepValue.length !== 8) {
+    showError(errorBox, "Informe um CEP válido.");
+    return;
+  }
 
-    if (cepValue.length !== 8) {
-      showError(errorBox, "Informe um CEP válido.");
-      return;
-    }
+  const cepOk = await buscarCep(cepValue);
+  if (!cepOk) {
+    showError(errorBox, "Não foi possível validar o CEP informado.");
+    return;
+  }
 
-    const cepOk = await buscarCep(cepValue);
-    if (!cepOk) {
-      showError(errorBox, "Não foi possível validar o CEP informado.");
-      return;
-    }
+  if (hasMobileRaw !== "true" && hasMobileRaw !== "false") {
+    showError(errorBox, "Selecione se a telefonia está ativa.");
+    return;
+  }
 
-    if (hasMobileRaw !== "true" && hasMobileRaw !== "false") {
-      showError(errorBox, "Selecione se a telefonia está ativa.");
-      return;
-    }
-
-    if (hasMobile) {
-      contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
-      operadorValue = (operatorInput?.value || "").trim();
-      const activeLinesRaw = String(activeLinesInput?.value || "").trim();
-
-      if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
-        showError(errorBox, "Selecione um tipo de contrato válido.");
-        return;
-      }
-
-      if (!operadorValue) {
-        showError(errorBox, "Informe a operadora.");
-        return;
-      }
-
-      if (activeLinesRaw === "") {
-        showError(errorBox, "Informe a quantidade de linhas ativas.");
-        return;
-      }
-
-      activeLinesValue = Number(activeLinesRaw);
-
-      if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
-        showError(errorBox, "Informe um número válido de linhas ativas.");
-        return;
-      }
-    }
-
-    const regiaoPayload = {
+  let payload = {
+    nome: nomeValue,
+    whatsapp: whatsappValue,
+    cep: cepValue,
+    regiao: {
       ...(parseRegiao(CURRENT_PROFILE?.regiao)),
       cep: cepValue,
       cidade: cidadeValue,
       estado: estadoValue,
-    };
+    },
+    has_mobile_service: hasMobile,
+  };
 
-    const payload = {
-      nome: nomeValue,
-      whatsapp: whatsappValue,
-      cep: cepValue,
-      regiao: regiaoPayload,
-      has_mobile_service: hasMobile,
-      ...(hasMobile
-        ? {
-            contract_type: contractTypeValue,
-            operador: operadorValue,
-            active_lines: activeLinesValue,
-          }
-        : {}),
-    };
+  if (hasMobile) {
+    const contractTypeValue = (contractTypeInput?.value || "").trim().toUpperCase();
+    const operadorValue = (operatorInput?.value || "").trim();
+    const activeLinesRaw = String(activeLinesInput?.value || "").trim();
 
+    if (contractTypeValue !== "CPF" && contractTypeValue !== "CNPJ") {
+      showError(errorBox, "Selecione um tipo de contrato válido.");
+      return;
+    }
+
+    if (!operadorValue) {
+      showError(errorBox, "Informe a operadora.");
+      return;
+    }
+
+    if (activeLinesRaw === "") {
+      showError(errorBox, "Informe a quantidade de linhas ativas.");
+      return;
+    }
+
+    const activeLinesValue = Number(activeLinesRaw);
+
+    if (!Number.isInteger(activeLinesValue) || activeLinesValue < 0) {
+      showError(errorBox, "Informe um número válido de linhas ativas.");
+      return;
+    }
+
+    payload = {
+      ...payload,
+      contract_type: contractTypeValue,
+      operador: operadorValue,
+      active_lines: activeLinesValue,
+    };
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `
+      <i class="ph ph-spinner-gap spinner"></i>
+      <span>Salvando...</span>
+    `;
+  }
+
+  try {
+    const result = await apiFetch(API_PROFILE_URL, {
+      method: "PUT",
+      token,
+      body: payload,
+    });
+
+    if (!result?.ok) {
+      throw new Error(result?.error || "Falha ao atualizar perfil.");
+    }
+
+    CURRENT_PROFILE = normalizeProfileFromApi({
+      ...(CURRENT_PROFILE || {}),
+      ...(result.user || payload),
+      email: emailInput?.value || CURRENT_PROFILE?.email || "",
+      protocol: CURRENT_PROFILE?.protocol,
+      cliente_avance: CURRENT_PROFILE?.cliente_avance,
+    });
+
+    fillProfileForm(CURRENT_PROFILE);
+
+    if (typeof showFeedback === "function") {
+      showFeedback("Perfil atualizado com sucesso.", "success");
+    }
+  } catch (err) {
+    console.error("Erro ao salvar perfil:", err);
+    showError(
+      errorBox,
+      extractApiError(err) || "Não foi possível salvar as alterações."
+    );
+  } finally {
     if (saveBtn) {
-      saveBtn.disabled = true;
+      saveBtn.disabled = false;
       saveBtn.innerHTML = `
-        <i class="ph ph-spinner-gap spinner"></i>
-        <span>Salvando...</span>
+        <i class="ph ph-floppy-disk"></i>
+        <span>Salvar alterações</span>
       `;
     }
-
-    try {
-      const result = await apiFetch(API_PROFILE_URL, {
-        method: "PUT",
-        token,
-        body: payload,
-      });
-
-      if (!result?.ok) {
-        throw new Error(result?.error || "Falha ao atualizar perfil.");
-      }
-
-      CURRENT_PROFILE = normalizeProfileFromApi({
-        ...(CURRENT_PROFILE || {}),
-        ...(result.user || payload),
-        email: emailInput?.value || CURRENT_PROFILE?.email || "",
-        protocol: CURRENT_PROFILE?.protocol,
-        cliente_avance: CURRENT_PROFILE?.cliente_avance,
-      });
-
-      fillProfileForm(CURRENT_PROFILE);
-
-      if (typeof showFeedback === "function") {
-        showFeedback("Perfil atualizado com sucesso.", "success");
-      }
-    } catch (err) {
-      console.error("Erro ao salvar perfil:", err);
-      showError(
-        errorBox,
-        extractApiError(err) || "Não foi possível salvar as alterações."
-      );
-    } finally {
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = `
-          <i class="ph ph-floppy-disk"></i>
-          <span>Salvar alterações</span>
-        `;
-      }
-    }
-  });
+  }
+});
 
   async function buscarCep(cepInformado, opts = {}) {
     if (!cepInput) return false;
