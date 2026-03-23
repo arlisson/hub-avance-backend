@@ -1,8 +1,6 @@
 let searchEl = null;
 let errorBox = null;
 let appUsageErrorBox = null;
-let supabaseClient = null;
-let currentSession = null;
 let currentView = "users";
 
 // Paginação
@@ -11,14 +9,17 @@ let currentPage = 1;
 let totalUsers = 0;
 
 // Filtros
-let filterClienteEl   = null;
+let filterClienteEl = null;
 let filterTelefoniaEl = null;
-let filterLinhasEl    = null;
-let filterContratoEl  = null;
+let filterLinhasEl = null;
+let filterContratoEl = null;
 let filterOperadoraEl = null;
 
 // Debounce do campo de busca
 let searchDebounceTimer = null;
+
+const LOGIN_URL = "/login/login.html";
+const HUB_URL = "/hub/hub.html";
 
 const METRICS = [
   { key: "access", label: "Acessos" },
@@ -54,6 +55,7 @@ function hideLoading() {
     window.AppLoading.hide();
   }
 }
+
 async function withLoading(title, message, task) {
   showLoading(title, message);
   try {
@@ -63,44 +65,108 @@ async function withLoading(title, message, task) {
   }
 }
 
+function getAccessToken() {
+  return (
+    localStorage.getItem("auth_token") ||
+    sessionStorage.getItem("auth_token") ||
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    sessionStorage.getItem("authToken") ||
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token") ||
+    ""
+  );
+}
+
+function clearAuthToken() {
+  ["auth_token", "token", "authToken", "access_token"].forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+}
+
+async function apiFetch(url, options = {}) {
+  const token = window.__USER_ACCESS_TOKEN__ || getAccessToken();
+
+  const headers = new Headers(options.headers || {});
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  let data = null;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const err = new Error(
+      data?.error || data?.detail || `Erro HTTP ${response.status}`
+    );
+    err.status = response.status;
+    err.data = data;
+
+    if (response.status === 401) {
+      clearAuthToken();
+    }
+
+    throw err;
+  }
+
+  return data;
+}
+
 // Monta os query params com base nos filtros e busca ativos
 function buildQueryParams(page, limit) {
   const params = new URLSearchParams();
-  params.set("page",  String(page));
+  params.set("page", String(page));
   params.set("limit", String(limit));
 
   const search = (searchEl?.value || "").trim();
-  if (search)                          params.set("search",            search);
-  if (filterClienteEl?.value)          params.set("cliente_avance",    filterClienteEl.value);
-  if (filterTelefoniaEl?.value)        params.set("has_mobile_service", filterTelefoniaEl.value);
-  if (filterLinhasEl?.value)           params.set("active_lines",       filterLinhasEl.value);
-  if (filterContratoEl?.value)         params.set("contract_type",      filterContratoEl.value);
-  if (filterOperadoraEl?.value)        params.set("operator",           filterOperadoraEl.value);
+  if (search) params.set("search", search);
+  if (filterClienteEl?.value) params.set("cliente_avance", filterClienteEl.value);
+  if (filterTelefoniaEl?.value) params.set("has_mobile_service", filterTelefoniaEl.value);
+  if (filterLinhasEl?.value) params.set("active_lines", filterLinhasEl.value);
+  if (filterContratoEl?.value) params.set("contract_type", filterContratoEl.value);
+  if (filterOperadoraEl?.value) params.set("operador", filterOperadoraEl.value);
 
   return params;
 }
 
-// Chamado quando filtro/busca muda: volta para página 1 e recarrega
 function applyFiltersAndReload() {
   currentPage = 1;
-  loadUsers(window.__USER_ACCESS_TOKEN__, 1, true);
+  loadUsers(1, true);
   updateFilterBadge();
 }
 
 function updateResultCount(total, page, pageSize) {
   const el = document.getElementById("filter-result-count");
   if (!el) return;
+
   if (total === 0) {
     el.textContent = "Nenhum usuário encontrado";
     return;
   }
+
   const from = (page - 1) * pageSize + 1;
-  const to   = Math.min(page * pageSize, total);
+  const to = Math.min(page * pageSize, total);
+
   el.textContent = `Exibindo ${from}–${to} de ${total.toLocaleString("pt-BR")} usuário${total !== 1 ? "s" : ""}`;
 }
 
 function updateFilterBadge() {
-  const countEl  = document.getElementById("filter-active-count");
+  const countEl = document.getElementById("filter-active-count");
   const clearBtn = document.getElementById("btn-clear-filters");
 
   const active = [
@@ -117,6 +183,7 @@ function updateFilterBadge() {
       : "";
     countEl.hidden = active === 0;
   }
+
   if (clearBtn) clearBtn.hidden = active === 0;
 }
 
@@ -138,23 +205,25 @@ function renderPagination(total, page, pageSize) {
     btn.className = "page-btn" + (active ? " active" : "");
     btn.disabled = disabled;
     btn.innerHTML = label;
+
     if (!disabled) {
       btn.addEventListener("click", () => {
         currentPage = targetPage;
-        loadUsers(window.__USER_ACCESS_TOKEN__, targetPage, false);
+        loadUsers(targetPage, false);
       });
     }
+
     return btn;
   };
 
   wrap.appendChild(mkBtn('<i class="ph ph-caret-left"></i>', page - 1, page === 1));
 
-  // Janela de páginas
   const delta = 2;
   const range = [];
   for (let i = Math.max(1, page - delta); i <= Math.min(totalPages, page + delta); i++) {
     range.push(i);
   }
+
   if (range[0] > 1) {
     wrap.appendChild(mkBtn("1", 1, false));
     if (range[0] > 2) {
@@ -164,7 +233,9 @@ function renderPagination(total, page, pageSize) {
       wrap.appendChild(dots);
     }
   }
+
   range.forEach((p) => wrap.appendChild(mkBtn(String(p), p, false, p === page)));
+
   if (range[range.length - 1] < totalPages) {
     if (range[range.length - 1] < totalPages - 1) {
       const dots = document.createElement("span");
@@ -180,9 +251,6 @@ function renderPagination(total, page, pageSize) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const LOGIN_URL = "/login/login.html";
-  const HUB_URL = "/hub/hub.html";
-
   searchEl = document.getElementById("search");
   errorBox = document.getElementById("errorBox");
   appUsageErrorBox = document.getElementById("appUsageErrorBox");
@@ -192,52 +260,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       "Carregando usuários",
       "Validando acesso e buscando dados...",
       async () => {
-        try {
-          supabaseClient = await window.getSupabaseClient();
-        } catch {
+        const token = getAccessToken();
+
+        if (!token) {
           window.location.href = LOGIN_URL;
           return;
         }
 
-        try {
-          const { data: sessionData, error: sessionError } =
-            await supabaseClient.auth.getSession();
+        window.__USER_ACCESS_TOKEN__ = token;
 
-          if (sessionError || !sessionData?.session) {
-            window.location.href = LOGIN_URL;
-            return;
-          }
+        const profile = await apiFetch("/api/profile", {
+          method: "GET",
+        });
 
-          currentSession = sessionData.session;
-          window.__USER_ACCESS_TOKEN__ = currentSession.access_token;
-        } catch {
-          window.location.href = LOGIN_URL;
-          return;
-        }
+        const hasAccess =
+          profile?.role === "admin" ||
+          profile?.role === "Administrador";
 
-        const user = currentSession.user;
-        const email = user?.email || "";
-
-        try {
-          const { data: profile, error } = await supabaseClient
-            .from("profiles")
-            .select("protocol")
-            .eq("id", user.id)
-            .single();
-
-          if (error) throw error;
-
-          if (!profile?.protocol) {
-            alert("Você não tem permissão para acessar esta tela.");
-            window.location.href = HUB_URL;
-            return;
-          }
-        } catch (err) {
-          console.error("Erro ao validar acesso:", err);
-          alert("Não foi possível validar sua permissão de acesso.");
+        if (!hasAccess) {
+          alert("Você não tem permissão para acessar esta tela.");
           window.location.href = HUB_URL;
           return;
         }
+
+        const email = profile?.email || "";
 
         const userEmailEl = document.getElementById("user-email");
         if (userEmailEl) {
@@ -263,11 +309,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const menuLogout = document.getElementById("menu-logout");
         if (menuLogout) {
           menuLogout.addEventListener("click", async () => {
-            try {
-              await supabaseClient.auth.signOut();
-            } finally {
-              window.location.href = LOGIN_URL;
-            }
+            clearAuthToken();
+            window.location.href = LOGIN_URL;
           });
         }
 
@@ -277,28 +320,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             await loadAppUsageDashboard(true);
           });
 
-        // Busca com debounce de 350ms
         searchEl?.addEventListener("input", () => {
           clearTimeout(searchDebounceTimer);
           searchDebounceTimer = setTimeout(() => applyFiltersAndReload(), 350);
         });
 
-        // Inicializa referências dos filtros
-        filterClienteEl   = document.getElementById("filter-cliente");
+        filterClienteEl = document.getElementById("filter-cliente");
         filterTelefoniaEl = document.getElementById("filter-telefonia");
-        filterLinhasEl    = document.getElementById("filter-linhas");
-        filterContratoEl  = document.getElementById("filter-contrato");
+        filterLinhasEl = document.getElementById("filter-linhas");
+        filterContratoEl = document.getElementById("filter-contrato");
         filterOperadoraEl = document.getElementById("filter-operadora");
 
         [filterClienteEl, filterTelefoniaEl, filterLinhasEl, filterContratoEl, filterOperadoraEl]
           .forEach((el) => el?.addEventListener("change", () => applyFiltersAndReload()));
 
         document.getElementById("btn-clear-filters")?.addEventListener("click", () => {
-          if (filterClienteEl)   filterClienteEl.value   = "";
+          if (filterClienteEl) filterClienteEl.value = "";
           if (filterTelefoniaEl) filterTelefoniaEl.value = "";
-          if (filterLinhasEl)    filterLinhasEl.value    = "";
-          if (filterContratoEl)  filterContratoEl.value  = "";
+          if (filterLinhasEl) filterLinhasEl.value = "";
+          if (filterContratoEl) filterContratoEl.value = "";
           if (filterOperadoraEl) filterOperadoraEl.value = "";
+          if (searchEl) searchEl.value = "";
           applyFiltersAndReload();
         });
 
@@ -307,45 +349,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         document.getElementById("filter-bar-toggle")?.addEventListener("click", () => {
-          const body  = document.getElementById("filter-bar-body");
+          const body = document.getElementById("filter-bar-body");
           const caret = document.getElementById("filter-caret");
           if (!body) return;
+
           const open = body.hidden;
           body.hidden = !open;
-          if (caret) caret.className = open ? "ph ph-caret-up filter-caret" : "ph ph-caret-down filter-caret";
+
+          if (caret) {
+            caret.className = open
+              ? "ph ph-caret-up filter-caret"
+              : "ph ph-caret-down filter-caret";
+          }
         });
 
-        await loadUsers(currentSession.access_token, 1, false);
+        updateFilterBadge();
+        await loadUsers(1, false);
         await loadAppUsageDashboard(false);
       }
     );
   } catch (err) {
     console.error(err);
-    setError(errorBox, "Erro ao carregar os dados da página.");
+    setError(errorBox, err?.message || "Erro ao carregar os dados da página.");
   }
 });
 
-async function loadUsers(token, page = 1, showLoader = true) {
+async function loadUsers(page = 1, showLoader = true) {
   const task = async () => {
     try {
       setError(errorBox, "", true);
 
       const params = buildQueryParams(page, PAGE_SIZE);
-      const resp   = await fetch(`/api/admin/users?${params.toString()}`, {
+      const data = await apiFetch(`/api/admin/users?${params.toString()}`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await resp.json();
-
-      if (!resp.ok) {
-        throw new Error(data?.error || "Falha ao carregar usuários.");
-      }
-
       const users = Array.isArray(data?.users) ? data.users : [];
-      // Suporte a resposta com campo "total" ou inferência pelo tamanho da página
+
       totalUsers = Number.isFinite(data?.total)
-        ? data.total
+        ? Number(data.total)
         : page === 1 && users.length < PAGE_SIZE
           ? users.length
           : (page - 1) * PAGE_SIZE + users.length + (users.length === PAGE_SIZE ? 1 : 0);
@@ -357,6 +399,9 @@ async function loadUsers(token, page = 1, showLoader = true) {
       renderPagination(totalUsers, page, PAGE_SIZE);
     } catch (e) {
       setError(errorBox, e?.message || "Erro ao carregar usuários.");
+      renderUsers([]);
+      updateResultCount(0, 1, PAGE_SIZE);
+      renderPagination(0, 1, PAGE_SIZE);
     }
   };
 
@@ -371,31 +416,52 @@ async function loadUsers(token, page = 1, showLoader = true) {
   );
 }
 
-// Busca TODAS as páginas com os filtros ativos (usado apenas no export)
-async function fetchAllFilteredUsers(token) {
-  const limit   = 500;
-  let   page    = 1;
+async function fetchAllFilteredUsers() {
+  const limit = 500;
+  let page = 1;
   const results = [];
 
   while (true) {
     const params = buildQueryParams(page, limit);
-    const resp   = await fetch(`/api/admin/users?${params.toString()}`, {
-      method:  "GET",
-      headers: { Authorization: `Bearer ${token}` },
+    const data = await apiFetch(`/api/admin/users?${params.toString()}`, {
+      method: "GET",
     });
 
-    if (!resp.ok) throw new Error("Falha ao buscar usuários para exportação.");
-
-    const data  = await resp.json();
     const users = Array.isArray(data?.users) ? data.users : [];
     results.push(...users);
 
-    // Para quando vier menos que o limite (última página)
     if (users.length < limit) break;
     page++;
   }
 
   return results;
+}
+
+async function fetchAllUsersWithoutFilters() {
+  const savedSearch = searchEl?.value || "";
+  const savedCliente = filterClienteEl?.value || "";
+  const savedTelefonia = filterTelefoniaEl?.value || "";
+  const savedLinhas = filterLinhasEl?.value || "";
+  const savedContrato = filterContratoEl?.value || "";
+  const savedOperadora = filterOperadoraEl?.value || "";
+
+  try {
+    if (searchEl) searchEl.value = "";
+    if (filterClienteEl) filterClienteEl.value = "";
+    if (filterTelefoniaEl) filterTelefoniaEl.value = "";
+    if (filterLinhasEl) filterLinhasEl.value = "";
+    if (filterContratoEl) filterContratoEl.value = "";
+    if (filterOperadoraEl) filterOperadoraEl.value = "";
+
+    return await fetchAllFilteredUsers();
+  } finally {
+    if (searchEl) searchEl.value = savedSearch;
+    if (filterClienteEl) filterClienteEl.value = savedCliente;
+    if (filterTelefoniaEl) filterTelefoniaEl.value = savedTelefonia;
+    if (filterLinhasEl) filterLinhasEl.value = savedLinhas;
+    if (filterContratoEl) filterContratoEl.value = savedContrato;
+    if (filterOperadoraEl) filterOperadoraEl.value = savedOperadora;
+  }
 }
 
 async function loadAppUsageDashboard(showLoader = true) {
@@ -426,45 +492,8 @@ async function loadAppUsageDashboard(showLoader = true) {
 }
 
 async function fetchAppUsageRecords() {
-  const tableResult = await tryFetchAppUsageTable();
-
-  if (tableResult.success && tableResult.rows.length) {
-    return normalizeTableRows(tableResult.rows);
-  }
-
-  return aggregateUsageFromUsers([]);
-}
-
-async function tryFetchAppUsageTable() {
-  try {
-    const { data, error } = await supabaseClient
-      .from("app_access")
-      .select("id, name, acessos, updated_at")
-      .order("name", { ascending: true });
-
-    if (error) {
-      console.error("Erro ao buscar app_access:", error);
-      return { success: false, rows: [] };
-    }
-
-    return { success: true, rows: Array.isArray(data) ? data : [] };
-  } catch (err) {
-    console.error("Erro inesperado ao buscar app_access:", err);
-    return { success: false, rows: [] };
-  }
-}
-
-function normalizeTableRows(rows) {
-  return rows.map((row) => {
-    const key = String(row?.name || "").trim().toLowerCase();
-
-    return {
-      key,
-      label: getAppMeta(key)?.label || key || "Aplicativo",
-      accesses: Number(row?.acessos || 0),
-      updated_at: row?.updated_at || null,
-    };
-  });
+  const users = await fetchAllUsersWithoutFilters();
+  return aggregateUsageFromUsers(users);
 }
 
 function aggregateUsageFromUsers(users) {
@@ -474,18 +503,19 @@ function aggregateUsageFromUsers(users) {
     const usage =
       user?.app_usage && typeof user.app_usage === "object"
         ? user.app_usage
-        : {};
+        : parseJsonSafe(user?.app_usage, {});
 
     Object.entries(usage).forEach(([appKey, appData]) => {
-      const current = totals.get(appKey) || {
-        key: appKey,
-        label: getAppMeta(appKey)?.label || appKey,
+      const normalizedKey = String(appKey || "").trim().toLowerCase();
+      const current = totals.get(normalizedKey) || {
+        key: normalizedKey,
+        label: getAppMeta(normalizedKey)?.label || normalizedKey,
         accesses: 0,
         updated_at: null,
       };
 
       current.accesses += Number(appData?.access || 0);
-      totals.set(appKey, current);
+      totals.set(normalizedKey, current);
     });
   });
 
@@ -512,19 +542,22 @@ function renderUsers(users) {
   }
 
   users.forEach((u) => {
+    const nome = u.nome || "";
+    const cpfCnpj = u.cpf_cnpj || "";
+    const operador = u.operador || "";
     const regiao = parseRegion(u.regiao);
-    const cep = regiao.cep || u.cep || "";
-    const cidade = regiao.cidade || "";
-    const estado = regiao.estado || "";
+    const cep = u.cep || regiao.cep || "";
+    const cidade = u.cidade || regiao.cidade || "";
+    const estado = u.estado || regiao.estado || "";
 
     const summaryRow = document.createElement("tr");
     summaryRow.className = "user-summary-row";
     summaryRow.setAttribute("data-user-id", u.id);
 
     summaryRow.innerHTML = `
-      <td>${escapeHtml(u.name || "")}</td>
+      <td>${escapeHtml(nome)}</td>
       <td>${escapeHtml(u.email || "")}</td>
-      <td>${escapeHtml(u.cpf || "")}</td>
+      <td>${escapeHtml(cpfCnpj)}</td>
       <td>${escapeHtml(u.whatsapp || "")}</td>
       <td>${escapeHtml(cidade)}</td>
       <td>${escapeHtml(estado)}</td>
@@ -552,79 +585,62 @@ function renderUsers(users) {
           <div class="user-card-grid">
             <div class="field">
               <label>Nome</label>
-              <input class="input-dark-lite edit-name" value="${escapeAttr(
-                u.name || ""
-              )}" readonly />
+              <input class="input-dark-lite edit-nome" value="${escapeAttr(nome)}" />
             </div>
 
             <div class="field">
               <label>E-mail</label>
-              <input class="input-dark-lite edit-email" value="${escapeAttr(
-                u.email || ""
-              )}" readonly />
+              <input class="input-dark-lite edit-email" value="${escapeAttr(u.email || "")}" readonly />
             </div>
 
             <div class="field">
               <label>CPF/CNPJ</label>
-              <input class="input-dark-lite edit-cpf" value="${escapeAttr(
-                u.cpf || ""
-              )}" readonly />
+              <input class="input-dark-lite edit-cpf-cnpj" value="${escapeAttr(cpfCnpj)}" />
             </div>
 
             <div class="field">
               <label>WhatsApp</label>
-              <input class="input-dark-lite edit-whatsapp" value="${escapeAttr(
-                u.whatsapp || ""
-              )}" readonly />
+              <input class="input-dark-lite edit-whatsapp" value="${escapeAttr(u.whatsapp || "")}" />
             </div>
 
             <div class="field">
               <label>CEP</label>
-              <input class="input-dark-lite edit-cep" value="${escapeAttr(
-                cep
-              )}" readonly />
+              <input class="input-dark-lite edit-cep" value="${escapeAttr(cep)}" />
             </div>
 
             <div class="field">
               <label>Cidade</label>
-              <input class="input-dark-lite edit-cidade" value="${escapeAttr(
-                cidade
-              )}" readonly />
+              <input class="input-dark-lite edit-cidade" value="${escapeAttr(cidade)}" />
             </div>
 
             <div class="field">
               <label>Estado</label>
-              <input class="input-dark-lite edit-estado" value="${escapeAttr(
-                estado
-              )}" readonly />
+              <input class="input-dark-lite edit-estado" value="${escapeAttr(estado)}" />
             </div>
 
             <div class="field">
               <label>Telefonia ativa</label>
-              <input class="input-dark-lite" value="${
-                u.has_mobile_service ? "Sim" : "Não"
-              }" readonly />
+              <select class="input-dark-lite edit-has-mobile-service">
+                <option value="true" ${u.has_mobile_service ? "selected" : ""}>Sim</option>
+                <option value="false" ${!u.has_mobile_service ? "selected" : ""}>Não</option>
+              </select>
             </div>
 
             <div class="field">
               <label>Tipo de contrato</label>
-              <input class="input-dark-lite edit-contract-type" value="${escapeAttr(
-                u.contract_type || ""
-              )}" readonly />
+              <input class="input-dark-lite edit-contract-type" value="${escapeAttr(u.contract_type || "")}" />
             </div>
 
             <div class="field">
               <label>Operadora</label>
-              <input class="input-dark-lite edit-operator" value="${escapeAttr(
-                u.operator || ""
-              )}" readonly />
+              <input class="input-dark-lite edit-operador" value="${escapeAttr(operador)}" />
             </div>
 
             <div class="field">
               <label>Linhas ativas</label>
               <input class="input-dark-lite edit-active-lines" type="number" value="${
-                Number.isFinite(u.active_lines) ? u.active_lines : ""
-              }" readonly />
+                Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : ""
+              }" />
             </div>
           </div>
 
@@ -633,16 +649,12 @@ function renderUsers(users) {
           <div class="field">
             <div class="inline-checks">
               <label>
-                <input type="checkbox" class="edit-protocol" ${
-                  u.protocol ? "checked" : ""
-                }>
+                <input type="checkbox" class="edit-protocol" ${u.protocol ? "checked" : ""}>
                 Protocolo Agendor
               </label>
 
               <label>
-                <input type="checkbox" class="edit-cliente-avance" ${
-                  u.cliente_avance ? "checked" : ""
-                }>
+                <input type="checkbox" class="edit-cliente-avance" ${u.cliente_avance ? "checked" : ""}>
                 Cliente Avance
               </label>
             </div>
@@ -673,12 +685,15 @@ function renderUsers(users) {
     const btnDelete = detailsRow.querySelector(".btn-delete-user");
     const protocolEl = detailsRow.querySelector(".edit-protocol");
     const clienteEl = detailsRow.querySelector(".edit-cliente-avance");
-    const nameEl = detailsRow.querySelector(".edit-name");
-    const emailEl = detailsRow.querySelector(".edit-email");
-    const cpfEl = detailsRow.querySelector(".edit-cpf");
+    const nomeEl = detailsRow.querySelector(".edit-nome");
+    const cpfCnpjEl = detailsRow.querySelector(".edit-cpf-cnpj");
     const whatsappEl = detailsRow.querySelector(".edit-whatsapp");
+    const cepEl = detailsRow.querySelector(".edit-cep");
+    const cidadeEl = detailsRow.querySelector(".edit-cidade");
+    const estadoEl = detailsRow.querySelector(".edit-estado");
+    const hasMobileServiceEl = detailsRow.querySelector(".edit-has-mobile-service");
     const contractTypeEl = detailsRow.querySelector(".edit-contract-type");
-    const operatorEl = detailsRow.querySelector(".edit-operator");
+    const operadorEl = detailsRow.querySelector(".edit-operador");
     const activeLinesEl = detailsRow.querySelector(".edit-active-lines");
 
     btnSave?.addEventListener("click", async () => {
@@ -686,47 +701,31 @@ function renderUsers(users) {
       if (btnDelete) btnDelete.disabled = true;
 
       try {
-        const resp = await fetch("/api/admin/update-user", {
+        await apiFetch("/api/admin/update-user", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${window.__USER_ACCESS_TOKEN__ || ""}`,
-          },
           body: JSON.stringify({
             id: u.id,
-            name: (nameEl?.value || "").trim(),
-            email: (emailEl?.value || "").trim(),
-            cpf: (cpfEl?.value || "").trim(),
+            nome: (nomeEl?.value || "").trim(),
+            cpf_cnpj: (cpfCnpjEl?.value || "").trim(),
             whatsapp: (whatsappEl?.value || "").trim(),
+            cep: (cepEl?.value || "").trim(),
+            cidade: (cidadeEl?.value || "").trim(),
+            estado: (estadoEl?.value || "").trim(),
+            has_mobile_service: hasMobileServiceEl?.value === "true",
             contract_type: (contractTypeEl?.value || "").trim(),
-            operator: (operatorEl?.value || "").trim(),
+            operador: (operadorEl?.value || "").trim(),
             active_lines:
               activeLinesEl?.value === ""
-                ? null
+                ? 0
                 : Number(activeLinesEl.value),
             protocol: !!protocolEl?.checked,
             cliente_avance: !!clienteEl?.checked,
           }),
         });
 
-        const data = await resp.json();
-
-        if (!resp.ok) {
-          throw new Error(data?.error || "Falha ao salvar.");
-        }
-
-        u.name = (nameEl?.value || "").trim();
-        u.email = (emailEl?.value || "").trim();
-        u.cpf = (cpfEl?.value || "").trim();
-        u.whatsapp = (whatsappEl?.value || "").trim();
-        u.contract_type = (contractTypeEl?.value || "").trim();
-        u.operator = (operatorEl?.value || "").trim();
-        u.active_lines =
-          activeLinesEl?.value === "" ? null : Number(activeLinesEl.value);
-        u.protocol = !!protocolEl?.checked;
-        u.cliente_avance = !!clienteEl?.checked;
-
-        applyFilterAndRender();
+        await loadUsers(currentPage, false);
+        await loadAppUsageDashboard(false);
+        showFeedback("Usuário atualizado com sucesso.", "success");
       } catch (e) {
         alert(e?.message || "Erro ao salvar usuário.");
       } finally {
@@ -737,9 +736,7 @@ function renderUsers(users) {
 
     btnDelete?.addEventListener("click", async () => {
       const confirmed = window.confirm(
-        `Tem certeza que deseja excluir o usuário "${
-          u.name || u.email || u.id
-        }"?\n\nEssa ação não pode ser desfeita.`
+        `Tem certeza que deseja excluir o usuário "${nome || u.email || u.id}"?\n\nEssa ação não pode ser desfeita.`
       );
 
       if (!confirmed) return;
@@ -748,25 +745,12 @@ function renderUsers(users) {
       if (btnSave) btnSave.disabled = true;
 
       try {
-        const resp = await fetch("/api/admin/delete-user", {
+        await apiFetch("/api/admin/delete-user", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${window.__USER_ACCESS_TOKEN__ || ""}`,
-          },
           body: JSON.stringify({ id: u.id }),
         });
 
-        const data = await resp.json();
-
-        if (!resp.ok) {
-          throw new Error(
-            data?.detail || data?.error || "Falha ao excluir usuário."
-          );
-        }
-
-        // Recarrega a página atual após excluir
-        await loadUsers(window.__USER_ACCESS_TOKEN__ || "", currentPage, false);
+        await loadUsers(currentPage, false);
         await loadAppUsageDashboard(false);
         showFeedback("Usuário excluído com sucesso.", "success");
       } catch (e) {
@@ -783,11 +767,13 @@ function renderUsers(users) {
 }
 
 function renderUserAppUsageBlock(appUsage) {
-  const usage = appUsage && typeof appUsage === "object" ? appUsage : {};
+  const usage =
+    appUsage && typeof appUsage === "object"
+      ? appUsage
+      : parseJsonSafe(appUsage, {});
+
   const knownKeys = Object.keys(APP_CATALOG);
-  const unknownKeys = Object.keys(usage).filter(
-    (key) => !knownKeys.includes(key)
-  );
+  const unknownKeys = Object.keys(usage).filter((key) => !knownKeys.includes(key));
   const orderedKeys = [...knownKeys.filter((key) => usage[key]), ...unknownKeys];
 
   if (!orderedKeys.length) {
@@ -811,9 +797,7 @@ function renderUserAppUsageBlock(appUsage) {
         const value = Number(appData?.[metric.key] || 0);
         return `
           <div class="usage-metric">
-            <span class="usage-metric-label">${escapeHtml(
-              metric.label
-            )}</span>
+            <span class="usage-metric-label">${escapeHtml(metric.label)}</span>
             <span class="usage-metric-value">${formatNumber(value)}</span>
           </div>
         `;
@@ -951,6 +935,7 @@ function switchView(view) {
 
 function parseRegion(regiao) {
   if (regiao && typeof regiao === "object") return regiao;
+
   if (typeof regiao === "string") {
     try {
       return JSON.parse(regiao);
@@ -958,7 +943,22 @@ function parseRegion(regiao) {
       return {};
     }
   }
+
   return {};
+}
+
+function parseJsonSafe(value, fallback = {}) {
+  if (value && typeof value === "object") return value;
+
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
 }
 
 function getAppMeta(appKey) {
@@ -984,6 +984,14 @@ function setError(element, message, hidden = false) {
   element.hidden = hidden || !message;
 }
 
+function showFeedback(message, type = "success") {
+  if (window.showToast && typeof window.showToast === "function") {
+    window.showToast(message, type);
+    return;
+  }
+
+  console.log(`[${type}] ${message}`);
+}
 
 async function exportFilteredUsersToExcel() {
   const exportBtn = document.getElementById("btn-export-excel");
@@ -993,7 +1001,7 @@ async function exportFilteredUsersToExcel() {
   }
 
   try {
-    const users = await fetchAllFilteredUsers(window.__USER_ACCESS_TOKEN__ || "");
+    const users = await fetchAllFilteredUsers();
 
     if (!users.length) {
       alert("Nenhum usuário encontrado com os filtros atuais.");
@@ -1002,34 +1010,40 @@ async function exportFilteredUsersToExcel() {
 
     const buildRow = (u) => {
       const regiao = parseRegion(u.regiao);
+
       return {
-        "Nome":             u.name               || "",
-        "E-mail":           u.email              || "",
-        "CPF/CNPJ":         u.cpf                || "",
-        "WhatsApp":         u.whatsapp           || "",
-        "CEP":              regiao.cep           || u.cep || "",
-        "Cidade":           regiao.cidade        || "",
-        "Estado":           regiao.estado        || "",
-        "Acesso Protocolo": u.protocol           ? "Sim" : "Não",
-        "Cliente Avance":   u.cliente_avance     ? "Sim" : "Não",
-        "Telefonia ativa":  u.has_mobile_service ? "Sim" : "Não",
-        "Tipo de contrato": u.contract_type      || "",
-        "Operadora":        u.operator           || "",
-        "Linhas ativas":    Number.isFinite(u.active_lines) ? u.active_lines : "",
+        "Nome": u.nome || "",
+        "E-mail": u.email || "",
+        "CPF/CNPJ": u.cpf_cnpj || "",
+        "WhatsApp": u.whatsapp || "",
+        "CEP": u.cep || regiao.cep || "",
+        "Cidade": u.cidade || regiao.cidade || "",
+        "Estado": u.estado || regiao.estado || "",
+        "Acesso Protocolo": u.protocol ? "Sim" : "Não",
+        "Cliente Avance": u.cliente_avance ? "Sim" : "Não",
+        "Telefonia ativa": u.has_mobile_service ? "Sim" : "Não",
+        "Tipo de contrato": u.contract_type || "",
+        "Operadora": u.operador || "",
+        "Linhas ativas": Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : "",
       };
     };
 
-    const rows      = users.map(buildRow);
-    const ws        = XLSX.utils.json_to_sheet(rows);
+    const rows = users.map(buildRow);
+    const ws = XLSX.utils.json_to_sheet(rows);
+
     const colWidths = Object.keys(rows[0]).map((key) => ({
-      wch: Math.min(Math.max(key.length, ...rows.map((r) => String(r[key] ?? "").length)) + 2, 40),
+      wch: Math.min(
+        Math.max(key.length, ...rows.map((r) => String(r[key] ?? "").length)) + 2,
+        40
+      ),
     }));
+
     ws["!cols"] = colWidths;
 
-    const wb    = XLSX.utils.book_new();
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Usuários");
 
-    const now   = new Date();
+    const now = new Date();
     const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
     XLSX.writeFile(wb, `usuarios_avance_${stamp}.xlsx`);
   } catch (e) {
