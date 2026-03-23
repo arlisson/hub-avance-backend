@@ -728,7 +728,10 @@ function renderUsers(users) {
 
         await loadUsers(currentPage, false);
         await loadAppUsageDashboard(false);
-        showFeedback("Usuário atualizado com sucesso.", "success");
+        
+        if (typeof showFeedback === "function") {
+          showFeedback("Usuário atualizado com sucesso.", "success");
+        }
       } catch (e) {
         alert(e?.message || "Erro ao salvar usuário.");
       } finally {
@@ -755,7 +758,10 @@ function renderUsers(users) {
 
         await loadUsers(currentPage, false);
         await loadAppUsageDashboard(false);
-        showFeedback("Usuário excluído com sucesso.", "success");
+        
+        if (typeof showFeedback === "function") {
+          showFeedback("Usuário excluído com sucesso.", "success");
+        }
       } catch (e) {
         alert(e?.message || "Erro ao excluir usuário.");
       } finally {
@@ -987,14 +993,6 @@ function setError(element, message, hidden = false) {
   element.hidden = hidden || !message;
 }
 
-function showFeedback(message, type = "success") {
-  if (window.showToast && typeof window.showToast === "function") {
-    window.showToast(message, type);
-    return;
-  }
-
-  console.log(`[${type}] ${message}`);
-}
 
 async function exportFilteredUsersToExcel() {
   const exportBtn = document.getElementById("btn-export-excel");
