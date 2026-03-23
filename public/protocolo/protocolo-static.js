@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   const LOGIN_URL = "/login/login.html";
   const HUB_URL = "/hub/hub.html";
 
@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
   initMobileSidebar(document.getElementById("mobile-menu-btn"));
   initTheme(document.getElementById("theme-toggle"));
+  loadUserEmail(userEmailEl);
 
   menuBackHub?.addEventListener("click", () => {
     window.location.href = HUB_URL;
@@ -33,10 +34,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = LOGIN_URL;
   });
 
-  loadUserEmail(userEmailEl);
-
   function clearFeedback() {
-    if (resultBox) resultBox.hidden = true;
+    if (resultBox) {
+      resultBox.hidden = true;
+    }
 
     if (errorBox) {
       errorBox.hidden = true;
@@ -45,8 +46,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function clearResultFields() {
-    if (protoEl) protoEl.textContent = "";
-    if (msgEl) msgEl.value = "";
+    if (protoEl) {
+      protoEl.textContent = "";
+    }
+
+    if (msgEl) {
+      msgEl.value = "";
+    }
   }
 
   btnClear?.addEventListener("click", () => {
@@ -109,39 +115,52 @@ document.addEventListener("DOMContentLoaded", async () => {
 function loadUserEmail(userEmailEl) {
   if (!userEmailEl) return;
 
-  const possibleKeys = [
+  const possibleDirectKeys = [
     "userEmail",
     "email",
     "usuarioEmail",
+    "user_email",
   ];
 
-  for (const key of possibleKeys) {
+  for (const key of possibleDirectKeys) {
     const value = localStorage.getItem(key);
-    if (value && value.trim()) {
-      userEmailEl.textContent = value.trim();
-      userEmailEl.title = value.trim();
+    if (value && String(value).trim()) {
+      const email = String(value).trim();
+      userEmailEl.textContent = email;
+      userEmailEl.title = email;
       return;
     }
   }
 
-  const jsonKeys = ["auth", "user", "session", "login", "currentUser"];
+  const possibleJsonKeys = [
+    "auth",
+    "user",
+    "session",
+    "login",
+    "currentUser",
+    "profile",
+  ];
 
-  for (const key of jsonKeys) {
+  for (const key of possibleJsonKeys) {
     const raw = localStorage.getItem(key);
     if (!raw) continue;
 
     try {
       const parsed = JSON.parse(raw);
+
       const email =
         parsed?.email ||
         parsed?.user?.email ||
         parsed?.usuario?.email ||
+        parsed?.profile?.email ||
         parsed?.user_email ||
+        parsed?.usuario_email ||
         "";
 
       if (email && String(email).trim()) {
-        userEmailEl.textContent = String(email).trim();
-        userEmailEl.title = String(email).trim();
+        const finalEmail = String(email).trim();
+        userEmailEl.textContent = finalEmail;
+        userEmailEl.title = finalEmail;
         return;
       }
     } catch {
@@ -165,9 +184,11 @@ function clearAuthData() {
     "session",
     "login",
     "currentUser",
+    "profile",
     "userEmail",
     "email",
     "usuarioEmail",
+    "user_email",
   ];
 
   for (const key of keysToRemove) {
@@ -195,13 +216,19 @@ function buildMessage(protocol) {
 function fallbackCopy(text) {
   const temp = document.createElement("textarea");
   temp.value = text;
+  temp.setAttribute("readonly", "");
   temp.style.position = "fixed";
   temp.style.left = "-9999px";
+  temp.style.top = "0";
   document.body.appendChild(temp);
   temp.focus();
   temp.select();
-  document.execCommand("copy");
-  document.body.removeChild(temp);
+
+  try {
+    document.execCommand("copy");
+  } finally {
+    document.body.removeChild(temp);
+  }
 }
 
 function initSettingsMenu(btn, menu) {
@@ -218,9 +245,14 @@ function initSettingsMenu(btn, menu) {
   };
 
   const toggle = () => {
-    if (menu.hidden) open();
-    else close();
+    if (menu.hidden) {
+      open();
+    } else {
+      close();
+    }
   };
+
+  btn.setAttribute("aria-expanded", "false");
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
