@@ -446,9 +446,10 @@ async function apiFetch(url, { method = "GET", token = "", body } = {}) {
   }
 
   if (resp.status === 401) {
-    clearAuthToken();
-    window.location.href = LOGIN_URL;
-    return null;
+    const err = new Error(data?.error || "Não autorizado.");
+    err.response = data;
+    err.status = resp.status;
+    throw err;
   }
 
   if (!resp.ok) {
