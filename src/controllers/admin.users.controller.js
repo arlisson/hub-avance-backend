@@ -148,7 +148,7 @@ function buildListFilters(query) {
 
 export async function listUsers(req, res) {
   try {
-    if (!await ensureAdmin(req, res)) return;
+    if (!(await ensureAdmin(req, res))) return;
 
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 200);
@@ -215,7 +215,7 @@ export async function listUsers(req, res) {
 
 export async function updateUser(req, res) {
   try {
-    if (!await ensureAdmin(req, res)) return;
+    if (!(await ensureAdmin(req, res))) return;
 
     const id = String(req.body?.id || "").trim();
     const nome = String(req.body?.nome || "").trim();
@@ -357,7 +357,7 @@ export async function deleteUser(req, res) {
   const connection = await pool.getConnection();
 
   try {
-    if (!await ensureAdmin(req, res)) {
+    if (!(await ensureAdmin(req, res))) {
       connection.release();
       return;
     }
