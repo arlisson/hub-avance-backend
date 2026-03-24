@@ -768,7 +768,7 @@ function renderUsers(users) {
       <td>${escapeHtml(u.whatsapp || "")}</td>
       <td>${escapeHtml(cidade)}</td>
       <td>${escapeHtml(estado)}</td>
-       <td>${hasMobile ? escapeHtml(operador) : ""}</td>
+      <td style="text-transform: uppercase;">${hasMobile ? escapeHtml(operador) : ""}</td>
       <td>
         <span class="badge ${u.protocol ? "success" : "muted"}">
           ${u.protocol ? "Sim" : "Não"}
