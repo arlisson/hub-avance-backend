@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       if (me?.ok) {
-        window.location.href = "/hub/hub.html";
+        window.location.href = "/hub//paginaUnificada/index.html";
         return;
       }
     }
@@ -198,7 +198,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       salvarToken(data.token);
-      window.location.href = "/hub/hub.html";
+      window.location.href = "/hub//paginaUnificada/index.html";
     } catch (error) {
       if (error?.status === 403) {
         alert("Confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada e também o spam.");
