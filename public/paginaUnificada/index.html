@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AVANCE | Soluções e Tecnologia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <script>
+      (function () {
+        if (localStorage.getItem("theme") !== "light")
+          document.body.classList.add("dark-mode");
+      })();
+    </script>
+
+    <header class="top-navbar">
+      <div class="logo-container">
+        <a href="#inicio">
+          <img
+            src="../img/LogoEscuroSemFundo.png"
+            alt="Logo Avance"
+            class="company-logo logo-escuro"
+            width="200"
+            height="60"
+          />
+          <img
+            src="../img/LogoClaraSemFundo.png"
+            alt="Logo Avance"
+            class="company-logo logo-claro"
+            width="200"
+            height="60"
+          />
+        </a>
+      </div>
+
+      <nav class="navbar-links" id="navbar-links">
+        <a href="#inicio" class="nav-link active">Início</a>
+        <a href="#sobre" class="nav-link">Quem Somos</a>
+        <a href="#aplicativos" class="nav-link">Ferramentas p/ clientes</a>
+        <a href="#solucoes" class="nav-link">Soluções</a>
+      </nav>
+
+      <div class="navbar-right">
+        <button
+          class="mobile-menu-btn"
+          id="mobile-menu-btn"
+          aria-label="Abrir Menu"
+          type="button"
+        >
+          <i class="ph ph-list"></i>
+        </button>
+
+        <button
+          class="theme-toggle-top"
+          id="theme-toggle"
+          type="button"
+          aria-label="Ativar modo claro"
+        >
+          <i class="ph ph-moon"></i>
+        </button>
+
+        <div class="user-menu-container" id="user-menu-container" hidden>
+          <button class="user-profile-btn" id="settings-btn" type="button">
+            <i class="ph ph-user-circle"></i>
+            <span id="user-email" class="nav-user-email">Carregando...</span>
+            <i class="ph ph-caret-down" style="font-size: 14px"></i>
+          </button>
+
+          <div class="settings-dropdown" id="settings-menu" hidden>
+            <a
+              href="../perfil/perfil.html"
+              class="dropdown-item reset-action"
+              id="perfil-user"
+              style="text-decoration: none"
+            >
+              <i class="ph ph-user"></i>
+              <span>Perfil</span>
+            </a>
+
+            <a
+              href="../usuarios/usuarios.html"
+              class="dropdown-item reset-action"
+              id="menu-users"
+              style="text-decoration: none"
+              hidden
+            >
+              <i class="ph ph-users-three"></i>
+              <span>Usuários</span>
+            </a>
+
+            <a
+              href="/redefinirSenha/redefinirSenha.html"
+              class="dropdown-item reset-action"
+              style="text-decoration: none"
+            >
+              <i class="ph ph-lock-key"></i>
+              <span>Alterar Senha</span>
+            </a>
+
+            <button type="button" class="dropdown-item danger" id="menu-logout">
+              <i class="ph ph-sign-out"></i>
+              <span>Sair</span>
+            </button>
+          </div>
+        </div>
+
+        <a
+          href="/login/login.html"
+          class="hub-btn hub-btn-primary"
+          id="login-btn-visitor"
+          style="padding: 8px 16px; font-size: 14px; display: none"
+        >
+          Entrar <i class="ph ph-sign-in"></i>
+        </a>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="inicio" class="hero-section">
+        <div class="hero-content">
+          <p class="hero-badge">Avance VIP</p>
+          <h1 class="hero-title">
+            O próximo nível da sua<br />operação começa
+            <span class="hero-title-accent">agora.</span>
+          </h1>
+          <p class="hero-subtitle">
+            Telecomunicação inteligente, ferramentas exclusivas e um parceiro
+            que não desaparece depois da venda.
+          </p>
+          <a href="#sobre" class="hero-btn hero-scroll-btn">
+            Conheça a Avance <i class="ph ph-arrow-down" aria-hidden="true"></i>
+          </a>
+        </div>
+      </section>
+
+      <section
+        id="sobre"
+        class="showcase-wrapper"
+        style="margin-top: 60px"
+        data-reveal
+      >
+        <div class="showcase-content about-content">
+          <div class="about-header">
+            <span class="about-eyebrow">Quem Somos</span>
+            <p class="about-tagline">
+              Em um mercado marcado por relações de curto prazo,<br />
+              nós construímos parcerias de longo prazo.
+            </p>
+          </div>
+
+          <div class="about-story">
+            <div class="about-block about-block--opener">
+              <div class="about-block-line"></div>
+              <div class="about-block-body">
+                <p class="about-lede">
+                  Telecomunicação não é um luxo. É infraestrutura.
+                </p>
+                <p class="about-text">
+                  Sem telefone, sem internet, sem linha, o negócio para. E mesmo
+                  sendo um serviço tão essencial, o mercado se acostumou a
+                  tratar esse cliente com frieza: vende o plano, assina o
+                  contrato e desaparece.
+                  <strong
+                    >A Avance VIP nasceu porque vimos esse padrão de atendimento
+                    ao cliente de perto e decidimos não aceitar.</strong
+                  >
+                </p>
+              </div>
+            </div>
+
+            <div class="about-block">
+              <div class="about-block-line"></div>
+              <div class="about-block-body">
+                <p class="about-text">
+                  Somos uma empresa que trabalha com as melhores operadoras do
+                  Brasil, mas o que nos define não é o produto que vendemos. É a
+                  forma como tratamos e cuidamos dos nossos clientes.
+                </p>
+                <p class="about-text">
+                  Em um mercado onde ninguém quer mostrar o rosto,
+                  <strong>a gente quer ser visto.</strong>
+                  Queremos que o cliente saiba com quem está falando, que sinta
+                  segurança em cada etapa e tenha certeza de que, se precisar,
+                  tem alguém real do outro lado não um robô, não um 0800, não um
+                  protocolo sem resposta.
+                </p>
+              </div>
+            </div>
+
+            <div class="about-block about-block--highlight">
+              <div class="about-block-line"></div>
+              <div class="about-block-body">
+                <p class="about-text">
+                  Este site é a prova mais concreta do que acreditamos. Criamos
+                  sistemas e ferramentas gratuitas que estão disponíveis aqui
+                  dentro. Todas foram pensadas para facilitar a rotina dos
+                  nossos clientes, sem cobrar nada por isso.
+                </p>
+                <p class="about-pullquote">
+                  Não fazemos para impressionar ou por marketing. Fazemos porque
+                  é assim que entedemos o modelo de negócio com base em
+                  parceria.
+                  <strong style="color: #ffffff"
+                    >E porque esse tipo de atendimento simplesmente não dá
+                    mais.</strong
+                  >
+                </p>
+                <p class="about-text">
+                  Tem que ser presente no dia a dia, contribuir de verdade, e
+                  não apenas na hora da renovação do contrato.
+                </p>
+              </div>
+            </div>
+
+            <div class="about-block">
+              <div class="about-block-line"></div>
+              <div class="about-block-body">
+                <p class="about-text">
+                  Toda empresa merece um serviço de telecomunicação que funcione
+                  e merece ser bem atendida enquanto usa esse serviço. Esse é o
+                  mínimo. E é exatamente esse mínimo que o mercado tem deixado
+                  de entregar.
+                </p>
+                <p class="about-text">
+                  A gente está aqui para mudar isso. Um cliente de cada vez.
+                  <strong
+                    >Quem escolhe a Avance não aceita mais atendimento
+                    mediano.</strong
+                  >
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="about-closing">
+            <span class="about-closing-divider"></span>
+            <p class="about-closing-text">
+              Seja bem-vindo à <strong>Avance VIP</strong>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="hub-testimonials-section"
+        style="margin-top: -60px; margin-bottom: 20px"
+        data-reveal
+      >
+        <div class="hub-section-title" style="margin-bottom: 30px">
+          <h2>O que dizem sobre nós</h2>
+        </div>
+        <div class="testimonials-container">
+          <div class="testimonials-track" id="testimonials-track-1"></div>
+        </div>
+      </section>
+
+      <section id="aplicativos" class="showcase-wrapper" data-reveal>
+        <div class="showcase-content">
+          <div class="hub-section-title">
+            <h2>Para facilitar o dia a dia do seu negócio</h2>
+          </div>
+          <div class="hub-grid-wrapper">
+            <div class="hub-grid" id="hub-grid"></div>
+            <div class="hub-coming-soon-badge">
+              <span class="hub-coming-soon-label">Ferramentas em desenvolvimento</span>
+              <span class="hub-coming-soon-count">2</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="hub-testimonials-section"
+        style="margin-top: -50px; margin-bottom: 40px"
+        data-reveal
+      >
+        <div class="hub-section-title" style="margin-bottom: 30px">
+          <h2>Mais histórias de sucesso</h2>
+        </div>
+        <div class="testimonials-container">
+          <div class="testimonials-track" id="testimonials-track-2"></div>
+        </div>
+      </section>
+
+      <!-- Hero intro de soluções -->
+      <section id="solucoes" class="solucoes-intro-section" data-reveal>
+        <div class="solucoes-intro-content">
+          <span class="about-eyebrow">Soluções</span>
+          <h2 class="solucoes-intro-title">
+            Trabalhamos com as melhores operadoras do Brasil para resolver a
+            conectividade do seu negócio.
+          </h2>
+          <p class="solucoes-intro-subtitle">
+            Não importa o tamanho da sua empresa. Temos a solução certa e um
+            consultor dedicado para te atender. Aqui você escolhe a operadora e
+            nós garantimos eficiência no processo.
+          </p>
+          <a href="#produtos" class="hero-btn solucoes-scroll-btn">
+            Ver soluções <i class="ph ph-arrow-down" aria-hidden="true"></i>
+          </a>
+        </div>
+      </section>
+
+      <!-- Grid de produtos -->
+      <section id="produtos" class="showcase-wrapper" data-reveal>
+        <div class="showcase-content">
+          <div class="hub-section-title">
+            <h2>Soluções que dominamos de ponta a ponta.</h2>
+            <p class="section-subtitle">
+              Escolha o serviço que a sua empresa precisa. Nosso consultor
+              assume daqui pra frente orienta cada passo e garante que você vai
+              contratar exatamente o que faz sentido pro seu negócio.
+            </p>
+          </div>
+          <div class="products-grid" id="products-grid"></div>
+        </div>
+      </section>
+
+      <!-- CTA intermediário -->
+      <section class="mid-cta-banner" data-reveal>
+        <div class="mid-cta-inner">
+          <div class="mid-cta-text">
+            <h3 class="mid-cta-title">
+              Ainda tem dúvida? A gente resolve isso agora.
+            </h3>
+            <p class="mid-cta-desc">
+              Fale direto com um consultor. Em minutos, você vai saber
+              exatamente qual solução faz sentido pro seu negócio.
+            </p>
+          </div>
+          <a
+            href="#"
+            id="mid-cta-whatsapp"
+            class="cta-whatsapp-btn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i class="ph ph-whatsapp-logo"></i>
+            Falar com um consultor agora
+          </a>
+        </div>
+      </section>
+
+      <!-- Seção pós-venda -->
+      <section class="showcase-wrapper posvenda-wrapper" data-reveal>
+        <div class="showcase-content posvenda-content">
+          <div class="posvenda-header">
+            <span class="about-eyebrow">Diferencial</span>
+            <h2 class="posvenda-title">
+              Aqui o atendimento não acaba quando você assina o contrato.
+            </h2>
+            <p class="posvenda-subtitle">Na verdade, é aí que ele começa.</p>
+          </div>
+
+          <div class="posvenda-body">
+            <div class="posvenda-text-col">
+              <p class="about-text">
+                O nosso diferencial não está apenas no que entregamos.
+                <strong>Está em como acompanhamos.</strong>
+              </p>
+              <p class="about-text">
+                É por isso que nossos clientes têm acesso a sistemas e
+                ferramentas exclusivas, criadas pelo nosso time interno de
+                engenharia. E isso não para por aqui: sempre que identificamos
+                uma necessidade comum, algo que pode beneficiar a todos,
+                <strong
+                  >desenvolvemos uma nova solução, gratuita e disponível para
+                  toda a base de clientes.</strong
+                >
+              </p>
+              <p class="about-text">
+                Mas o verdadeiro valor da parceria está no pós-venda ativo e
+                consultivo. Enquanto a maioria das empresas oferece apenas
+                suporte reativo, aquele 0800 com fila interminável,
+                transferências sem fim e atendimento robotizado,
+                <strong> nós trabalhamos de forma diferente.</strong>
+              </p>
+              <p class="about-text">
+                Nosso pós-venda não espera você ligar com um problema. Ele
+                acompanha, antecipa necessidades, sugere melhorias e
+                <strong
+                  >garante que você esteja extraindo o máximo valor da solução
+                  contratada.</strong
+                >
+              </p>
+              <p class="about-text">
+                Em um cenário onde o pós-venda das empresas é terceirizado e
+                automatizado, ter um parceiro com acompanhamento humanizado e
+                estratégico é um diferencial competitivo.
+                <strong>
+                  Aqui na Avance, você sabe com quem está falando, e esse
+                  relacionamento faz toda a diferença.</strong
+                >
+              </p>
+            </div>
+
+            <div class="posvenda-pillars">
+              <div class="posvenda-pillar">
+                <span class="posvenda-pillar-emoji">🤝</span>
+                <span class="posvenda-pillar-label">Consultor dedicado</span>
+              </div>
+              <div class="posvenda-pillar">
+                <span class="posvenda-pillar-emoji">📲</span>
+                <span class="posvenda-pillar-label">Suporte humanizado</span>
+              </div>
+              <div class="posvenda-pillar">
+                <span class="posvenda-pillar-emoji">🔄</span>
+                <span class="posvenda-pillar-label">Parceria ativa</span>
+              </div>
+              <div class="posvenda-pillar">
+                <span class="posvenda-pillar-emoji">💡</span>
+                <span class="posvenda-pillar-label">Inovação</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="posvenda-closing">
+            <p class="posvenda-mission">
+              Nossa missão é garantir que você tenha uma experiência
+              diferenciada enquanto for nosso cliente.
+            </p>
+            <a
+              href="#"
+              id="posvenda-whatsapp"
+              class="cta-whatsapp-btn"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i class="ph ph-whatsapp-logo"></i>
+              Quero esse tipo de atendimento
+              <i class="ph ph-arrow-up-right" style="font-size: 16px"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="hub-footer">
+        <div class="footer-grid">
+          <div class="footer-col footer-col-brand">
+            <span class="footer-brand">AVANCE VIP</span>
+            <p class="footer-tagline">Soluções e Tecnologia para o seu negócio.</p>
+          </div>
+
+          <div class="footer-col">
+            <h4 class="footer-col-title">Contato</h4>
+            <ul class="footer-links">
+              <li>
+                <i class="ph ph-shopping-bag"></i>
+                <a href="https://mail.google.com/mail/?view=cm&to=querosercliente@avancevip.net.br" target="_blank" rel="noopener noreferrer">querosercliente@avancevip.net.br</a>
+              </li>
+              <li>
+                <i class="ph ph-headset"></i>
+                <a href="https://mail.google.com/mail/?view=cm&to=suporte@avancevip.net.br" target="_blank" rel="noopener noreferrer">suporte@avancevip.net.br</a>
+              </li>
+              <li>
+                <i class="ph ph-chat-dots"></i>
+                <a href="https://mail.google.com/mail/?view=cm&to=sugestoes@avancevip.net.br" target="_blank" rel="noopener noreferrer">sugestoes@avancevip.net.br</a>
+              </li>
+              <li>
+                <i class="ph ph-whatsapp-logo"></i>
+                <a href="https://wa.me/5522988124656" target="_blank" rel="noopener noreferrer">(22) 98812-4656</a>
+              </li>
+              <li>
+                <i class="ph ph-instagram-logo"></i>
+                <a href="https://instagram.com/avancevip" target="_blank" rel="noopener noreferrer">@avancevip</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4 class="footer-col-title">Navegação</h4>
+            <ul class="footer-links">
+              <li><a href="#aplicativos">Aplicativos</a></li>
+              <li><a href="#solucoes">Soluções</a></li>
+              <li><a href="#sobre">Sobre nós</a></li>
+              <li><a href="#posvenda">Pós-venda</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <span>© 2025 Avance. Todos os direitos reservados.</span>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Modal de detalhes dos apps (hub) -->
+    <div id="app-modal-backdrop" class="app-modal-backdrop" hidden>
+      <div
+        id="app-modal"
+        class="app-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="app-modal-title"
+        hidden
+      >
+        <div class="app-modal-header">
+          <div class="app-modal-titlewrap">
+            <div class="app-modal-badge" id="app-modal-badge"></div>
+            <h2 class="app-modal-title" id="app-modal-title"></h2>
+          </div>
+          <button
+            type="button"
+            class="app-modal-close"
+            id="app-modal-close"
+            aria-label="Fechar"
+          >
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+
+        <div class="app-modal-body">
+          <p class="app-modal-desc" id="app-modal-desc"></p>
+
+          <div class="app-modal-video" id="app-modal-video">
+            <!-- iframe inserido via JS -->
+          </div>
+
+          <div
+            class="app-modal-actions app-modal-actions-bottom"
+            id="app-modal-actions"
+          >
+            <!-- botões inseridos via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal multi-step dos produtos (soluções)  conteúdo gerado via JS -->
+    <div id="prod-modal-backdrop" class="app-modal-backdrop" hidden>
+      <div
+        id="prod-modal"
+        class="app-modal prod-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prod-modal-title"
+        hidden
+      ></div>
+    </div>
+
+    <a
+      href="#"
+      id="floating-whatsapp"
+      class="floating-whatsapp"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Falar com um consultor no WhatsApp"
+    >
+      <i class="ph ph-whatsapp-logo"></i>
+    </a>
+
+    <script src="./script.js" defer></script>
+  </body>
+</html>
