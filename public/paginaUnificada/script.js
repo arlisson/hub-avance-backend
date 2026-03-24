@@ -1800,8 +1800,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sessionData = await getCurrentSession();
 
     if (!sessionData?.ok || !sessionData?.user) {
-      clearAuthToken();
-      clearAgentChatSessionStorage();
       window.location.href = normalizeLoginUrl(LOGIN_URL);
       return;
     }
