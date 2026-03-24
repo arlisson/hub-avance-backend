@@ -311,8 +311,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const hasAccess =
           profile?.role === "admin" ||
-          profile?.role === "Administrador" ||
-          profile?.protocol === true;
+          profile?.role === "Administrador";
+          
 
         if (!hasAccess) {
           alert("Você não tem permissão para acessar esta tela.");
