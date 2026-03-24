@@ -64,8 +64,9 @@ export async function createLead(req, res) {
         cpf,
         whatsapp,
         servico,
-        dados
-      ) VALUES (?, ?, ?, ?, ?, ?)
+        dados,
+        atendido
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       [
         id,
@@ -74,6 +75,7 @@ export async function createLead(req, res) {
         whatsapp,
         servico,
         dados ? JSON.stringify(dados) : null,
+        0,
       ]
     );
 

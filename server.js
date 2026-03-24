@@ -10,6 +10,7 @@ import adminUsersRoutes from "./src/routes/admin.users.routes.js";
 import agentRoutes from "./src/routes/agent.routes.js";
 import avaliacoesRoutes from "./src/routes/avaliacoes.routes.js";
 import leadsRoutes from "./src/routes/leads.routes.js";
+import adminLeadsRoutes from "./src/routes/admin.leads.routes.js";
 
 
 dotenv.config();
@@ -34,7 +35,7 @@ app.use("/api", avaliacoesRoutes);
 
 
 app.use("/api", leadsRoutes);
-
+app.use("/api", adminLeadsRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });
