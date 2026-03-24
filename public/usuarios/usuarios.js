@@ -378,6 +378,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (searchEl) searchEl.value = "";
 
           selectedOperadoras.clear();
+          if (filterOperadoraEl) filterOperadoraEl.value = "";
+          
           syncOperadoraCheckboxesFromState();
           updateOperadoraLabel();
 
@@ -415,44 +417,108 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initOperadoraMultiSelect() {
+  const wrapper = document.querySelector(".filter-multiselect");
   const operadoraBtn = document.getElementById("filter-operadora-btn");
   const operadoraDropdown = document.getElementById("filter-operadora-dropdown");
+  const operadoraLabel = document.getElementById("filter-operadora-label");
 
-  if (!operadoraBtn || !operadoraDropdown) return;
+  if (!wrapper || !operadoraBtn || !operadoraDropdown || !operadoraLabel) return;
+
+  const checkboxes = Array.from(
+    operadoraDropdown.querySelectorAll("input[type='checkbox']")
+  );
+
+  function openDropdown() {
+    operadoraDropdown.hidden = false;
+    operadoraBtn.classList.add("is-open");
+    operadoraBtn.setAttribute("aria-expanded", "true");
+  }
+
+  function closeDropdown() {
+    operadoraDropdown.hidden = true;
+    operadoraBtn.classList.remove("is-open");
+    operadoraBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function syncHiddenInput() {
+    if (!filterOperadoraEl) return;
+    filterOperadoraEl.value = Array.from(selectedOperadoras).join(",");
+  }
+
+  function syncCheckboxes() {
+    checkboxes.forEach((cb) => {
+      cb.checked = selectedOperadoras.has(String(cb.value).trim().toUpperCase());
+    });
+  }
+
+  function syncLabel() {
+    const values = Array.from(selectedOperadoras);
+
+    operadoraLabel.textContent =
+      values.length === 0
+        ? "Todas"
+        : values.length === 1
+        ? values[0]
+        : `${values.length} selecionadas`;
+  }
 
   operadoraBtn.addEventListener("click", (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    const isOpen = !operadoraDropdown.hidden;
-    operadoraDropdown.hidden = isOpen;
-    operadoraBtn.classList.toggle("is-open", !isOpen);
+
+    if (operadoraDropdown.hidden) {
+      openDropdown();
+    } else {
+      closeDropdown();
+    }
   });
 
-  operadoraDropdown.querySelectorAll("input[type='checkbox']").forEach((cb) => {
+  checkboxes.forEach((cb) => {
+    cb.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
     cb.addEventListener("change", () => {
+      const value = String(cb.value || "").trim().toUpperCase();
+
+      if (!value) return;
+
       if (cb.checked) {
-        selectedOperadoras.add(cb.value);
+        selectedOperadoras.add(value);
       } else {
-        selectedOperadoras.delete(cb.value);
+        selectedOperadoras.delete(value);
       }
 
-      // quando usa o multiselect, limpa o select simples antigo
-      if (selectedOperadoras.size > 0 && filterOperadoraEl) {
-        filterOperadoraEl.value = "";
-      }
-
-      updateOperadoraLabel();
+      syncHiddenInput();
+      syncCheckboxes();
+      syncLabel();
+      updateFilterBadge();
       applyFiltersAndReload();
     });
   });
 
+  operadoraDropdown.querySelectorAll(".filter-multiselect-item").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      const input = item.querySelector("input[type='checkbox']");
+      if (!input) return;
+
+      if (e.target !== input) {
+        e.preventDefault();
+        input.checked = !input.checked;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  });
+
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".filter-multiselect")) {
-      operadoraDropdown.hidden = true;
-      operadoraBtn.classList.remove("is-open");
+    if (!wrapper.contains(e.target)) {
+      closeDropdown();
     }
   });
 
-  updateOperadoraLabel();
+  syncHiddenInput();
+  syncCheckboxes();
+  syncLabel();
 }
 
 function syncOperadoraCheckboxesFromState() {
@@ -467,14 +533,14 @@ function updateOperadoraLabel() {
   const operadoraLabel = document.getElementById("filter-operadora-label");
   if (!operadoraLabel) return;
 
-  const count = selectedOperadoras.size;
+  const values = Array.from(selectedOperadoras);
 
   operadoraLabel.textContent =
-    count === 0
+    values.length === 0
       ? "Todas"
-      : count === 1
-        ? [...selectedOperadoras][0]
-        : `${count} selecionadas`;
+      : values.length === 1
+      ? values[0]
+      : `${values.length} selecionadas`;
 }
 
 async function loadUsers(page = 1, showLoader = true) {
