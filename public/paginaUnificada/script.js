@@ -1811,20 +1811,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadPublicAgentConfig();
 
   try {
-    const token = getAuthToken();
-
-    if (!token) {
-      clearAuthToken();
-      clearAgentChatSessionStorage();
-      window.location.href = normalizeLoginUrl(LOGIN_URL);
-      return;
-    }
-
+   
     const sessionData = await getCurrentSession();
 
     if (!sessionData?.ok || !sessionData?.user) {
-      clearAuthToken();
-      clearAgentChatSessionStorage();
       window.location.href = normalizeLoginUrl(LOGIN_URL);
       return;
     }
