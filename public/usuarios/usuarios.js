@@ -768,7 +768,7 @@ function renderUsers(users) {
       <td>${escapeHtml(u.whatsapp || "")}</td>
       <td>${escapeHtml(cidade)}</td>
       <td>${escapeHtml(estado)}</td>
-      <td>${escapeHtml(operador)}</td>
+       <td>${hasMobile ? escapeHtml(operador) : ""}</td>
       <td>
         <span class="badge ${u.protocol ? "success" : "muted"}">
           ${u.protocol ? "Sim" : "Não"}
@@ -786,7 +786,7 @@ function renderUsers(users) {
     detailsRow.hidden = true;
 
     detailsRow.innerHTML = `
-      <td colspan="8">
+      <td colspan="9">
         <div class="user-expanded-box">
           <div class="expand-section-title">Dados do cliente</div>
 
