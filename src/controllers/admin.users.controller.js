@@ -105,16 +105,17 @@ function parseOperatorFilters(query) {
     values.push(query.operator);
   }
 
-  // compatibilidade com o filtro antigo/simples
   if (query.operador != null && query.operador !== "") {
     values.push(query.operador);
   }
 
-  return [...new Set(
-    values
-      .map((v) => String(v || "").trim().toUpperCase())
-      .filter(Boolean)
-  )];
+  return [
+    ...new Set(
+      values
+        .map((v) => String(v || "").trim().toUpperCase())
+        .filter(Boolean)
+    ),
+  ];
 }
 
 function buildListFilters(query) {
@@ -155,16 +156,37 @@ function buildListFilters(query) {
     params.push(contractType);
   }
 
-  if (operadores.length === 1) {
-    where.push("UPPER(COALESCE(p.operador, '')) = ?");
-    params.push(operadores[0]);
-  } else if (operadores.length > 1) {
-    const placeholders = operadores.map(() => "?").join(", ");
-    where.push(`UPPER(COALESCE(p.operador, '')) IN (${placeholders})`);
-    params.push(...operadores);
+  if (operadores.length > 0) {
+    const operadoresFixos = ["VIVO", "TIM", "CLARO", "NIO", "EMBRATEL"];
+    const selecionadasNormais = operadores.filter((op) => op !== "OUTRAS");
+    const temOutras = operadores.includes("OUTRAS");
+
+    const condicoesOperadora = [];
+
+    if (selecionadasNormais.length > 0) {
+      const placeholders = selecionadasNormais.map(() => "?").join(", ");
+      condicoesOperadora.push(
+        `UPPER(TRIM(COALESCE(p.operador, ''))) IN (${placeholders})`
+      );
+      params.push(...selecionadasNormais);
+    }
+
+    if (temOutras) {
+      const placeholders = operadoresFixos.map(() => "?").join(", ");
+      condicoesOperadora.push(`
+        (
+          TRIM(COALESCE(p.operador, '')) <> ''
+          AND UPPER(TRIM(COALESCE(p.operador, ''))) NOT IN (${placeholders})
+        )
+      `);
+      params.push(...operadoresFixos);
+    }
+
+    if (condicoesOperadora.length > 0) {
+      where.push(`(${condicoesOperadora.join(" OR ")})`);
+    }
   }
 
-  // compatível com os dois modelos
   if (activeLines === "0") {
     where.push("COALESCE(p.active_lines, 0) = 0");
   } else if (activeLines === "1") {

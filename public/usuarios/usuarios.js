@@ -13,7 +13,7 @@ let filterClienteEl = null;
 let filterTelefoniaEl = null;
 let filterLinhasEl = null;
 let filterContratoEl = null;
-let filterOperadoraEl = null; // mantido por compatibilidade
+let filterOperadoraEl = null;
 let selectedOperadoras = new Set();
 
 // Debounce do campo de busca
@@ -128,6 +128,10 @@ async function apiFetch(url, options = {}) {
   return data;
 }
 
+function normalizeOperatorValue(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
 function buildQueryParams(page, limit) {
   const params = new URLSearchParams();
   params.set("page", String(page));
@@ -154,11 +158,11 @@ function buildQueryParams(page, limit) {
 
   if (selectedOperadoras.size > 0) {
     Array.from(selectedOperadoras)
-      .map((op) => String(op || "").trim().toUpperCase())
+      .map(normalizeOperatorValue)
       .filter(Boolean)
       .forEach((op) => params.append("operator", op));
   } else if (filterOperadoraEl?.value) {
-    params.set("operador", String(filterOperadoraEl.value).trim().toUpperCase());
+    params.set("operador", normalizeOperatorValue(filterOperadoraEl.value));
   }
 
   return params;
@@ -198,9 +202,10 @@ function updateFilterBadge() {
   ].filter(Boolean).length;
 
   if (countEl) {
-    countEl.textContent = active > 0
-      ? `${active} filtro${active > 1 ? "s" : ""} ativo${active > 1 ? "s" : ""}`
-      : "";
+    countEl.textContent =
+      active > 0
+        ? `${active} filtro${active > 1 ? "s" : ""} ativo${active > 1 ? "s" : ""}`
+        : "";
     countEl.hidden = active === 0;
   }
 
@@ -236,11 +241,17 @@ function renderPagination(total, page, pageSize) {
     return btn;
   };
 
-  wrap.appendChild(mkBtn('<i class="ph ph-caret-left"></i>', page - 1, page === 1));
+  wrap.appendChild(
+    mkBtn('<i class="ph ph-caret-left"></i>', page - 1, page === 1)
+  );
 
   const delta = 2;
   const range = [];
-  for (let i = Math.max(1, page - delta); i <= Math.min(totalPages, page + delta); i++) {
+  for (
+    let i = Math.max(1, page - delta);
+    i <= Math.min(totalPages, page + delta);
+    i++
+  ) {
     range.push(i);
   }
 
@@ -266,7 +277,10 @@ function renderPagination(total, page, pageSize) {
     wrap.appendChild(mkBtn(String(totalPages), totalPages, false));
   }
 
-  wrap.appendChild(mkBtn('<i class="ph ph-caret-right"></i>', page + 1, page === totalPages));
+  wrap.appendChild(
+    mkBtn('<i class="ph ph-caret-right"></i>', page + 1, page === totalPages)
+  );
+
   container.appendChild(wrap);
 }
 
@@ -357,7 +371,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         [filterClienteEl, filterTelefoniaEl, filterLinhasEl, filterContratoEl]
           .forEach((el) => el?.addEventListener("change", () => applyFiltersAndReload()));
 
-        // Compatibilidade com select simples antigo, se ele ainda existir na tela
         filterOperadoraEl?.addEventListener("change", () => {
           if (filterOperadoraEl.value) {
             selectedOperadoras.clear();
@@ -418,7 +431,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initOperadoraMultiSelect() {
-  const wrapper = document.querySelector(".filter-multiselect");
+  const wrapper =
+    document.getElementById("filter-operadora-wrap") ||
+    document.querySelector(".filter-multiselect");
+
   const operadoraBtn = document.getElementById("filter-operadora-btn");
   const operadoraDropdown = document.getElementById("filter-operadora-dropdown");
   const operadoraLabel = document.getElementById("filter-operadora-label");
@@ -443,15 +459,16 @@ function initOperadoraMultiSelect() {
 
   function syncHiddenInput() {
     if (!filterOperadoraEl) return;
+
     filterOperadoraEl.value = Array.from(selectedOperadoras)
-      .map((value) => String(value || "").trim().toUpperCase())
+      .map(normalizeOperatorValue)
       .filter(Boolean)
       .join(",");
   }
 
   function syncCheckboxes() {
     checkboxes.forEach((cb) => {
-      const value = String(cb.value || "").trim().toUpperCase();
+      const value = normalizeOperatorValue(cb.value);
       cb.checked = selectedOperadoras.has(value);
     });
   }
@@ -471,11 +488,8 @@ function initOperadoraMultiSelect() {
     e.preventDefault();
     e.stopPropagation();
 
-    if (operadoraDropdown.hidden) {
-      openDropdown();
-    } else {
-      closeDropdown();
-    }
+    if (operadoraDropdown.hidden) openDropdown();
+    else closeDropdown();
   });
 
   checkboxes.forEach((cb) => {
@@ -484,13 +498,17 @@ function initOperadoraMultiSelect() {
     });
 
     cb.addEventListener("change", () => {
-      const value = String(cb.value || "").trim().toUpperCase();
+      const value = normalizeOperatorValue(cb.value);
       if (!value) return;
 
       if (cb.checked) {
         selectedOperadoras.add(value);
       } else {
         selectedOperadoras.delete(value);
+      }
+
+      if (selectedOperadoras.size > 0 && filterOperadoraEl) {
+        filterOperadoraEl.value = "";
       }
 
       syncHiddenInput();
@@ -501,18 +519,20 @@ function initOperadoraMultiSelect() {
     });
   });
 
-  operadoraDropdown.querySelectorAll(".filter-multiselect-item").forEach((item) => {
-    item.addEventListener("click", (e) => {
-      const input = item.querySelector("input[type='checkbox']");
-      if (!input) return;
+  operadoraDropdown
+    .querySelectorAll(".filter-multiselect-item, .filter-check-item")
+    .forEach((item) => {
+      item.addEventListener("click", (e) => {
+        const input = item.querySelector("input[type='checkbox']");
+        if (!input) return;
 
-      if (e.target !== input) {
-        e.preventDefault();
-        input.checked = !input.checked;
-        input.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+        if (e.target !== input) {
+          e.preventDefault();
+          input.checked = !input.checked;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
     });
-  });
 
   document.addEventListener("click", (e) => {
     if (!wrapper.contains(e.target)) {
@@ -529,7 +549,7 @@ function syncOperadoraCheckboxesFromState() {
   document
     .querySelectorAll("#filter-operadora-dropdown input[type='checkbox']")
     .forEach((cb) => {
-      const value = String(cb.value || "").trim().toUpperCase();
+      const value = normalizeOperatorValue(cb.value);
       cb.checked = selectedOperadoras.has(value);
     });
 }
@@ -547,7 +567,6 @@ function updateOperadoraLabel() {
         ? values[0]
         : `${values.length} selecionadas`;
 }
-
 
 async function loadUsers(page = 1, showLoader = true) {
   const task = async () => {
@@ -642,7 +661,9 @@ async function fetchAllUsersWithoutFilters() {
     if (filterContratoEl) filterContratoEl.value = savedContrato;
     if (filterOperadoraEl) filterOperadoraEl.value = savedOperadora;
 
-    selectedOperadoras = new Set(savedSelectedOperadoras);
+    selectedOperadoras = new Set(
+      Array.from(savedSelectedOperadoras).map(normalizeOperatorValue)
+    );
     syncOperadoraCheckboxesFromState();
     updateOperadoraLabel();
   }
@@ -1259,19 +1280,22 @@ async function exportFilteredUsersToExcel() {
       const hasMobile = u.has_mobile_service === true;
 
       return {
-        "Nome": u.nome || "",
+        Nome: u.nome || "",
         "E-mail": u.email || "",
         "CPF/CNPJ": u.cpf_cnpj || "",
-        "WhatsApp": u.whatsapp || "",
-        "CEP": u.cep || regiao.cep || "",
-        "Cidade": u.cidade || regiao.cidade || "",
-        "Estado": u.estado || regiao.estado || "",
+        WhatsApp: u.whatsapp || "",
+        CEP: u.cep || regiao.cep || "",
+        Cidade: u.cidade || regiao.cidade || "",
+        Estado: u.estado || regiao.estado || "",
         "Acesso Protocolo": u.protocol ? "Sim" : "Não",
         "Cliente Avance": u.cliente_avance ? "Sim" : "Não",
         "Telefonia ativa": hasMobile ? "Sim" : "Não",
-        "Tipo de contrato": hasMobile ? (u.contract_type || "") : "",
-        "Operadora": hasMobile ? (u.operador || "") : "",
-        "Linhas ativas": hasMobile && Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : "",
+        "Tipo de contrato": hasMobile ? u.contract_type || "" : "",
+        Operadora: hasMobile ? u.operador || "" : "",
+        "Linhas ativas":
+          hasMobile && Number.isFinite(Number(u.active_lines))
+            ? Number(u.active_lines)
+            : "",
       };
     };
 
@@ -1298,7 +1322,8 @@ async function exportFilteredUsersToExcel() {
   } finally {
     if (exportBtn) {
       exportBtn.disabled = false;
-      exportBtn.innerHTML = '<i class="ph ph-microsoft-excel-logo"></i> Exportar para Excel';
+      exportBtn.innerHTML =
+        '<i class="ph ph-microsoft-excel-logo"></i> Exportar para Excel';
     }
   }
 }
