@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import authRoutes from "./src/routes/auth.routes.js";
 import profileRoutes from "./src/routes/profile.routes.js";
 import adminUsersRoutes from "./src/routes/admin.users.routes.js";
+import agentRoutes from "./src/routes/agent.routes.js";
+
 
 dotenv.config();
 
@@ -23,6 +25,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api", authRoutes);
 app.use("/api", profileRoutes);
 app.use("/api", adminUsersRoutes);
+
+app.use("/api", agentRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });

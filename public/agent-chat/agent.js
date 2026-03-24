@@ -1,10 +1,13 @@
-/**
- * agent.js — Chat responsivo + Menus padrão Hub + Gestão de Sessão
- */
-HUB_URL = "/hub/hub.html";
+const LOGIN_URL = "/login/login.html";
+const HUB_URL = "/hub/hub.html";
+
+const API_ME_URL = "/api/profile";
+const API_LOGOUT_URL = "/api/logout";
+const API_AGENT_STATUS_URL = "/api/agent/status";
+const API_AGENT_KEY_URL = "/api/agent/api-key";
+const API_AGENT_CHAT_URL = "/api/agent";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // --- Elementos da Interface  ---
   const chatMessages = document.getElementById("chat-messages");
   const userInput = document.querySelector(".input-container textarea");
   const sendBtn = document.querySelector(".send-btn");
@@ -12,87 +15,102 @@ document.addEventListener("DOMContentLoaded", async () => {
   const newChatBtn = document.querySelector(".new-chat-btn");
   const userEmailEl = document.getElementById("user-email");
 
-  // Elementos de Navegação
   const menuBtn = document.getElementById("mobile-menu-btn");
   const settingsBtn = document.getElementById("settings-btn");
   const settingsMenu = document.getElementById("settings-menu");
   const menuLogout = document.getElementById("menu-logout");
+  const menuBackHub = document.getElementById("menu-back-hub");
 
-  // --- Inicialização de Menus ---
+  const modalApi = document.getElementById("modalApi");
+  const btnAbrirModal = document.getElementById("btnAbrirModalSidebar");
+  const btnFecharModal = document.getElementById("btnFecharModal");
+  const formApi = document.getElementById("formApi");
+  const inputApiKey = document.getElementById("apiKey");
+  const btnMostrarSenha = document.getElementById("btnMostrarSenha");
+  const mensagemApi = document.getElementById("mensagemApi");
+
   initSettingsMenu(settingsBtn, settingsMenu);
   initMobileSidebar(menuBtn);
+  initTheme(themeToggle);
 
-  // Trava de segurança: se faltar algum elemento crucial da interface de chat, para aqui.
   if (!chatMessages || !userInput || !sendBtn || !newChatBtn) {
-      console.warn("Elementos do chat não encontrados na tela.");
-      return;
+    console.warn("Elementos do chat não encontrados na tela.");
+    return;
   }
 
-  // --- Configurações Iniciais ---
-  const cfg = await loadAgentConfig().catch(() => null);
-  const LOGIN_URL = cfg?.loginUrl || "/login/login.html";
-  const AGENT_PROXY_URL = cfg?.agentProxyUrl || "/api/agent";
+  const token = getAccessToken();
+  if (!token) {
+    window.location.href = LOGIN_URL;
+    return;
+  }
 
-  // --- Supabase (Segurança e Sessão) ---
-  let sb;
+  let currentUser = null;
+
   try {
-    if (typeof window.getSupabaseClient !== "function") {
-      throw new Error("getSupabaseClient não encontrado.");
+    const meResp = await apiFetch(API_ME_URL, {
+      method: "GET",
+      token,
+    });
+
+    if (!meResp?.ok || !meResp?.user) {
+      throw new Error("Usuário não autenticado.");
     }
-    sb = await window.getSupabaseClient();
-  } catch (e) {
-    console.error("Erro ao carregar Supabase:", e);
-    window.location.href = LOGIN_URL;
+
+    currentUser = meResp.user;
+
+    if (userEmailEl) {
+      userEmailEl.textContent = currentUser.email || "";
+      userEmailEl.title = currentUser.email || "";
+    }
+  } catch (err) {
+    console.error("Erro ao carregar usuário:", err);
+    if (err?.status === 401) {
+      clearAuthToken();
+      window.location.href = LOGIN_URL;
+      return;
+    }
+    appendSystemMessage(
+      chatMessages,
+      `Não foi possível carregar o usuário: ${extractApiError(err) || "erro desconhecido."}`
+    );
     return;
   }
 
-  const { data: s1 } = await sb.auth.getSession();
-  if (!s1?.session) {
-    window.location.href = LOGIN_URL;
-    return;
-  }
-
-  const emailUser = s1.session.user?.email || "";
-  if (userEmailEl) {
-    userEmailEl.textContent = emailUser;
-    userEmailEl.title = emailUser; // tooltip (balão) no hover
-  }
-
-  // --- Verificação de Status (Luz Online/Offline) ---
-  checkAgentApiStatus(sb, emailUser);
-
-  // --- Logout (Integrado ao menu Dropdown) ---
-  if (menuLogout) {
-    menuLogout.addEventListener("click", async () => {
-      try {
-        await sb.auth.signOut();
-      } finally {
-        clearAgentChatSessionStorage();
-        window.location.href = LOGIN_URL;
-      }
-    });
-  }
-
-  const menuBackHub = document.getElementById("menu-back-hub");
-  if (menuBackHub) {
-    menuBackHub.addEventListener("click", () => {
-      window.location.href = HUB_URL;
-    });
-  }
-
-  // --- Estado do Chat (Persistência por aba) ---
+  const emailUser = currentUser?.email || "usuario";
   const storageKey = `agente_chat_state:${emailUser}`;
   const chatState = loadState(storageKey);
+
   if (!chatState.sessionId) chatState.sessionId = newSessionId();
   if (!Array.isArray(chatState.messages)) chatState.messages = [];
   saveState(storageKey, chatState);
 
   renderHistory(chatMessages, chatState.messages);
 
-  // --- Inicialização do Tema ---
-  initTheme(themeToggle);
+  await refreshAgentStatus(token, chatMessages);
 
-  // --- Eventos do Chat ---
+  if (menuBackHub) {
+    menuBackHub.addEventListener("click", () => {
+      window.location.href = HUB_URL;
+    });
+  }
+
+  if (menuLogout) {
+    menuLogout.addEventListener("click", async () => {
+      try {
+        await apiFetch(API_LOGOUT_URL, {
+          method: "POST",
+          token: getAccessToken(),
+        });
+      } catch (err) {
+        console.warn("Falha no logout remoto:", err);
+      } finally {
+        clearAuthToken();
+        clearAgentChatSessionStorage();
+        window.location.href = LOGIN_URL;
+      }
+    });
+  }
+
   sendBtn.addEventListener("click", () => sendMessage());
 
   userInput.addEventListener("keypress", (e) => {
@@ -101,10 +119,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       sendMessage();
     }
   });
-  // Faz a caixa de texto crescer ou encolher automaticamente conforme a digitação
+
   userInput.addEventListener("input", function () {
     this.style.height = "auto";
-    this.style.height = this.scrollHeight + "px";
+    this.style.height = `${this.scrollHeight}px`;
   });
 
   newChatBtn.addEventListener("click", () => {
@@ -114,7 +132,102 @@ document.addEventListener("DOMContentLoaded", async () => {
     chatMessages.innerHTML = "";
   });
 
-  // --- Lógica de Envio ---
+  if (btnAbrirModal) {
+    btnAbrirModal.addEventListener("click", async () => {
+      resetApiFeedback();
+      if (inputApiKey) inputApiKey.value = "";
+
+      modalApi?.classList.add("active");
+
+      try {
+        const statusResp = await apiFetch(API_AGENT_STATUS_URL, {
+          method: "GET",
+          token: getAccessToken(),
+        });
+
+        if (statusResp?.hasApiKey && inputApiKey) {
+          inputApiKey.placeholder = "Chave já cadastrada. Cole outra para substituir.";
+        }
+      } catch (err) {
+        console.warn("Não foi possível consultar status da chave:", err);
+      }
+    });
+  }
+
+  const fecharModal = () => {
+    modalApi?.classList.remove("active");
+    resetApiFeedback();
+    if (inputApiKey) {
+      inputApiKey.type = "password";
+    }
+    const icon = btnMostrarSenha?.querySelector("i");
+    if (icon) {
+      icon.className = "ph ph-eye";
+    }
+  };
+
+  if (btnFecharModal) {
+    btnFecharModal.addEventListener("click", fecharModal);
+  }
+
+  if (modalApi) {
+    modalApi.addEventListener("click", (e) => {
+      if (e.target === modalApi) {
+        fecharModal();
+      }
+    });
+  }
+
+  if (btnMostrarSenha && inputApiKey) {
+    btnMostrarSenha.addEventListener("click", () => {
+      const icon = btnMostrarSenha.querySelector("i");
+      const isPassword = inputApiKey.type === "password";
+      inputApiKey.type = isPassword ? "text" : "password";
+      if (icon) {
+        icon.className = isPassword ? "ph ph-eye-slash" : "ph ph-eye";
+      }
+    });
+  }
+
+  if (formApi) {
+    formApi.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const apiKey = String(inputApiKey?.value || "").trim();
+
+      if (apiKey.length < 10) {
+        showApiFeedback("Por favor, insira uma chave de API válida.", "erro");
+        return;
+      }
+
+      showApiFeedback("Validando e salvando chave...", "loading");
+
+      try {
+        const resp = await apiFetch(API_AGENT_KEY_URL, {
+          method: "POST",
+          token: getAccessToken(),
+          body: { apiKey },
+        });
+
+        if (!resp?.ok) {
+          throw new Error(resp?.error || "Não foi possível salvar a chave.");
+        }
+
+        showApiFeedback("Chave validada e salva com sucesso.", "sucesso");
+        await refreshAgentStatus(getAccessToken(), chatMessages);
+
+        setTimeout(() => {
+          fecharModal();
+        }, 1200);
+      } catch (err) {
+        showApiFeedback(
+          `Erro: ${extractApiError(err) || "Falha na validação da chave."}`,
+          "erro"
+        );
+      }
+    });
+  }
+
   async function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
@@ -126,62 +239,171 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading(chatMessages);
 
     try {
-      const { data: s2 } = await sb.auth.getSession();
-      const token = s2?.session?.access_token;
+      const historyForApi = chatState.messages
+        .slice(-12)
+        .map((msg) => ({
+          role: msg.role === "bot" ? "model" : "user",
+          text: msg.text,
+        }));
 
-      if (!token) {
-        removeLoading();
+      const resp = await apiFetch(API_AGENT_CHAT_URL, {
+        method: "POST",
+        token: getAccessToken(),
+        body: {
+          chatInput: text,
+          sessionId: chatState.sessionId,
+          history: historyForApi,
+        },
+      });
+
+      removeLoading();
+
+      appendMessage(
+        chatMessages,
+        chatState,
+        storageKey,
+        "bot",
+        resp?.output || "Desculpe, não entendi."
+      );
+    } catch (err) {
+      removeLoading();
+
+      if (err?.status === 401) {
+        clearAuthToken();
         window.location.href = LOGIN_URL;
         return;
       }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 150000);
-
-      const resp = await fetch(AGENT_PROXY_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          chatInput: text,
-          sessionId: chatState.sessionId,
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const raw = await resp.text();
-      removeLoading();
-
-      if (!resp.ok) {
-        appendMessage(chatMessages, chatState, storageKey, "bot", formatBackendError(resp.status, raw));
-        return;
-      }
-
-      let data;
-      try { data = JSON.parse(raw); } catch { data = { output: raw }; }
-
-      appendMessage(chatMessages, chatState, storageKey, "bot", data.output || "Desculpe, não entendi.");
-    } catch (err) {
-      removeLoading();
-      console.error(err);
-      const errorMsg = err.name === "AbortError" ? "Tempo limite excedido." : "Erro de conexão.";
-      appendMessage(chatMessages, chatState, storageKey, "bot", errorMsg);
+      appendMessage(
+        chatMessages,
+        chatState,
+        storageKey,
+        "bot",
+        extractApiError(err) || "Erro de conexão."
+      );
     }
+  }
+
+  function showApiFeedback(text, kind = "") {
+    if (!mensagemApi) return;
+    mensagemApi.textContent = text;
+    mensagemApi.className = "mensagem-feedback";
+    if (kind === "erro") mensagemApi.classList.add("mensagem-erro");
+    if (kind === "sucesso") mensagemApi.classList.add("mensagem-sucesso");
+  }
+
+  function resetApiFeedback() {
+    if (!mensagemApi) return;
+    mensagemApi.textContent = "";
+    mensagemApi.className = "mensagem-feedback";
   }
 });
 
-// ---------------------------------------------------------
-// FUNÇÕES DE NAVEGAÇÃO E VISUAL
-// ---------------------------------------------------------
+function getAccessToken() {
+  return (
+    localStorage.getItem("auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("auth_token") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("access_token") ||
+    ""
+  );
+}
+
+function clearAuthToken() {
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("access_token");
+
+  sessionStorage.removeItem("auth_token");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("access_token");
+}
+
+async function apiFetch(url, { method = "GET", token = "", body } = {}) {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const resp = await fetch(url, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await resp.text();
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { ok: false, error: text || "Resposta inválida do servidor." };
+  }
+
+  if (!resp.ok) {
+    const err = new Error(data?.error || "Erro na requisição.");
+    err.response = data;
+    err.status = resp.status;
+    throw err;
+  }
+
+  return data;
+}
+
+async function refreshAgentStatus(token, chatMessages) {
+  try {
+    const resp = await apiFetch("/api/agent/status", {
+      method: "GET",
+      token,
+    });
+
+    const isOnline = !!resp?.hasApiKey;
+    window.atualizarStatusAgente(isOnline);
+
+    if (!isOnline && chatMessages && !document.getElementById("agent-offline-tip")) {
+      appendSystemMessage(
+        chatMessages,
+        "O agente está offline. Cadastre uma chave Gemini na barra lateral para habilitar o Apolo.",
+        "agent-offline-tip"
+      );
+    }
+  } catch {
+    window.atualizarStatusAgente(false);
+  }
+}
 
 function initSettingsMenu(btn, menu) {
   if (!btn || !menu) return;
-  const close = () => (menu.hidden = true);
-  const open = () => (menu.hidden = false);
-  const toggle = () => (menu.hidden ? open() : close());
+
+  const close = () => {
+    menu.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  };
+
+  const open = () => {
+    menu.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+  };
+
+  const toggle = () => {
+    if (menu.hidden) open();
+    else close();
+  };
+
+  btn.setAttribute("aria-expanded", "false");
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -200,12 +422,14 @@ function initSettingsMenu(btn, menu) {
 
 function initMobileSidebar(menuBtn) {
   if (!menuBtn) return;
+
   menuBtn.addEventListener("click", () => {
     document.body.classList.toggle("sidebar-open");
   });
 
   document.addEventListener("click", (e) => {
     if (!document.body.classList.contains("sidebar-open")) return;
+
     const sidebar = document.querySelector(".sidebar");
     if (!sidebar?.contains(e.target) && !menuBtn.contains(e.target)) {
       document.body.classList.remove("sidebar-open");
@@ -219,39 +443,27 @@ function initTheme(themeToggle) {
   const savedTheme = localStorage.getItem("theme");
   const isLight = savedTheme === "light";
 
-  // Aplica as classes iniciais
   document.body.classList.toggle("light-mode", isLight);
   document.body.classList.toggle("dark-mode", !isLight);
-  
-  // Chama a função passando se está escuro ou não
   updateThemeIcon(themeToggle, !isLight);
 
   themeToggle.addEventListener("click", () => {
     const nowLight = document.body.classList.toggle("light-mode");
     document.body.classList.toggle("dark-mode", !nowLight);
     localStorage.setItem("theme", nowLight ? "light" : "dark");
-    
-    // Passa o estado atualizado para o botão (!nowLight = isDark)
     updateThemeIcon(themeToggle, !nowLight);
   });
 }
 
 function updateThemeIcon(btn, isDark) {
-  // Pega os elementos do botão de tema
-  const icon = btn.querySelector("i");
-  const text = btn.querySelector("span");
-  
-  // Atualiza apenas o botão (Ícone e Texto). 
-  // A logo agora é controlada 100% pelo seu CSS!
+  const icon = btn?.querySelector("i");
+  const text = btn?.querySelector("span");
+
   if (icon && text) {
     icon.className = isDark ? "ph ph-sun" : "ph ph-moon";
     text.textContent = isDark ? "Modo claro" : "Modo escuro";
   }
 }
-
-// ---------------------------------------------------------
-// GESTÃO DE ESTADO E CHAT
-// ---------------------------------------------------------
 
 function newSessionId() {
   return "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 11);
@@ -261,7 +473,9 @@ function loadState(key) {
   try {
     const raw = sessionStorage.getItem(key);
     return raw ? JSON.parse(raw) : { sessionId: null, messages: [] };
-  } catch { return { sessionId: null, messages: [] }; }
+  } catch {
+    return { sessionId: null, messages: [] };
+  }
 }
 
 function saveState(key, state) {
@@ -270,26 +484,30 @@ function saveState(key, state) {
 
 function renderHistory(chatMessages, messages) {
   chatMessages.innerHTML = "";
-  messages.forEach(msg => appendMessage(chatMessages, null, null, msg.role, msg.text, { persist: false }));
+  messages.forEach((msg) => {
+    appendMessage(chatMessages, null, null, msg.role, msg.text, { persist: false });
+  });
 }
 
 function appendMessage(chatMessages, chatState, storageKey, role, text, opts = {}) {
   const persist = opts.persist !== false;
   const messageDiv = document.createElement("div");
-  
+
   messageDiv.className = `message ${role === "user" ? "message-user" : "message-bot"}`;
 
-  const contentHTML = role === "bot"
-    ? (window.marked ? marked.parse(text) : `<div class="text-content">${escapeHtml(text)}</div>`)
-    : `<div class="text-content">${escapeHtml(text)}</div>`;
+  const contentHTML =
+    role === "bot"
+      ? (window.marked
+          ? marked.parse(text)
+          : `<div class="text-content">${escapeHtml(text)}</div>`)
+      : `<div class="text-content">${escapeHtml(text)}</div>`;
 
-  // Removemos a variável do avatarHTML, deixando apenas a bolha de mensagem
   messageDiv.innerHTML = `<div class="message-bubble">${contentHTML}</div>`;
   chatMessages.appendChild(messageDiv);
-  
+
   chatMessages.scrollTo({
     top: chatMessages.scrollHeight,
-    behavior: "smooth"
+    behavior: "smooth",
   });
 
   if (persist && chatState && storageKey) {
@@ -298,18 +516,26 @@ function appendMessage(chatMessages, chatState, storageKey, role, text, opts = {
   }
 }
 
+function appendSystemMessage(chatMessages, text, id = "") {
+  const messageDiv = document.createElement("div");
+  messageDiv.className = "message message-bot";
+  if (id) messageDiv.id = id;
+  messageDiv.innerHTML = `<div class="message-bubble"><div class="text-content">${escapeHtml(text)}</div></div>`;
+  chatMessages.appendChild(messageDiv);
+}
+
 function showLoading(chatMessages) {
   if (document.getElementById("loading-indicator")) return;
+
   const loadingDiv = document.createElement("div");
   loadingDiv.className = "message message-bot";
   loadingDiv.id = "loading-indicator";
-  
-  // Removemos a div do message-avatar daqui também
   loadingDiv.innerHTML = `
     <div class="message-bubble typing-indicator">
       <span></span><span></span><span></span>
     </div>
   `;
+
   chatMessages.appendChild(loadingDiv);
   chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: "smooth" });
 }
@@ -317,23 +543,6 @@ function showLoading(chatMessages) {
 function removeLoading() {
   const loader = document.getElementById("loading-indicator");
   if (loader) loader.remove();
-}
-
-// ---------------------------------------------------------
-// HELPERS E STATUS
-// ---------------------------------------------------------
-
-async function checkAgentApiStatus(sb, email) {
-  try {
-    // Checa primeiro no banco de dados
-    const { data } = await sb.from('profiles').select('chave_api').eq('email', email).single();
-    // Checa também se há uma chave salva localmente pelo script de cadastro
-    const localKey = localStorage.getItem('gemini_api_key');
-    
-    window.atualizarStatusAgente(!!(data?.chave_api || localKey));
-  } catch {
-    window.atualizarStatusAgente(false);
-  }
 }
 
 window.atualizarStatusAgente = function (isOnline) {
@@ -351,26 +560,32 @@ window.atualizarStatusAgente = function (isOnline) {
   if (inputBtn) inputBtn.disabled = !isOnline;
   if (inputBox) {
     inputBox.disabled = !isOnline;
-    inputBox.placeholder = isOnline ? "Digite sua mensagem para o Apolo..." : "IA offline. Conecte sua Chave API na barra lateral.";
+    inputBox.placeholder = isOnline
+      ? "Digite sua mensagem para o Apolo..."
+      : "IA offline. Conecte sua Chave API na barra lateral.";
   }
-}
+};
 
 function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#039;" }[m]));
+  return String(str).replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  }[m]));
 }
 
-async function loadAgentConfig() {
-  const r = await fetch("/api/public-agent-config", { cache: "no-store" });
-  return r.json().then(j => j.ok ? j : null);
-}
-
-function formatBackendError(status, raw) {
-  try {
-    const j = JSON.parse(raw);
-    return `Erro (${status}): ${j.message || j.error || "Erro desconhecido"}`;
-  } catch { return `Erro no servidor (${status}).`; }
+function extractApiError(err) {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err?.response?.error) return String(err.response.error);
+  if (err?.message) return String(err.message);
+  return "";
 }
 
 function clearAgentChatSessionStorage() {
-  Object.keys(sessionStorage).filter(k => k.startsWith("agente_chat_state:")).forEach(k => sessionStorage.removeItem(k));
+  Object.keys(sessionStorage)
+    .filter((k) => k.startsWith("agente_chat_state:"))
+    .forEach((k) => sessionStorage.removeItem(k));
 }
