@@ -152,13 +152,13 @@ function buildQueryParams(page, limit) {
     params.set("contract_type", filterContratoEl.value);
   }
 
-  // Mantém compatibilidade:
-  // 1) envia múltiplos "operator" para o modelo novo de filtro melhorado
-  // 2) se nada estiver selecionado no multiselect, cai no select simples antigo
   if (selectedOperadoras.size > 0) {
-    selectedOperadoras.forEach((op) => params.append("operator", op));
+    Array.from(selectedOperadoras)
+      .map((op) => String(op || "").trim().toUpperCase())
+      .filter(Boolean)
+      .forEach((op) => params.append("operator", op));
   } else if (filterOperadoraEl?.value) {
-    params.set("operador", filterOperadoraEl.value);
+    params.set("operador", String(filterOperadoraEl.value).trim().toUpperCase());
   }
 
   return params;
@@ -379,9 +379,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           selectedOperadoras.clear();
           if (filterOperadoraEl) filterOperadoraEl.value = "";
-          
+
           syncOperadoraCheckboxesFromState();
           updateOperadoraLabel();
+          updateFilterBadge();
 
           applyFiltersAndReload();
         });
@@ -442,12 +443,16 @@ function initOperadoraMultiSelect() {
 
   function syncHiddenInput() {
     if (!filterOperadoraEl) return;
-    filterOperadoraEl.value = Array.from(selectedOperadoras).join(",");
+    filterOperadoraEl.value = Array.from(selectedOperadoras)
+      .map((value) => String(value || "").trim().toUpperCase())
+      .filter(Boolean)
+      .join(",");
   }
 
   function syncCheckboxes() {
     checkboxes.forEach((cb) => {
-      cb.checked = selectedOperadoras.has(String(cb.value).trim().toUpperCase());
+      const value = String(cb.value || "").trim().toUpperCase();
+      cb.checked = selectedOperadoras.has(value);
     });
   }
 
@@ -458,8 +463,8 @@ function initOperadoraMultiSelect() {
       values.length === 0
         ? "Todas"
         : values.length === 1
-        ? values[0]
-        : `${values.length} selecionadas`;
+          ? values[0]
+          : `${values.length} selecionadas`;
   }
 
   operadoraBtn.addEventListener("click", (e) => {
@@ -480,7 +485,6 @@ function initOperadoraMultiSelect() {
 
     cb.addEventListener("change", () => {
       const value = String(cb.value || "").trim().toUpperCase();
-
       if (!value) return;
 
       if (cb.checked) {
@@ -525,7 +529,8 @@ function syncOperadoraCheckboxesFromState() {
   document
     .querySelectorAll("#filter-operadora-dropdown input[type='checkbox']")
     .forEach((cb) => {
-      cb.checked = selectedOperadoras.has(cb.value);
+      const value = String(cb.value || "").trim().toUpperCase();
+      cb.checked = selectedOperadoras.has(value);
     });
 }
 
@@ -539,9 +544,10 @@ function updateOperadoraLabel() {
     values.length === 0
       ? "Todas"
       : values.length === 1
-      ? values[0]
-      : `${values.length} selecionadas`;
+        ? values[0]
+        : `${values.length} selecionadas`;
 }
+
 
 async function loadUsers(page = 1, showLoader = true) {
   const task = async () => {
