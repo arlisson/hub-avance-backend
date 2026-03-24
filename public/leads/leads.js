@@ -299,7 +299,7 @@ function renderLeads(leads) {
 
         await loadLeads(currentPage, false);
         if (typeof showFeedback === "function") {
-          showFeedback("Lead marcado como atendido.", "success");
+          showFeedback("Lead atualizado com sucesso.", "success");
         }
       } catch (err) {
 
