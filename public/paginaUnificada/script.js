@@ -1791,16 +1791,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     const token = getAuthToken();
 
     if (!token) {
-      applyVisitorState();
-      await carregarAvaliacoes();
+      clearAuthToken();
+      clearAgentChatSessionStorage();
+      window.location.href = normalizeLoginUrl(LOGIN_URL);
       return;
     }
 
     const sessionData = await getCurrentSession();
+
     if (!sessionData?.ok || !sessionData?.user) {
       clearAuthToken();
-      applyVisitorState();
-      await carregarAvaliacoes();
+      clearAgentChatSessionStorage();
+      window.location.href = normalizeLoginUrl(LOGIN_URL);
       return;
     }
 
@@ -1816,10 +1818,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await carregarAvaliacoes();
   } catch (e) {
-    console.error("Erro ao inicializar Hub:", e);
+    console.error("Erro ao inicializar página:", e);
     clearAuthToken();
     clearAgentChatSessionStorage();
-    applyVisitorState();
-    await carregarAvaliacoes().catch(() => {});
+    window.location.href = normalizeLoginUrl(LOGIN_URL);
   }
 });
