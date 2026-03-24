@@ -1356,3 +1356,57 @@ body.light-mode .page-btn.active {
     font-size: 13px;
   }
 }
+.filter-multiselect {
+  position: relative;
+  width: 100%;
+}
+
+.filter-multiselect-btn {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-soft);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.filter-multiselect-btn.is-open {
+  border-color: var(--brand-accent);
+}
+
+.filter-multiselect-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  padding: 8px;
+  z-index: 30;
+}
+
+.filter-multiselect-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.filter-multiselect-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.filter-multiselect-item input {
+  accent-color: var(--brand-accent);
+}

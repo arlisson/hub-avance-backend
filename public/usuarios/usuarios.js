@@ -13,7 +13,8 @@ let filterClienteEl = null;
 let filterTelefoniaEl = null;
 let filterLinhasEl = null;
 let filterContratoEl = null;
-let filterOperadoraEl = null;
+let filterOperadoraEl = null; // mantido por compatibilidade
+let selectedOperadoras = new Set();
 
 // Debounce do campo de busca
 let searchDebounceTimer = null;
@@ -134,11 +135,31 @@ function buildQueryParams(page, limit) {
 
   const search = (searchEl?.value || "").trim();
   if (search) params.set("search", search);
-  if (filterClienteEl?.value) params.set("cliente_avance", filterClienteEl.value);
-  if (filterTelefoniaEl?.value) params.set("has_mobile_service", filterTelefoniaEl.value);
-  if (filterLinhasEl?.value) params.set("active_lines", filterLinhasEl.value);
-  if (filterContratoEl?.value) params.set("contract_type", filterContratoEl.value);
-  if (filterOperadoraEl?.value) params.set("operador", filterOperadoraEl.value);
+
+  if (filterClienteEl?.value) {
+    params.set("cliente_avance", filterClienteEl.value);
+  }
+
+  if (filterTelefoniaEl?.value) {
+    params.set("has_mobile_service", filterTelefoniaEl.value);
+  }
+
+  if (filterLinhasEl?.value) {
+    params.set("active_lines", filterLinhasEl.value);
+  }
+
+  if (filterContratoEl?.value) {
+    params.set("contract_type", filterContratoEl.value);
+  }
+
+  // Mantém compatibilidade:
+  // 1) envia múltiplos "operator" para o modelo novo de filtro melhorado
+  // 2) se nada estiver selecionado no multiselect, cai no select simples antigo
+  if (selectedOperadoras.size > 0) {
+    selectedOperadoras.forEach((op) => params.append("operator", op));
+  } else if (filterOperadoraEl?.value) {
+    params.set("operador", filterOperadoraEl.value);
+  }
 
   return params;
 }
@@ -173,7 +194,7 @@ function updateFilterBadge() {
     filterTelefoniaEl?.value,
     filterLinhasEl?.value,
     filterContratoEl?.value,
-    filterOperadoraEl?.value,
+    selectedOperadoras.size > 0 ? "1" : filterOperadoraEl?.value,
   ].filter(Boolean).length;
 
   if (countEl) {
@@ -333,8 +354,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         filterContratoEl = document.getElementById("filter-contrato");
         filterOperadoraEl = document.getElementById("filter-operadora");
 
-        [filterClienteEl, filterTelefoniaEl, filterLinhasEl, filterContratoEl, filterOperadoraEl]
+        [filterClienteEl, filterTelefoniaEl, filterLinhasEl, filterContratoEl]
           .forEach((el) => el?.addEventListener("change", () => applyFiltersAndReload()));
+
+        // Compatibilidade com select simples antigo, se ele ainda existir na tela
+        filterOperadoraEl?.addEventListener("change", () => {
+          if (filterOperadoraEl.value) {
+            selectedOperadoras.clear();
+            syncOperadoraCheckboxesFromState();
+            updateOperadoraLabel();
+          }
+          applyFiltersAndReload();
+        });
+
+        initOperadoraMultiSelect();
 
         document.getElementById("btn-clear-filters")?.addEventListener("click", () => {
           if (filterClienteEl) filterClienteEl.value = "";
@@ -343,6 +376,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (filterContratoEl) filterContratoEl.value = "";
           if (filterOperadoraEl) filterOperadoraEl.value = "";
           if (searchEl) searchEl.value = "";
+
+          selectedOperadoras.clear();
+          syncOperadoraCheckboxesFromState();
+          updateOperadoraLabel();
+
           applyFiltersAndReload();
         });
 
@@ -375,6 +413,69 @@ document.addEventListener("DOMContentLoaded", async () => {
     setError(errorBox, err?.message || "Erro ao carregar os dados da página.");
   }
 });
+
+function initOperadoraMultiSelect() {
+  const operadoraBtn = document.getElementById("filter-operadora-btn");
+  const operadoraDropdown = document.getElementById("filter-operadora-dropdown");
+
+  if (!operadoraBtn || !operadoraDropdown) return;
+
+  operadoraBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = !operadoraDropdown.hidden;
+    operadoraDropdown.hidden = isOpen;
+    operadoraBtn.classList.toggle("is-open", !isOpen);
+  });
+
+  operadoraDropdown.querySelectorAll("input[type='checkbox']").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      if (cb.checked) {
+        selectedOperadoras.add(cb.value);
+      } else {
+        selectedOperadoras.delete(cb.value);
+      }
+
+      // quando usa o multiselect, limpa o select simples antigo
+      if (selectedOperadoras.size > 0 && filterOperadoraEl) {
+        filterOperadoraEl.value = "";
+      }
+
+      updateOperadoraLabel();
+      applyFiltersAndReload();
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".filter-multiselect")) {
+      operadoraDropdown.hidden = true;
+      operadoraBtn.classList.remove("is-open");
+    }
+  });
+
+  updateOperadoraLabel();
+}
+
+function syncOperadoraCheckboxesFromState() {
+  document
+    .querySelectorAll("#filter-operadora-dropdown input[type='checkbox']")
+    .forEach((cb) => {
+      cb.checked = selectedOperadoras.has(cb.value);
+    });
+}
+
+function updateOperadoraLabel() {
+  const operadoraLabel = document.getElementById("filter-operadora-label");
+  if (!operadoraLabel) return;
+
+  const count = selectedOperadoras.size;
+
+  operadoraLabel.textContent =
+    count === 0
+      ? "Todas"
+      : count === 1
+        ? [...selectedOperadoras][0]
+        : `${count} selecionadas`;
+}
 
 async function loadUsers(page = 1, showLoader = true) {
   const task = async () => {
@@ -446,6 +547,7 @@ async function fetchAllUsersWithoutFilters() {
   const savedLinhas = filterLinhasEl?.value || "";
   const savedContrato = filterContratoEl?.value || "";
   const savedOperadora = filterOperadoraEl?.value || "";
+  const savedSelectedOperadoras = new Set(selectedOperadoras);
 
   try {
     if (searchEl) searchEl.value = "";
@@ -455,6 +557,10 @@ async function fetchAllUsersWithoutFilters() {
     if (filterContratoEl) filterContratoEl.value = "";
     if (filterOperadoraEl) filterOperadoraEl.value = "";
 
+    selectedOperadoras.clear();
+    syncOperadoraCheckboxesFromState();
+    updateOperadoraLabel();
+
     return await fetchAllFilteredUsers();
   } finally {
     if (searchEl) searchEl.value = savedSearch;
@@ -463,6 +569,10 @@ async function fetchAllUsersWithoutFilters() {
     if (filterLinhasEl) filterLinhasEl.value = savedLinhas;
     if (filterContratoEl) filterContratoEl.value = savedContrato;
     if (filterOperadoraEl) filterOperadoraEl.value = savedOperadora;
+
+    selectedOperadoras = new Set(savedSelectedOperadoras);
+    syncOperadoraCheckboxesFromState();
+    updateOperadoraLabel();
   }
 }
 
