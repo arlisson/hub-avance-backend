@@ -29,30 +29,7 @@ let _currentUserProfile = null; // { name, cpf, whatsapp, operator, active_lines
 // ============================================================
 
 const APPS = [
-  {
-    id: "agent",
-    badge: "Mentor estratégico de vendas",
-    image: "../img/Apolo.png",
-    title: "Mentor estratégico de vendas",
-    shortDesc:
-      "Acesse o sistema online. Ideal para uso em qualquer dispositivo.",
-    longDesc:
-      "Este é o agente mentor estratégico de vendas. Ele permite atendimento diretamente no navegador, com experiência adaptada para desktop e mobile. Use este produto quando precisar operar de qualquer lugar, sem depender de instalação local.",
-    youtubeId: "CNFqPBAdglE",
-    enabled: true,
-    requiresPermission: false,
-    clienteCta: true,
-    actions: [
-      {
-        label: "Acessar",
-        icon: "ph-arrow-square-out",
-        app: "agent",
-        metric: "access",
-        primary: true,
-        targetBlank: false,
-      },
-    ],
-  },
+  
   {
     id: "desktop",
     badge: "Preenche Fácil",
