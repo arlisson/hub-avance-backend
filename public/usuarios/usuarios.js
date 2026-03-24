@@ -826,7 +826,7 @@ function renderUsers(users) {
 
             <div class="field">
               <label>Telefonia ativa</label>
-              <select class="input-dark-lite edit-has-mobile-service" dsabled>
+              <select class="input-dark-lite edit-has-mobile-service" disabled>
                 <option value="true" ${hasMobile ? "selected" : ""}>Sim</option>
                 <option value="false" ${!hasMobile ? "selected" : ""}>Não</option>                
               </select>
