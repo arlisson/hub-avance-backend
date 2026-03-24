@@ -838,12 +838,7 @@ function renderUsers(users) {
              <div class="field">
               <label>Tipo de contrato</label>
               <input class="input-dark-lite edit-contract-type" value="${hasMobile ? escapeAttr(u.contract_type || "") : ""}" readonly/>
-            </div>
-
-            <div class="field">
-              <label>Tipo de contrato</label>
-              <input class="input-dark-lite edit-contract-type" value="${hasMobile ? escapeAttr(u.contract_type || "") : ""}" readonly/>
-            </div>
+            </div>           
 
             <div class="field">
               <label>Operadora</label>
