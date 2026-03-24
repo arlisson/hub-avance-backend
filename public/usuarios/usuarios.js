@@ -791,7 +791,7 @@ function renderUsers(users) {
           <div class="user-card-grid">
             <div class="field">
               <label>Nome</label>
-              <input class="input-dark-lite edit-nome" value="${escapeAttr(nome)}" />
+              <input class="input-dark-lite edit-nome" value="${escapeAttr(nome)}" readonly/>
             </div>
 
             <div class="field">
@@ -801,32 +801,32 @@ function renderUsers(users) {
 
             <div class="field">
               <label>CPF/CNPJ</label>
-              <input class="input-dark-lite edit-cpf-cnpj" value="${escapeAttr(cpfCnpj)}" />
+              <input class="input-dark-lite edit-cpf-cnpj" value="${escapeAttr(cpfCnpj)}" readonly/>
             </div>
 
             <div class="field">
               <label>WhatsApp</label>
-              <input class="input-dark-lite edit-whatsapp" value="${escapeAttr(u.whatsapp || "")}" />
+              <input class="input-dark-lite edit-whatsapp" value="${escapeAttr(u.whatsapp || "")}" readonly/>
             </div>
 
             <div class="field">
               <label>CEP</label>
-              <input class="input-dark-lite edit-cep" value="${escapeAttr(cep)}" />
+              <input class="input-dark-lite edit-cep" value="${escapeAttr(cep)}" readonly/>
             </div>
 
             <div class="field">
               <label>Cidade</label>
-              <input class="input-dark-lite edit-cidade" value="${escapeAttr(cidade)}" />
+              <input class="input-dark-lite edit-cidade" value="${escapeAttr(cidade)}" readonly/>
             </div>
 
             <div class="field">
               <label>Estado</label>
-              <input class="input-dark-lite edit-estado" value="${escapeAttr(estado)}" />
+              <input class="input-dark-lite edit-estado" value="${escapeAttr(estado)}" readonly/>
             </div>
 
             <div class="field">
               <label>Telefonia ativa</label>
-              <select class="input-dark-lite edit-has-mobile-service">
+              <select class="input-dark-lite edit-has-mobile-service" readonly>
                 <option value="true" ${hasMobile ? "selected" : ""}>Sim</option>
                 <option value="false" ${!hasMobile ? "selected" : ""}>Não</option>
               </select>
@@ -834,19 +834,19 @@ function renderUsers(users) {
 
             <div class="field">
               <label>Tipo de contrato</label>
-              <input class="input-dark-lite edit-contract-type" value="${hasMobile ? escapeAttr(u.contract_type || "") : ""}" />
+              <input class="input-dark-lite edit-contract-type" value="${hasMobile ? escapeAttr(u.contract_type || "") : ""}" readonly/>
             </div>
 
             <div class="field">
               <label>Operadora</label>
-              <input class="input-dark-lite edit-operador" value="${hasMobile ? escapeAttr(operador) : ""}" />
+              <input class="input-dark-lite edit-operador" value="${hasMobile ? escapeAttr(operador) : ""}" readonly/>
             </div>
 
             <div class="field">
               <label>Linhas ativas</label>
               <input class="input-dark-lite edit-active-lines" type="number" value="${
                 hasMobile && Number.isFinite(Number(u.active_lines)) ? Number(u.active_lines) : ""
-              }" />
+              }" readonly/>
             </div>
           </div>
 
