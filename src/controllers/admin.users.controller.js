@@ -87,15 +87,45 @@ async function ensureAdmin(req, res) {
   }
 }
 
+function parseBooleanFilter(value) {
+  const raw = String(value ?? "").trim().toLowerCase();
+
+  if (raw === "true" || raw === "1") return 1;
+  if (raw === "false" || raw === "0") return 0;
+
+  return null;
+}
+
+function parseOperatorFilters(query) {
+  const values = [];
+
+  if (Array.isArray(query.operator)) {
+    values.push(...query.operator);
+  } else if (query.operator != null) {
+    values.push(query.operator);
+  }
+
+  // compatibilidade com o filtro antigo/simples
+  if (query.operador != null && query.operador !== "") {
+    values.push(query.operador);
+  }
+
+  return [...new Set(
+    values
+      .map((v) => String(v || "").trim().toUpperCase())
+      .filter(Boolean)
+  )];
+}
+
 function buildListFilters(query) {
   const where = [];
   const params = [];
 
   const search = String(query.search || "").trim();
-  const clienteAvance = String(query.cliente_avance || "").trim();
-  const hasMobileService = String(query.has_mobile_service || "").trim();
-  const contractType = String(query.contract_type || "").trim();
-  const operador = String(query.operador || "").trim();
+  const clienteAvance = parseBooleanFilter(query.cliente_avance);
+  const hasMobileService = parseBooleanFilter(query.has_mobile_service);
+  const contractType = String(query.contract_type || "").trim().toUpperCase();
+  const operadores = parseOperatorFilters(query);
   const activeLines = String(query.active_lines || "").trim();
 
   if (search) {
@@ -110,14 +140,14 @@ function buildListFilters(query) {
     params.push(like, like, like, like, like);
   }
 
-  if (clienteAvance === "true" || clienteAvance === "false") {
+  if (clienteAvance !== null) {
     where.push("p.cliente_avance = ?");
-    params.push(clienteAvance === "true" ? 1 : 0);
+    params.push(clienteAvance);
   }
 
-  if (hasMobileService === "true" || hasMobileService === "false") {
+  if (hasMobileService !== null) {
     where.push("p.has_mobile_service = ?");
-    params.push(hasMobileService === "true" ? 1 : 0);
+    params.push(hasMobileService);
   }
 
   if (contractType) {
@@ -125,13 +155,38 @@ function buildListFilters(query) {
     params.push(contractType);
   }
 
-  if (operador) {
-    where.push("p.operador = ?");
-    params.push(operador);
+  if (operadores.length === 1) {
+    where.push("UPPER(COALESCE(p.operador, '')) = ?");
+    params.push(operadores[0]);
+  } else if (operadores.length > 1) {
+    const placeholders = operadores.map(() => "?").join(", ");
+    where.push(`UPPER(COALESCE(p.operador, '')) IN (${placeholders})`);
+    params.push(...operadores);
   }
 
+  // compatível com os dois modelos
   if (activeLines === "0") {
     where.push("COALESCE(p.active_lines, 0) = 0");
+  } else if (activeLines === "1") {
+    where.push("COALESCE(p.active_lines, 0) = 1");
+  } else if (activeLines === "2") {
+    where.push("COALESCE(p.active_lines, 0) = 2");
+  } else if (activeLines === "3") {
+    where.push("COALESCE(p.active_lines, 0) = 3");
+  } else if (activeLines === "4") {
+    where.push("COALESCE(p.active_lines, 0) = 4");
+  } else if (activeLines === "5") {
+    where.push("COALESCE(p.active_lines, 0) = 5");
+  } else if (activeLines === "6") {
+    where.push("COALESCE(p.active_lines, 0) = 6");
+  } else if (activeLines === "7") {
+    where.push("COALESCE(p.active_lines, 0) = 7");
+  } else if (activeLines === "8") {
+    where.push("COALESCE(p.active_lines, 0) = 8");
+  } else if (activeLines === "9") {
+    where.push("COALESCE(p.active_lines, 0) = 9");
+  } else if (activeLines === "10+" || activeLines === "10plus") {
+    where.push("COALESCE(p.active_lines, 0) >= 10");
   } else if (activeLines === "1-10") {
     where.push("COALESCE(p.active_lines, 0) BETWEEN 1 AND 10");
   } else if (activeLines === "11-50") {
