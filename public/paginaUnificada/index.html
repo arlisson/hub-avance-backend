@@ -484,6 +484,26 @@
               <li><a href="#posvenda">Pós-venda</a></li>
             </ul>
           </div>
+
+          <div class="footer-col">
+            <h4 class="footer-col-title">Avalie-nos</h4>
+            <div class="footer-rating">
+              <div
+                class="star-rating"
+                id="footer-stars"
+                role="group"
+                aria-label="Avaliação de 0 a 5 estrelas"
+              >
+                <button type="button" class="star-btn" data-value="1" aria-label="1 estrela"><i class="ph ph-star-fill"></i></button>
+                <button type="button" class="star-btn" data-value="2" aria-label="2 estrelas"><i class="ph ph-star-fill"></i></button>
+                <button type="button" class="star-btn" data-value="3" aria-label="3 estrelas"><i class="ph ph-star-fill"></i></button>
+                <button type="button" class="star-btn" data-value="4" aria-label="4 estrelas"><i class="ph ph-star-fill"></i></button>
+                <button type="button" class="star-btn" data-value="5" aria-label="5 estrelas"><i class="ph ph-star-fill"></i></button>
+              </div>
+              <span class="footer-rating-label" id="footer-rating-label">5 de 5</span>
+            </div>
+            <p class="footer-rating-hint">Sua opinião nos ajuda a melhorar.</p>
+          </div>
         </div>
 
         <div class="footer-bottom">
@@ -558,5 +578,43 @@
     </a>
 
     <script src="./script.js" defer></script>
+    <script>
+      (function () {
+        var container = document.getElementById("footer-stars");
+        var label = document.getElementById("footer-rating-label");
+        if (!container || !label) return;
+        var stars = container.querySelectorAll(".star-btn");
+        var current = 5;
+
+        function render(val) {
+          stars.forEach(function (btn, i) {
+            var active = i < val;
+            btn.classList.toggle("star-active", active);
+            btn.querySelector("i").className = active
+              ? "ph ph-star-fill"
+              : "ph ph-star";
+          });
+          label.textContent = val === 0 ? "Sem avaliação" : val + " de 5";
+        }
+
+        container.addEventListener("click", function (e) {
+          var btn = e.target.closest(".star-btn");
+          if (!btn) return;
+          var val = parseInt(btn.dataset.value, 10);
+          current = current === val ? 0 : val;
+          render(current);
+        });
+
+        container.addEventListener("mouseover", function (e) {
+          var btn = e.target.closest(".star-btn");
+          if (!btn) return;
+          render(parseInt(btn.dataset.value, 10));
+        });
+
+        container.addEventListener("mouseleave", function () {
+          render(current);
+        });
+      })();
+    </script>
   </body>
 </html>
