@@ -304,16 +304,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadPublicAgentConfig();
 
   try {
+    const token = getAuthToken();
+
+    if (!token) {
+      clearAuthToken();
+      clearAgentChatSessionStorage();
+      window.location.replace(normalizeLoginUrl(LOGIN_URL));
+      return;
+    }
+
     const sessionData = await getCurrentSession();
 
     if (!sessionData?.ok || !sessionData?.user) {
-      window.location.href = normalizeLoginUrl(LOGIN_URL);
+      clearAuthToken();
+      clearAgentChatSessionStorage();
+      window.location.replace(normalizeLoginUrl(LOGIN_URL));
       return;
     }
 
     const user = sessionData.user;
-
-
     const email = user.email || "";
     const canAccessProtocol = !!user.protocol;
 
@@ -339,7 +348,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (menuLogout) {
       menuLogout.addEventListener("click", async () => {
         await doLogout();
-        window.location.href = normalizeLoginUrl(LOGIN_URL);
+        clearAuthToken();
+        clearAgentChatSessionStorage();
+        window.location.replace(normalizeLoginUrl(LOGIN_URL));
       });
     }
 
@@ -349,10 +360,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Erro ao inicializar Hub:", e);
     clearAuthToken();
     clearAgentChatSessionStorage();
-    window.location.href = normalizeLoginUrl(LOGIN_URL);
+    window.location.replace(normalizeLoginUrl(LOGIN_URL));
   }
 });
-
 
 // -------------------------
 // Skeleton Loader
