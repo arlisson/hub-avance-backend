@@ -756,6 +756,7 @@ function renderUsers(users) {
     const estado = u.estado || regiao.estado || "";
     const hasMobile = u.has_mobile_service === true;
 
+
     const summaryRow = document.createElement("tr");
     summaryRow.className = "user-summary-row";
     summaryRow.setAttribute("data-user-id", u.id);
@@ -767,6 +768,7 @@ function renderUsers(users) {
       <td>${escapeHtml(u.whatsapp || "")}</td>
       <td>${escapeHtml(cidade)}</td>
       <td>${escapeHtml(estado)}</td>
+      <td>${escapeHtml(operador)}</td>
       <td>
         <span class="badge ${u.protocol ? "success" : "muted"}">
           ${u.protocol ? "Sim" : "Não"}
@@ -831,6 +833,11 @@ function renderUsers(users) {
                 <option value="false" ${!hasMobile ? "selected" : ""}>Não</option>                
               </select>
                <input type="hidden" name="hasMobileService" value="${hasMobile ? 'true' : 'false'}">
+            </div>
+
+             <div class="field">
+              <label>Tipo de contrato</label>
+              <input class="input-dark-lite edit-contract-type" value="${hasMobile ? escapeAttr(u.contract_type || "") : ""}" readonly/>
             </div>
 
             <div class="field">
