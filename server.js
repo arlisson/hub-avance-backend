@@ -8,6 +8,8 @@ import authRoutes from "./src/routes/auth.routes.js";
 import profileRoutes from "./src/routes/profile.routes.js";
 import adminUsersRoutes from "./src/routes/admin.users.routes.js";
 import agentRoutes from "./src/routes/agent.routes.js";
+import avaliacoesRoutes from "./src/routes/avaliacoes.routes.js";
+
 
 
 dotenv.config();
@@ -27,6 +29,8 @@ app.use("/api", profileRoutes);
 app.use("/api", adminUsersRoutes);
 
 app.use("/api", agentRoutes);
+
+app.use("/api", avaliacoesRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });
