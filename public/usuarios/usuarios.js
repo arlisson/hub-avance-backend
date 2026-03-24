@@ -738,7 +738,7 @@ function renderUsers(users) {
   if (!users.length) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td colspan="8" style="text-align:center; color: var(--text-secondary); padding: 24px;">
+      <td colspan="9" style="text-align:center; color: var(--text-secondary); padding: 24px;">
         Nenhum usuário encontrado.
       </td>
     `;
@@ -749,7 +749,7 @@ function renderUsers(users) {
   users.forEach((u) => {
     const nome = u.nome || "";
     const cpfCnpj = u.cpf_cnpj || "";
-    const operador = u.operador || "";
+    const operador = String(u.operador).toUpperCase() || "";
     const regiao = parseRegion(u.regiao);
     const cep = u.cep || regiao.cep || "";
     const cidade = u.cidade || regiao.cidade || "";
@@ -768,7 +768,7 @@ function renderUsers(users) {
       <td>${escapeHtml(u.whatsapp || "")}</td>
       <td>${escapeHtml(cidade)}</td>
       <td>${escapeHtml(estado)}</td>
-      <td >${hasMobile ? escapeHtml(String(operador || "").toUpperCase()) : ""}</td>
+      <td>${hasMobile ? escapeHtml(operador) : ""}</td>
       <td>
         <span class="badge ${u.protocol ? "success" : "muted"}">
           ${u.protocol ? "Sim" : "Não"}
@@ -1285,7 +1285,11 @@ async function exportFilteredUsersToExcel() {
 
     const buildRow = (u) => {
       const regiao = parseRegion(u.regiao);
-      const hasMobile = u.has_mobile_service === true;
+      const hasMobile =
+      u.has_mobile_service === true ||
+      u.has_mobile_service === 1 ||
+      u.has_mobile_service === "1" ||
+      String(u.has_mobile_service || "").trim().toLowerCase() === "true";
 
       return {
         Nome: u.nome || "",
