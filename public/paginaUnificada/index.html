@@ -502,7 +502,12 @@
               </div>
               <span class="footer-rating-label" id="footer-rating-label">5 de 5</span>
             </div>
-            <p class="footer-rating-hint">Sua opinião nos ajuda a melhorar.</p>
+            <textarea
+              id="footer-comment"
+              class="footer-comment-input"
+              placeholder="Deixe seu comentário..."
+              rows="3"
+            ></textarea>
           </div>
         </div>
 
@@ -608,7 +613,16 @@
         container.addEventListener("mouseover", function (e) {
           var btn = e.target.closest(".star-btn");
           if (!btn) return;
-          render(parseInt(btn.dataset.value, 10));
+          var hval = parseInt(btn.dataset.value, 10);
+          stars.forEach(function (s, i) {
+            s.classList.remove("star-active", "star-hover");
+            if (i < hval) {
+              s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
+              s.querySelector("i").className = "ph ph-star-fill";
+            } else {
+              s.querySelector("i").className = "ph ph-star";
+            }
+          });
         });
 
         container.addEventListener("mouseleave", function () {

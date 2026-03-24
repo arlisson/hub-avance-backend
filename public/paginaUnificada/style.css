@@ -1560,8 +1560,9 @@ body.modal-open .hero-badge {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 40px;
+  grid-template-columns: auto auto auto 1fr;
+  column-gap: 48px;
+  row-gap: 40px;
   max-width: 1200px;
   margin: 0 auto 48px;
 }
@@ -1665,8 +1666,8 @@ body.dark-mode .footer-brand {
   cursor: pointer;
   line-height: 1;
   color: var(--text-primary);
-  opacity: 0.25;
-  transition: opacity 0.15s ease, transform 0.1s ease, color 0.15s ease;
+  opacity: 0.45;
+  transition: transform 0.1s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 .star-btn.star-active {
@@ -1674,30 +1675,16 @@ body.dark-mode .footer-brand {
   opacity: 1;
 }
 
+.star-btn.star-hover {
+  color: #f59e0b;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
 .star-btn i {
   font-size: 22px;
   display: block;
   pointer-events: none;
-}
-
-.star-rating:hover .star-btn {
-  opacity: 0.3;
-  color: var(--text-primary);
-}
-
-.star-rating:hover .star-btn:hover,
-.star-rating:hover .star-btn:hover ~ .star-btn {
-  opacity: 1;
-}
-
-.star-rating:hover .star-btn:hover {
-  color: #f59e0b;
-  transform: scale(1.15);
-}
-
-.star-rating .star-btn:has(~ .star-btn:hover) {
-  color: #f59e0b;
-  opacity: 1;
 }
 
 .footer-rating-label {
@@ -1707,12 +1694,31 @@ body.dark-mode .footer-brand {
   font-weight: 500;
 }
 
-.footer-rating-hint {
-  font-size: 12px;
+.footer-comment-input {
+  width: 100%;
+  min-width: 200px;
+  max-width: 280px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
   color: var(--text-primary);
-  opacity: 0.4;
-  margin: 10px 0 0;
-  line-height: 1.5;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  resize: vertical;
+  outline: none;
+  opacity: 0.75;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+  box-sizing: border-box;
+}
+
+.footer-comment-input::placeholder {
+  opacity: 0.45;
+}
+
+.footer-comment-input:focus {
+  border-color: var(--brand-action);
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
