@@ -1779,18 +1779,28 @@ function applyVisitorState() {
 function initFooterRating() {
   const container = document.getElementById("footer-stars");
   const label = document.getElementById("footer-rating-label");
-  if (!container || !label) return;
+  
+  if (!container || !label) {
+    console.warn("Aviso: Elementos de avaliação não encontrados na tela.");
+    return;
+  }
 
   const stars = container.querySelectorAll(".star-btn");
-  let current = 5;
+  let current = 5; // Começa com 5 estrelas
 
+  // Função que pinta as estrelas
   function render(val) {
     stars.forEach((btn, i) => {
-      btn.classList.toggle("star-active", i < val);
+      if (i < val) {
+        btn.classList.add("star-active");
+      } else {
+        btn.classList.remove("star-active");
+      }
     });
     label.textContent = val === 0 ? "Sem avaliação" : val + " de 5";
   }
 
+  // Evento de clique para fixar a nota
   container.addEventListener("click", (e) => {
     const btn = e.target.closest(".star-btn");
     if (!btn) return;
@@ -1799,6 +1809,7 @@ function initFooterRating() {
     render(current);
   });
 
+  // Evento de passar o mouse por cima (hover)
   container.addEventListener("mouseover", (e) => {
     const btn = e.target.closest(".star-btn");
     if (!btn) return;
@@ -1811,27 +1822,33 @@ function initFooterRating() {
     });
   });
 
+  // Evento de tirar o mouse de cima
   container.addEventListener("mouseleave", () => {
     render(current);
   });
 
-  // Inicializa a visualização
+  // Renderiza o estado inicial (5 estrelas)
   render(current);
 
-  // --- Lógica de Envio ---
+  // --- LÓGICA DE ENVIO ---
   const submitBtn = document.getElementById("btn-submit-rating");
   const commentInput = document.getElementById("footer-comment");
 
-  if (submitBtn) {
+  if (submitBtn && commentInput) {
     submitBtn.addEventListener("click", async () => {
       const comentario = commentInput.value.trim();
-      const nome = (typeof _currentUserProfile !== 'undefined' && _currentUserProfile && _currentUserProfile.name) 
-                 ? _currentUserProfile.name 
-                 : "Anônimo";
       const nota = current;
 
       if (nota === 0) {
         alert("Por favor, selecione uma nota de 1 a 5 estrelas antes de enviar.");
+        return;
+      }
+
+      // Utiliza o ID da sessão que já existe no seu script.js
+      const cliente_id = typeof CURRENT_USER_ID !== 'undefined' ? CURRENT_USER_ID : null; 
+
+      if (!cliente_id) {
+        alert("Sessão inválida. Por favor, faça login novamente.");
         return;
       }
 
@@ -1842,7 +1859,11 @@ function initFooterRating() {
         const res = await fetch("/api/avaliacoes/nova", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nome, nota, comentario })
+          body: JSON.stringify({ 
+            cliente_id: cliente_id,
+            nota: nota, 
+            comentario: comentario 
+          })
         });
 
         if (res.ok) {
