@@ -2410,12 +2410,22 @@ body.dark-mode .product-card {
   transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35);
   letter-spacing: 0.2px;
-  animation: pulse-cta 3s ease-in-out infinite;
+  animation: pulseGlowCta 2s infinite;
 }
 
-@keyframes pulse-cta {
-  0%, 100% { box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35); }
-  50% { box-shadow: 0 4px 24px rgba(87, 197, 234, 0.7); }
+@keyframes pulseGlowCta {
+  0% {
+    /* Mantém a sombra base e inicia a borda de pulso colada ao botão */
+    box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35), 0 0 0 0 rgba(87, 197, 234, 0.6);
+  }
+  70% {
+    /* Expande a borda em 15px e reduz a opacidade a zero */
+    box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35), 0 0 0 15px rgba(87, 197, 234, 0);
+  }
+  100% {
+    /* Retorna ao estado inicial transparente para reiniciar o loop */
+    box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35), 0 0 0 0 rgba(87, 197, 234, 0);
+  }
 }
 
 .product-card-cta:hover {
