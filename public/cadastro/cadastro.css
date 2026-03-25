@@ -543,3 +543,114 @@ body:not(.dark-mode) .logo-escuro {
 body:not(.dark-mode) .logo-claro {
   display: block;
 }
+/* =========================================
+   BOTÃO FLUTUANTE DE AJUDA
+   ========================================= */
+.help-fab {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  box-shadow: var(--shadow-soft);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.help-fab:hover {
+  background: rgba(87, 197, 234, 0.15);
+  color: var(--brand-action);
+  transform: translateY(-1px) scale(1.06);
+  box-shadow: 0 0 0 4px rgba(87, 197, 234, 0.15);
+}
+
+.help-fab:active {
+  transform: scale(0.98);
+}
+
+body.dark-mode .help-fab {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--brand-light);
+}
+
+.help-fab::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  transform: translateY(-50%);
+  background: rgba(19, 23, 57, 0.96);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.help-fab::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 6px);
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent rgba(19, 23, 57, 0.96) transparent transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.help-fab:hover::after,
+.help-fab:hover::before,
+.help-fab:focus-visible::after,
+.help-fab:focus-visible::before {
+  opacity: 1;
+}
+
+.help-fab:hover::after,
+.help-fab:focus-visible::after {
+  transform: translateY(-50%) translateX(2px);
+}
+
+.help-fab:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 4px rgba(87, 197, 234, 0.18);
+}
+
+@media (max-width: 640px) {
+  .help-fab {
+    top: 14px;
+    left: 14px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .help-fab::after,
+  .help-fab::before {
+    display: none;
+  }
+}

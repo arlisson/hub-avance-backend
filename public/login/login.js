@@ -2,6 +2,24 @@
 // Mantém: verificação de elementos, toggle de tema, toggle de senha e submit.
 // Remove: dependência do Supabase no frontend.
 
+const WHATSAPP_NUMBER = "5522988124656";
+
+function buildWhatsAppUrl(message) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
+function initHelpWhatsApp() {
+  const btn = document.getElementById("help-whatsapp");
+  if (!btn) return;
+
+  const message =
+    "Olá! Estou na tela de login da AVANCE e preciso de ajuda para acessar minha conta.";
+  const url = buildWhatsAppUrl(message);
+
+  btn.addEventListener("click", () => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  });
+}
 function validarEmail(email) {
   const v = String(email || "").trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -96,6 +114,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     localStorage.setItem("theme", isDark ? "dark" : "light");
     updateThemeIcon(isDark);
   });
+
+  initHelpWhatsApp();
 
   if (!identifierInput || !passwordInput || !loginForm) return;
 

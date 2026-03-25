@@ -1,4 +1,24 @@
 // cadastro.js
+
+const WHATSAPP_NUMBER = "5522988124656";
+
+function buildWhatsAppUrl(message) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
+function initHelpWhatsApp() {
+  const btn = document.getElementById("help-whatsapp");
+  if (!btn) return;
+
+  const message =
+    "Olá! Estou na tela de cadastro da AVANCE e preciso de ajuda para fazer meu cadastro.";
+  const url = buildWhatsAppUrl(message);
+
+  btn.addEventListener("click", () => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  });
+}
+
 function validarCPF(cpf) {
   const c = String(cpf || "").replace(/\D/g, "");
   if (c.length !== 11) return false;
@@ -127,6 +147,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     localStorage.setItem("theme", isDark ? "dark" : "light");
     updateThemeIcon(isDark);
   });
+
+  initHelpWhatsApp();
 
   const form = document.getElementById("register-form");
   const nameInput = document.getElementById("name");
