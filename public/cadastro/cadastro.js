@@ -11,12 +11,8 @@ function initHelpWhatsApp() {
   if (!btn) return;
 
   const message =
-    "Olá! Estou na tela de cadastro da AVANCE e preciso de ajuda para fazer meu cadastro.";
-  const url = buildWhatsAppUrl(message);
-
-  btn.addEventListener("click", () => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  });
+    "Olá! Estou nesta tela de cadastro da AVANCE e preciso de ajuda para crealizar meu cadastro.";
+  btn.href = buildWhatsAppUrl(message);
 }
 
 function validarCPF(cpf) {

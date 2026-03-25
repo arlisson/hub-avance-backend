@@ -548,53 +548,62 @@ body:not(.dark-mode) .logo-claro {
    ========================================= */
 .help-fab {
   position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 100;
-  width: 48px;
-  height: 48px;
+  left: 20px;
+  bottom: 20px;
+  z-index: 999;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: none;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--brand-primary);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 22px;
+  text-decoration: none;
   box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease,
-    opacity 0.2s ease;
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.help-fab i {
+  font-size: 22px;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .help-fab:hover {
   background: rgba(87, 197, 234, 0.15);
   color: var(--brand-action);
-  transform: translateY(-1px) scale(1.06);
+  transform: translateY(-2px) scale(1.04);
   box-shadow: 0 0 0 4px rgba(87, 197, 234, 0.15);
 }
 
-.help-fab:active {
-  transform: scale(0.98);
+.help-fab:focus,
+.help-fab:focus-visible {
+  outline: none;
 }
 
 body.dark-mode .help-fab {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--brand-light);
 }
 
 .help-fab::after {
   content: attr(data-tooltip);
   position: absolute;
-  top: 50%;
   left: calc(100% + 12px);
-  transform: translateY(-50%);
+  bottom: 50%;
+  transform: translateY(50%);
   background: rgba(19, 23, 57, 0.96);
-  color: #ffffff;
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
@@ -603,16 +612,15 @@ body.dark-mode .help-fab {
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .help-fab::before {
   content: "";
   position: absolute;
-  top: 50%;
-  left: calc(100% + 6px);
-  transform: translateY(-50%);
+  left: calc(100% + 1px);
+  bottom: 50%;
+  transform: translateY(50%);
   border-width: 6px;
   border-style: solid;
   border-color: transparent rgba(19, 23, 57, 0.96) transparent transparent;
@@ -628,24 +636,15 @@ body.dark-mode .help-fab {
   opacity: 1;
 }
 
-.help-fab:hover::after,
-.help-fab:focus-visible::after {
-  transform: translateY(-50%) translateX(2px);
-}
-
-.help-fab:focus-visible {
-  outline: none;
-  box-shadow:
-    var(--shadow-soft),
-    0 0 0 4px rgba(87, 197, 234, 0.18);
-}
-
 @media (max-width: 640px) {
   .help-fab {
-    top: 14px;
     left: 14px;
-    width: 44px;
-    height: 44px;
+    bottom: 14px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .help-fab i {
     font-size: 20px;
   }
 
