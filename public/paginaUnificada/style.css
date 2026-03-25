@@ -3543,3 +3543,31 @@ html {
     width: 100%;
   }
 }
+
+@media (max-width: 1180px) {
+  .showcase-content .hub-section-title {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .showcase-content .hub-section-title h2 {
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .hub-grid-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .hub-coming-soon-badge {
+    position: static;
+    width: 180px;
+    height: auto;
+    min-height: 96px;
+    padding: 16px 18px;
+    margin-top: -8px;
+  }
+}
