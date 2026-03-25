@@ -11,7 +11,8 @@ function initHelpWhatsApp() {
   if (!btn) return;
 
   const message =
-    "Olá! Estou nesta tela de cadastro da AVANCE e preciso de ajuda para crealizar meu cadastro.";
+    "Olá! Estou na tela de cadastro da AVANCE e preciso de ajuda para realizar meu cadastro.";
+
   btn.href = buildWhatsAppUrl(message);
 }
 

@@ -13,10 +13,10 @@ function initHelpWhatsApp() {
   if (!btn) return;
 
   const message =
-    "Olá! Estou nesta tela de login da AVANCE e preciso de ajuda para acessar minha conta.";
+    "Olá! Estou na tela de login da AVANCE e preciso de ajuda para acessar minha conta.";
+
   btn.href = buildWhatsAppUrl(message);
 }
-
 
 function validarEmail(email) {
   const v = String(email || "").trim();

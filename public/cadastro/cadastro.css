@@ -544,112 +544,36 @@ body:not(.dark-mode) .logo-claro {
   display: block;
 }
 /* =========================================
-   BOTÃO FLUTUANTE DE AJUDA
+   BOTÃO DE AJUDA
    ========================================= */
-.help-fab {
-  position: fixed;
-  left: 20px;
-  bottom: 20px;
-  z-index: 999;
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: var(--bg-card);
-  color: var(--brand-primary);
+.help-link {
+  margin-top: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  color: var(--brand-primary);
   text-decoration: none;
-  box-shadow: var(--shadow-soft);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
-.help-fab i {
-  font-size: 22px;
+.help-link i {
+  font-size: 18px;
+  color: #25d366;
   line-height: 1;
-  pointer-events: none;
 }
 
-.help-fab:hover {
-  background: rgba(87, 197, 234, 0.15);
+.help-link:hover {
   color: var(--brand-action);
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 0 0 4px rgba(87, 197, 234, 0.15);
+  transform: translateY(-1px);
 }
 
-.help-fab:focus,
-.help-fab:focus-visible {
-  outline: none;
-}
-
-body.dark-mode .help-fab {
-  background: rgba(255, 255, 255, 0.06);
+body.dark-mode .help-link {
   color: var(--brand-light);
 }
 
-.help-fab::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  left: calc(100% + 12px);
-  bottom: 50%;
-  transform: translateY(50%);
-  background: rgba(19, 23, 57, 0.96);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-  padding: 10px 12px;
-  border-radius: 10px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.help-fab::before {
-  content: "";
-  position: absolute;
-  left: calc(100% + 1px);
-  bottom: 50%;
-  transform: translateY(50%);
-  border-width: 6px;
-  border-style: solid;
-  border-color: transparent rgba(19, 23, 57, 0.96) transparent transparent;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.help-fab:hover::after,
-.help-fab:hover::before,
-.help-fab:focus-visible::after,
-.help-fab:focus-visible::before {
-  opacity: 1;
-}
-
-@media (max-width: 640px) {
-  .help-fab {
-    left: 14px;
-    bottom: 14px;
-    width: 46px;
-    height: 46px;
-  }
-
-  .help-fab i {
-    font-size: 20px;
-  }
-
-  .help-fab::after,
-  .help-fab::before {
-    display: none;
-  }
+body.dark-mode .help-link:hover {
+  color: var(--brand-action);
 }
