@@ -39,7 +39,7 @@ const APPS = [
     longDesc:
       "Este é o agente mentor estratégico de vendas. Ele permite atendimento diretamente no navegador, com experiência adaptada para desktop e mobile. Use este produto quando precisar operar de qualquer lugar, sem depender de instalação local.",
     youtubeId: "CNFqPBAdglE",
-    enabled: true,
+    enabled: false,
     requiresPermission: false,
     clienteCta: true,
     actions: [
