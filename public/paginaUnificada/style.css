@@ -1585,13 +1585,29 @@ body.dark-mode .footer-brand {
   color: var(--brand-action);
 }
 
-.footer-tagline {
+.footer-brand-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-brand-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   color: var(--text-primary);
-  opacity: 0.5;
-  line-height: 1.6;
-  margin: 0;
-  max-width: 240px;
+  opacity: 0.65;
+}
+
+.footer-brand-list li i {
+  font-size: 15px;
+  color: var(--brand-action);
+  opacity: 1;
+  flex-shrink: 0;
 }
 
 .footer-col-title {
