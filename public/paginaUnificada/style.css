@@ -1559,11 +1559,10 @@ body.modal-open .hero-badge {
 }
 
 .footer-grid {
-  display: grid;
-  grid-template-columns: repeat(4, auto);
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  column-gap: 48px;
-  row-gap: 40px;
+  gap: 48px;
   max-width: 1200px;
   margin: 0 auto 48px;
 }
@@ -1735,17 +1734,14 @@ body.dark-mode .footer-brand {
     padding: 40px 24px 28px;
   }
   .footer-grid {
-    grid-template-columns: 1fr 1fr;
     gap: 32px;
-  }
-  .footer-col-brand {
-    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 480px) {
   .footer-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
     gap: 28px;
   }
 }
