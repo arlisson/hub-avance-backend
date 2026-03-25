@@ -1774,6 +1774,97 @@ function applyVisitorState() {
 }
 
 // ============================================================
+// AVALIAÇÕES DO RODAPÉ (Estrelas e Envio)
+// ============================================================
+function initFooterRating() {
+  const container = document.getElementById("footer-stars");
+  const label = document.getElementById("footer-rating-label");
+  if (!container || !label) return;
+
+  const stars = container.querySelectorAll(".star-btn");
+  let current = 5;
+
+  function render(val) {
+    stars.forEach((btn, i) => {
+      btn.classList.toggle("star-active", i < val);
+    });
+    label.textContent = val === 0 ? "Sem avaliação" : val + " de 5";
+  }
+
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".star-btn");
+    if (!btn) return;
+    const val = parseInt(btn.dataset.value, 10);
+    current = current === val ? 0 : val;
+    render(current);
+  });
+
+  container.addEventListener("mouseover", (e) => {
+    const btn = e.target.closest(".star-btn");
+    if (!btn) return;
+    const hval = parseInt(btn.dataset.value, 10);
+    stars.forEach((s, i) => {
+      s.classList.remove("star-active", "star-hover");
+      if (i < hval) {
+        s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
+      }
+    });
+  });
+
+  container.addEventListener("mouseleave", () => {
+    render(current);
+  });
+
+  // Inicializa a visualização
+  render(current);
+
+  // --- Lógica de Envio ---
+  const submitBtn = document.getElementById("btn-submit-rating");
+  const commentInput = document.getElementById("footer-comment");
+
+  if (submitBtn) {
+    submitBtn.addEventListener("click", async () => {
+      const comentario = commentInput.value.trim();
+      const nome = (typeof _currentUserProfile !== 'undefined' && _currentUserProfile && _currentUserProfile.name) 
+                 ? _currentUserProfile.name 
+                 : "Anônimo";
+      const nota = current;
+
+      if (nota === 0) {
+        alert("Por favor, selecione uma nota de 1 a 5 estrelas antes de enviar.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "Enviando... <i class='ph ph-spinner ph-spin' style='animation: spin 1s linear infinite;'></i>";
+
+      try {
+        const res = await fetch("/api/avaliacoes/nova", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome, nota, comentario })
+        });
+
+        if (res.ok) {
+          alert("Avaliação enviada com sucesso! Obrigado pelo feedback.");
+          commentInput.value = "";
+          current = 5; 
+          render(current);
+        } else {
+          alert("Erro ao enviar avaliação. Tente novamente.");
+        }
+      } catch (err) {
+        console.error("Erro no envio da avaliação:", err);
+        alert("Erro na conexão com o servidor. Tente novamente mais tarde.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Enviar Avaliação";
+      }
+    });
+  }
+}
+
+// ============================================================
 // INICIALIZAÇÃO
 // ============================================================
 
@@ -1784,6 +1875,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initMobileMenu();
   initScrollReveal();
   initActiveNavTracking();
+  initFooterRating();
 
   const _navLinks = document.querySelectorAll(".nav-link");
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {

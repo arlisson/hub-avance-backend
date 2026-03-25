@@ -512,6 +512,10 @@
               placeholder="Deixe seu comentário..."
               rows="3"
             ></textarea>
+
+            <button type="button" id="btn-submit-rating" class="hub-btn hub-btn-primary" style="margin-top: 12px; width: 100%; padding: 10px;">
+              Enviar Avaliação
+            </button>
           </div>
         </div>
 
@@ -587,47 +591,6 @@
     </a>
 
     <script src="./script.js" defer></script>
-    <script>
-      (function () {
-        var container = document.getElementById("footer-stars");
-        var label = document.getElementById("footer-rating-label");
-        if (!container || !label) return;
-        var stars = container.querySelectorAll(".star-btn");
-        var current = 5;
-
-        function render(val) {
-          stars.forEach(function (btn, i) {
-            btn.classList.toggle("star-active", i < val);
-          });
-          label.textContent = val === 0 ? "Sem avaliação" : val + " de 5";
-        }
-
-        container.addEventListener("click", function (e) {
-          var btn = e.target.closest(".star-btn");
-          if (!btn) return;
-          var val = parseInt(btn.dataset.value, 10);
-          current = current === val ? 0 : val;
-          render(current);
-        });
-
-        container.addEventListener("mouseover", function (e) {
-          var btn = e.target.closest(".star-btn");
-          if (!btn) return;
-          var hval = parseInt(btn.dataset.value, 10);
-          stars.forEach(function (s, i) {
-            s.classList.remove("star-active", "star-hover");
-            if (i < hval) {
-              s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
-            }
-          });
-        });
-
-        container.addEventListener("mouseleave", function () {
-          render(current);
-        });
-
-        render(current);
-      })();
-    </script>
+    
   </body>
 </html>
