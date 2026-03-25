@@ -2410,7 +2410,7 @@ body.dark-mode .product-card {
   transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35);
   letter-spacing: 0.2px;
-  animation: pulseGlowCta 4s infinite;
+  animation: pulseGlowCta 2s infinite;
 }
 
 @keyframes pulseGlowCta {
