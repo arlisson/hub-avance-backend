@@ -1560,7 +1560,8 @@ body.modal-open .hero-badge {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: auto auto auto 1fr;
+  grid-template-columns: repeat(4, auto);
+  justify-content: center;
   column-gap: 48px;
   row-gap: 40px;
   max-width: 1200px;
