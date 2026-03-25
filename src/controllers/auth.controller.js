@@ -444,20 +444,214 @@ export async function register(req, res) {
 
 export async function testSmtp(req, res) {
   try {
+    const host = process.env.SMTP_HOST;
+    const port = Number(process.env.SMTP_PORT || 465);
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+
     const transporter = getMailer();
     await transporter.verify();
 
-    return res.json({
-      ok: true,
-      message: "SMTP autenticado com sucesso."
-    });
+    return res.status(200).send(`
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Teste SMTP</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 24px;
+              background: #f7f7f7;
+              color: #111;
+            }
+            .card {
+              max-width: 720px;
+              margin: 0 auto;
+              background: #fff;
+              padding: 24px;
+              border-radius: 12px;
+              box-shadow: 0 2px 12px rgba(0,0,0,.08);
+            }
+            .ok { color: #0a7a2f; }
+            code {
+              background: #f1f1f1;
+              padding: 2px 6px;
+              border-radius: 6px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1 class="ok">SMTP autenticado com sucesso</h1>
+            <p><strong>Host:</strong> <code>${host || "(vazio)"}</code></p>
+            <p><strong>Porta:</strong> <code>${port}</code></p>
+            <p><strong>Usuário:</strong> <code>${user || "(vazio)"}</code></p>
+            <p><strong>Senha carregada:</strong> <code>${pass ? "SIM" : "NÃO"}</code></p>
+            <p>Se esta tela abriu com sucesso, a autenticação SMTP básica está funcionando.</p>
+          </div>
+        </body>
+      </html>
+    `);
   } catch (error) {
     console.error("Erro em /api/test-smtp:", error);
 
-    return res.status(500).json({
-      ok: false,
-      error: error.message
+    return res.status(500).send(`
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Erro SMTP</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 24px;
+              background: #f7f7f7;
+              color: #111;
+            }
+            .card {
+              max-width: 720px;
+              margin: 0 auto;
+              background: #fff;
+              padding: 24px;
+              border-radius: 12px;
+              box-shadow: 0 2px 12px rgba(0,0,0,.08);
+            }
+            .erro { color: #b42318; }
+            pre {
+              white-space: pre-wrap;
+              word-break: break-word;
+              background: #f8f8f8;
+              padding: 12px;
+              border-radius: 8px;
+              border: 1px solid #e5e5e5;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1 class="erro">Falha ao autenticar no SMTP</h1>
+            <pre>${String(error?.stack || error?.message || error)}</pre>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+}
+
+export async function testEmail(req, res) {
+  try {
+    const transporter = getMailer();
+
+    const to = String(req.query?.to || process.env.SMTP_USER || "").trim();
+    if (!to) {
+      return res.status(400).send(`
+        <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Teste de envio</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; padding: 24px;">
+            <h1>Destinatário não informado</h1>
+            <p>Use <code>?to=seuemail@dominio.com</code> na URL ou configure <code>SMTP_USER</code>.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    const info = await transporter.sendMail({
+      from: `"AVANCE" <${process.env.SMTP_USER}>`,
+      to,
+      subject: "Teste SMTP AVANCE",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Teste de envio SMTP</h2>
+          <p>Este é um e-mail de teste enviado pela rota <strong>/api/test-email</strong>.</p>
+          <p><strong>Remetente:</strong> ${process.env.SMTP_USER}</p>
+          <p><strong>Destinatário:</strong> ${to}</p>
+          <p><strong>Data:</strong> ${new Date().toLocaleString("pt-BR")}</p>
+        </div>
+      `,
     });
+
+    return res.status(200).send(`
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Teste de envio</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 24px;
+              background: #f7f7f7;
+              color: #111;
+            }
+            .card {
+              max-width: 720px;
+              margin: 0 auto;
+              background: #fff;
+              padding: 24px;
+              border-radius: 12px;
+              box-shadow: 0 2px 12px rgba(0,0,0,.08);
+            }
+            .ok { color: #0a7a2f; }
+            code {
+              background: #f1f1f1;
+              padding: 2px 6px;
+              border-radius: 6px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1 class="ok">E-mail de teste enviado com sucesso</h1>
+            <p><strong>Para:</strong> <code>${to}</code></p>
+            <p><strong>Message ID:</strong> <code>${info?.messageId || "(não informado)"}</code></p>
+            <p>Verifique a caixa de entrada e também o spam.</p>
+          </div>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Erro em /api/test-email:", error);
+
+    return res.status(500).send(`
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Erro no envio</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 24px;
+              background: #f7f7f7;
+              color: #111;
+            }
+            .card {
+              max-width: 720px;
+              margin: 0 auto;
+              background: #fff;
+              padding: 24px;
+              border-radius: 12px;
+              box-shadow: 0 2px 12px rgba(0,0,0,.08);
+            }
+            .erro { color: #b42318; }
+            pre {
+              white-space: pre-wrap;
+              word-break: break-word;
+              background: #f8f8f8;
+              padding: 12px;
+              border-radius: 8px;
+              border: 1px solid #e5e5e5;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1 class="erro">Falha ao enviar e-mail de teste</h1>
+            <pre>${String(error?.stack || error?.message || error)}</pre>
+          </div>
+        </body>
+      </html>
+    `);
   }
 }
 
@@ -892,5 +1086,40 @@ export async function resetPassword(req, res) {
     });
   } finally {
     conn.release();
+  }
+}
+
+export async function debugSmtpEnv(req, res) {
+  try {
+    const host = String(process.env.SMTP_HOST || "").trim();
+    const port = String(process.env.SMTP_PORT || "").trim();
+    const user = String(process.env.SMTP_USER || "").trim();
+    const pass = String(process.env.SMTP_PASS || "");
+
+    return res.status(200).json({
+      ok: true,
+      smtp: {
+        host: host || null,
+        port: port || null,
+        user: user || null,
+        hasPass: pass.length > 0,
+        passLength: pass.length,
+        passStartsWith: pass ? pass.slice(0, 2) : null,
+        passEndsWith: pass ? pass.slice(-2) : null,
+        hasLeadingSpace: pass !== pass.trimStart(),
+        hasTrailingSpace: pass !== pass.trimEnd(),
+      },
+      hints: [
+        "Confira se SMTP_USER é exatamente o email completo da caixa.",
+        "Confira se SMTP_PASS não tem espaço no começo ou no fim.",
+        "Se passLength estiver 0, a senha não está chegando ao Node.",
+      ],
+    });
+  } catch (error) {
+    console.error("Erro em /api/debug-smtp-env:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error?.message || String(error),
+    });
   }
 }
