@@ -1088,3 +1088,38 @@ export async function resetPassword(req, res) {
     conn.release();
   }
 }
+
+export async function debugSmtpEnv(req, res) {
+  try {
+    const host = String(process.env.SMTP_HOST || "").trim();
+    const port = String(process.env.SMTP_PORT || "").trim();
+    const user = String(process.env.SMTP_USER || "").trim();
+    const pass = String(process.env.SMTP_PASS || "");
+
+    return res.status(200).json({
+      ok: true,
+      smtp: {
+        host: host || null,
+        port: port || null,
+        user: user || null,
+        hasPass: pass.length > 0,
+        passLength: pass.length,
+        passStartsWith: pass ? pass.slice(0, 2) : null,
+        passEndsWith: pass ? pass.slice(-2) : null,
+        hasLeadingSpace: pass !== pass.trimStart(),
+        hasTrailingSpace: pass !== pass.trimEnd(),
+      },
+      hints: [
+        "Confira se SMTP_USER é exatamente o email completo da caixa.",
+        "Confira se SMTP_PASS não tem espaço no começo ou no fim.",
+        "Se passLength estiver 0, a senha não está chegando ao Node.",
+      ],
+    });
+  } catch (error) {
+    console.error("Erro em /api/debug-smtp-env:", error);
+    return res.status(500).json({
+      ok: false,
+      error: error?.message || String(error),
+    });
+  }
+}

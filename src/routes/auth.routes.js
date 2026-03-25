@@ -11,6 +11,7 @@ import {
   changePassword,
   testSmtp,
   testEmail,
+  debugSmtpEnv
 } from "../controllers/auth.controller.js";
 import {registerAppUsage} from "../controllers/counter.controller.js"
 import { authenticateToken } from "../middlewares/auth.js";
@@ -30,5 +31,6 @@ router.post("/contador", authenticateToken, registerAppUsage);
 // ROTAS DE TESTE SMTP
 router.get("/test-smtp", testSmtp);
 router.get("/test-email", testEmail);
+router.get("/debug-smtp-env", debugSmtpEnv);
 
 export default router;
