@@ -29,7 +29,30 @@ let _currentUserProfile = null; // { name, cpf, whatsapp, operator, active_lines
 // ============================================================
 
 const APPS = [
-  
+  {
+    id: "agent",
+    badge: "Mentor estratégico de vendas",
+    image: "../img/Apolo.png",
+    title: "Mentor estratégico de vendas",
+    shortDesc:
+      "Acesse o sistema online. Ideal para uso em qualquer dispositivo.",
+    longDesc:
+      "Este é o agente mentor estratégico de vendas. Ele permite atendimento diretamente no navegador, com experiência adaptada para desktop e mobile. Use este produto quando precisar operar de qualquer lugar, sem depender de instalação local.",
+    youtubeId: "CNFqPBAdglE",
+    enabled: false,
+    requiresPermission: false,
+    clienteCta: true,
+    actions: [
+      {
+        label: "Acessar",
+        icon: "ph-arrow-square-out",
+        app: "agent",
+        metric: "access",
+        primary: true,
+        targetBlank: false,
+      },
+    ],
+  },
   {
     id: "desktop",
     badge: "Preenche Fácil",
@@ -1235,7 +1258,7 @@ function renderProductCards() {
       </ul>
 
       <button type="button" class="product-card-cta" data-product-id="${escapeHtml(p.id)}">
-        Começar <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+        Contratar <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
       </button>
     </article>
   `,
@@ -1751,6 +1774,118 @@ function applyVisitorState() {
 }
 
 // ============================================================
+// AVALIAÇÕES DO RODAPÉ (Estrelas e Envio)
+// ============================================================
+function initFooterRating() {
+  const container = document.getElementById("footer-stars");
+  const label = document.getElementById("footer-rating-label");
+  
+  if (!container || !label) {
+    console.warn("Aviso: Elementos de avaliação não encontrados na tela.");
+    return;
+  }
+
+  const stars = container.querySelectorAll(".star-btn");
+  let current = 5; // Começa com 5 estrelas
+
+  // Função que pinta as estrelas
+  function render(val) {
+    stars.forEach((btn, i) => {
+      if (i < val) {
+        btn.classList.add("star-active");
+      } else {
+        btn.classList.remove("star-active");
+      }
+    });
+    label.textContent = val === 0 ? "Sem avaliação" : val + " de 5";
+  }
+
+  // Evento de clique para fixar a nota
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".star-btn");
+    if (!btn) return;
+    const val = parseInt(btn.dataset.value, 10);
+    current = current === val ? 0 : val;
+    render(current);
+  });
+
+  // Evento de passar o mouse por cima (hover)
+  container.addEventListener("mouseover", (e) => {
+    const btn = e.target.closest(".star-btn");
+    if (!btn) return;
+    const hval = parseInt(btn.dataset.value, 10);
+    stars.forEach((s, i) => {
+      s.classList.remove("star-active", "star-hover");
+      if (i < hval) {
+        s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
+      }
+    });
+  });
+
+  // Evento de tirar o mouse de cima
+  container.addEventListener("mouseleave", () => {
+    render(current);
+  });
+
+  // Renderiza o estado inicial (5 estrelas)
+  render(current);
+
+  // --- LÓGICA DE ENVIO ---
+  const submitBtn = document.getElementById("btn-submit-rating");
+  const commentInput = document.getElementById("footer-comment");
+
+  if (submitBtn && commentInput) {
+    submitBtn.addEventListener("click", async () => {
+      const comentario = commentInput.value.trim();
+      const nota = current;
+
+      if (nota === 0) {
+        alert("Por favor, selecione uma nota de 1 a 5 estrelas antes de enviar.");
+        return;
+      }
+
+      // Utiliza o ID da sessão que já existe no seu script.js
+      const cliente_id = typeof CURRENT_USER_ID !== 'undefined' ? CURRENT_USER_ID : null; 
+
+      if (!cliente_id) {
+        alert("Sessão inválida. Por favor, faça login novamente.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "Enviando... <i class='ph ph-spinner ph-spin' style='animation: spin 1s linear infinite;'></i>";
+
+      try {
+        const res = await fetch("/api/avaliacoes/nova", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            cliente_id: cliente_id,
+            nota: nota, 
+            comentario: comentario 
+          })
+        });
+
+        if (res.ok) {
+          alert("Avaliação enviada com sucesso! Obrigado pelo feedback.");
+          commentInput.value = "";
+          current = 5; 
+          render(current);
+        } else {
+          alert("Erro ao enviar avaliação. Tente novamente.");
+        }
+      } catch (err) {
+        console.error("Erro no envio da avaliação:", err);
+        alert("Erro na conexão com o servidor. Tente novamente mais tarde.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Enviar Avaliação";
+      }
+    });
+  }
+}
+
+// ============================================================
 // INICIALIZAÇÃO
 // ============================================================
 
@@ -1761,6 +1896,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initMobileMenu();
   initScrollReveal();
   initActiveNavTracking();
+  initFooterRating();
 
   const _navLinks = document.querySelectorAll(".nav-link");
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
@@ -1788,15 +1924,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadPublicAgentConfig();
 
   try {
-    const token = getAuthToken();
-
-    if (!token) {
-      clearAuthToken();
-      clearAgentChatSessionStorage();
-      window.location.href = normalizeLoginUrl(LOGIN_URL);
-      return;
-    }
-
+   
     const sessionData = await getCurrentSession();
 
     if (!sessionData?.ok || !sessionData?.user) {

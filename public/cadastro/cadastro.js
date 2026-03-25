@@ -1,4 +1,21 @@
 // cadastro.js
+
+const WHATSAPP_NUMBER = "5522988124656";
+
+function buildWhatsAppUrl(message) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
+function initHelpWhatsApp() {
+  const btn = document.getElementById("help-whatsapp");
+  if (!btn) return;
+
+  const message =
+    "Olá! Estou na tela de cadastro da AVANCE e preciso de ajuda para realizar meu cadastro.";
+
+  btn.href = buildWhatsAppUrl(message);
+}
+
 function validarCPF(cpf) {
   const c = String(cpf || "").replace(/\D/g, "");
   if (c.length !== 11) return false;
@@ -128,6 +145,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateThemeIcon(isDark);
   });
 
+  initHelpWhatsApp();
+
   const form = document.getElementById("register-form");
   const nameInput = document.getElementById("name");
   const docInput = document.getElementById("document");
@@ -145,6 +164,65 @@ document.addEventListener("DOMContentLoaded", async () => {
   const operatorGroup = document.getElementById("operator-group");
   const linesGroup = document.getElementById("lines-group");
   const contractGroup = document.getElementById("contract-type-group");
+
+  // ── Dropdown customizado de operadora ──
+  const operatorBtn = document.getElementById("operator-btn");
+  const operatorList = document.getElementById("operator-list");
+  const operatorSelectedLabel = document.getElementById("operator-selected-label");
+  const operatorCustomWrap = document.getElementById("operator-custom-wrap");
+  const operatorCustomInput = document.getElementById("operator-custom");
+
+  function resetOperatorDropdown() {
+    if (operatorInput) operatorInput.value = "";
+    if (operatorSelectedLabel) {
+      operatorSelectedLabel.textContent = "Selecione a operadora";
+      operatorSelectedLabel.classList.add("placeholder");
+    }
+    operatorList?.querySelectorAll("li").forEach(li => li.removeAttribute("aria-selected"));
+    if (operatorCustomWrap) operatorCustomWrap.hidden = true;
+    if (operatorCustomInput) operatorCustomInput.value = "";
+  }
+
+  function closeOperatorDropdown() {
+    if (operatorList) operatorList.hidden = true;
+    operatorBtn?.setAttribute("aria-expanded", "false");
+  }
+
+  operatorBtn?.addEventListener("click", () => {
+    const isOpen = !operatorList.hidden;
+    operatorList.hidden = isOpen;
+    operatorBtn.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  operatorList?.querySelectorAll("li").forEach(li => {
+    li.addEventListener("click", () => {
+      const val = li.dataset.value;
+      if (operatorInput) operatorInput.value = val === "OUTRAS" ? "" : val;
+      if (operatorSelectedLabel) {
+        operatorSelectedLabel.textContent = val;
+        operatorSelectedLabel.classList.remove("placeholder");
+      }
+      operatorList.querySelectorAll("li").forEach(el => el.removeAttribute("aria-selected"));
+      li.setAttribute("aria-selected", "true");
+      closeOperatorDropdown();
+      setValid(operatorInput);
+      if (operatorCustomWrap) operatorCustomWrap.hidden = val !== "OUTRAS";
+      if (val !== "OUTRAS" && operatorCustomInput) operatorCustomInput.value = "";
+      if (val === "OUTRAS" && operatorCustomInput) operatorCustomInput.focus();
+    });
+  });
+
+  operatorCustomInput?.addEventListener("input", () => {
+    if (operatorInput) operatorInput.value = operatorCustomInput.value.trim();
+  });
+
+  document.addEventListener("click", e => {
+    if (!operatorBtn?.contains(e.target) && !operatorList?.contains(e.target)) {
+      closeOperatorDropdown();
+    }
+  });
+
+  if (operatorSelectedLabel) operatorSelectedLabel.classList.add("placeholder");
 
   let cepLookupController = null;
 
@@ -485,9 +563,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     setContractTypeRequired(shouldShow);
 
     if (!shouldShow) {
-      if (operatorInput) operatorInput.value = "";
-      if (activeLinesInput) activeLinesInput.value = "";
+      resetOperatorDropdown();
       if (operatorInput) setValid(operatorInput);
+      if (activeLinesInput) activeLinesInput.value = "";
       if (activeLinesInput) setValid(activeLinesInput);
     }
   }
@@ -525,7 +603,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     el.addEventListener("change", toggleMobileFields);
   });
 
-  if (operatorInput) operatorInput.addEventListener("blur", validateMobileExtrasHard);
+  if (operatorCustomInput) operatorCustomInput.addEventListener("blur", validateMobileExtrasHard);
   if (activeLinesInput) activeLinesInput.addEventListener("blur", validateMobileExtrasHard);
 
   form.addEventListener("submit", async (e) => {

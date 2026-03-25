@@ -322,6 +322,149 @@ body.dark-mode .radio-item { background: rgba(255,255,255,0.04); }
 /* Classe usada pelo JS de cadastro para esconder os campos extras */
 .is-hidden { display: none !important; }
 
+/* ── Dropdown customizado de operadora ── */
+.operator-wrapper {
+  position: relative;
+}
+
+.operator-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.operator-select-btn {
+  width: 100%;
+  height: 54px;
+  padding: 0 48px 0 44px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.operator-select-btn span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operator-select-btn span.placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.operator-caret {
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.operator-select-btn[aria-expanded="true"] .operator-caret {
+  transform: rotate(180deg);
+}
+
+.operator-select-btn:focus,
+.operator-select-btn[aria-expanded="true"] {
+  border-color: var(--brand-action);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+body.dark-mode .operator-select-btn:focus,
+body.dark-mode .operator-select-btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.operator-dropdown {
+  position: absolute;
+  top: calc(54px + 6px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  list-style: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+body.dark-mode .operator-dropdown {
+  background: #1a1f4a;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.operator-dropdown li {
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.operator-dropdown li:hover {
+  background: rgba(87, 197, 234, 0.12);
+  color: var(--brand-action);
+}
+
+.operator-dropdown li[aria-selected="true"] {
+  background: rgba(87, 197, 234, 0.18);
+  color: var(--brand-action);
+  font-weight: 600;
+}
+
+.operator-custom-wrap {
+  margin-top: 10px;
+  animation: fadeSlideDown 0.2s ease;
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.operator-custom-input {
+  width: 100%;
+  height: 54px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 0 16px 0 44px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.operator-custom-input:focus {
+  border-color: var(--brand-action);
+  box-shadow: var(--shadow-focus);
+}
+
+.operator-custom-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
 @media (max-width: 640px) {
   .register-container { padding: 0; }
   .register-card { padding: 28px 20px 22px; border-radius: 22px; }
@@ -399,4 +542,51 @@ body:not(.dark-mode) .logo-escuro {
 
 body:not(.dark-mode) .logo-claro {
   display: block;
+}
+/* =========================================
+   BOTÃO DE AJUDA
+   ========================================= */
+.help-link {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-primary);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.help-link i,
+.help-link .ph,
+.help-link .ph-whatsapp-logo {
+  color: #25d366 !important;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.help-link span {
+  color: inherit;
+}
+
+.help-link:hover {
+  color: var(--brand-action);
+  transform: translateY(-1px);
+}
+
+body.dark-mode .help-link {
+  color: var(--brand-light);
+}
+
+body.dark-mode .help-link:hover {
+  color: var(--brand-action);
+}
+
+body.dark-mode .help-link i,
+body.dark-mode .help-link .ph,
+body.dark-mode .help-link .ph-whatsapp-logo {
+  color: #25d366 !important;
 }

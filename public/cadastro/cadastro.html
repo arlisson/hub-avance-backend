@@ -28,7 +28,7 @@
     <button class="theme-toggle-cadastro" id="theme-toggle" type="button" aria-label="Alternar tema">
       <i class="ph ph-sun"></i>
     </button>
-
+ 
     <div class="register-container">
       <div class="register-card">
         <div class="register-header">
@@ -165,10 +165,28 @@
 
             <!-- 3. Qual operadora atende sua empresa hoje? -->
             <div class="input-group" id="operator-group">
-              <label for="operator">Qual operadora de telefonia atende sua empresa hoje?</label>
-              <div class="input-wrapper">
-                <i class="ph ph-sim-card input-icon"></i>
-                <input type="text" id="operator" placeholder="Sua operadora" />
+              <label for="operator-btn">Qual operadora de telefonia atende sua empresa hoje?</label>
+              <div class="operator-wrapper">
+                <i class="ph ph-sim-card operator-icon"></i>
+                <button type="button" class="operator-select-btn" id="operator-btn" aria-haspopup="listbox" aria-expanded="false">
+                  <span id="operator-selected-label" class="placeholder">Selecione a operadora</span>
+                  <i class="ph ph-caret-down operator-caret"></i>
+                </button>
+                <ul class="operator-dropdown" id="operator-list" role="listbox" hidden>
+                  <li role="option" data-value="VIVO">VIVO</li>
+                  <li role="option" data-value="TIM">TIM</li>
+                  <li role="option" data-value="CLARO">CLARO</li>
+                  <li role="option" data-value="NIO">NIO</li>
+                  <li role="option" data-value="EMBRATEL">EMBRATEL</li>
+                  <li role="option" data-value="OUTRAS">OUTRAS</li>
+                </ul>
+                <input type="hidden" id="operator" />
+              </div>
+              <div class="operator-custom-wrap" id="operator-custom-wrap" hidden>
+                <div class="input-wrapper">
+                  <i class="ph ph-pencil input-icon"></i>
+                  <input type="text" id="operator-custom" class="operator-custom-input" placeholder="Digite o nome da operadora" autocomplete="off" />
+                </div>
               </div>
             </div>
 
@@ -221,6 +239,17 @@
 
         <div class="register-footer">
           <p>Já tem uma conta? <a href="../login/login.html">Fazer login</a></p>
+          <a
+            href="#"
+            id="help-whatsapp"
+            class="help-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Precisa de ajuda? Falar no WhatsApp"
+          >
+            <i class="ph ph-whatsapp-logo"></i>
+            <span>Precisa de ajuda?</span>
+          </a>
         </div>
       </div>
     </div>

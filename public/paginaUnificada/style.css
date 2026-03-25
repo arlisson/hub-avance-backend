@@ -1559,10 +1559,11 @@ body.modal-open .hero-badge {
 }
 
 .footer-grid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr;
-  gap: 40px;
-  max-width: 1100px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  gap: 48px 0;
+  max-width: 100%;
   margin: 0 auto 48px;
 }
 
@@ -1583,13 +1584,31 @@ body.dark-mode .footer-brand {
   color: var(--brand-action);
 }
 
-.footer-tagline {
-  font-size: 13px;
-  color: var(--text-primary);
-  opacity: 0.5;
-  line-height: 1.6;
+.footer-brand-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-brand-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-family: "Inter", system-ui, sans-serif;
+  color: var(--text-primary);
+  opacity: 0.65;
+}
+
+.footer-brand-list li::before {
+  content: "–";
+  color: var(--brand-action);
+  font-weight: 700;
+  opacity: 1;
+  flex-shrink: 0;
 }
 
 .footer-col-title {
@@ -1647,22 +1666,84 @@ body.dark-mode .footer-brand {
   text-align: center;
 }
 
+.footer-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.star-rating {
+  display: flex;
+  gap: 4px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  padding: 2px 3px;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  color: #c8c8c8;
+  transition: transform 0.1s ease, color 0.15s ease;
+}
+
+.star-btn.star-active {
+  color: #f59e0b;
+}
+
+.star-btn.star-hover {
+  color: #f59e0b;
+  transform: scale(1.15);
+}
+
+.footer-rating-label {
+  font-size: 12px;
+  color: var(--text-primary);
+  opacity: 0.5;
+  font-weight: 500;
+}
+
+.footer-comment-input {
+  width: 100%;
+  min-width: 200px;
+  max-width: 280px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  resize: vertical;
+  outline: none;
+  opacity: 0.75;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+  box-sizing: border-box;
+}
+
+.footer-comment-input::placeholder {
+  opacity: 0.45;
+}
+
+.footer-comment-input:focus {
+  border-color: var(--brand-action);
+  opacity: 1;
+}
+
 @media (max-width: 768px) {
   .hub-footer {
     padding: 40px 24px 28px;
   }
   .footer-grid {
-    grid-template-columns: 1fr 1fr;
     gap: 32px;
-  }
-  .footer-col-brand {
-    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 480px) {
   .footer-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
     gap: 28px;
   }
 }
@@ -2317,8 +2398,8 @@ body.dark-mode .product-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--brand-primary);
-  color: #fafeff;
+  background: var(--brand-action);
+  color: #0f2c58;
   font-size: 14px;
   font-weight: 700;
   padding: 14px 20px;
@@ -2327,15 +2408,28 @@ body.dark-mode .product-card {
   cursor: pointer;
   width: 100%;
   transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(19, 56, 104, 0.25);
+  box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35);
   letter-spacing: 0.2px;
+  animation: pulseGlowCta 2s infinite;
+}
+
+@keyframes pulseGlowCta {
+  0% {
+    box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35), 0 0 0 0 rgba(87, 197, 234, 0.6);
+  }
+  70% {
+    box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35), 0 0 0 25px rgba(87, 197, 234, 0);
+  }
+  100% {
+    box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35), 0 0 0 0 rgba(87, 197, 234, 0);
+  }
 }
 
 .product-card-cta:hover {
-  background: var(--brand-action);
-  color: #131739;
+  background: #3bb8e0;
+  color: #0f2c58;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(87, 197, 234, 0.45);
+  box-shadow: 0 8px 20px rgba(87, 197, 234, 0.55);
 }
 
 .product-card-cta i {
@@ -3184,14 +3278,15 @@ body:not(.dark-mode) .hub-cta-section #btn-submit-feedback:hover {
 
 /* 4. Corrige os Botões "Começar" (product-card-cta) nos Cards de Produto */
 body:not(.dark-mode) .product-card-cta {
-  background-color: #f1f5f9 !important; /* Fundo cinza bem claro */
-  color: #1e293b !important; /* Texto escuro */
-  border: 1px solid #cbd5e1 !important; /* Borda cinza clara */
+  background-color: #57c5ea !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 body:not(.dark-mode) .product-card-cta:hover {
-  background-color: #e2e8f0 !important; /* Fundo um pouco mais escuro no hover */
-  border-color: #94a3b8 !important; /* Borda mais escura no hover */
+  background-color: #3bb8e0 !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 /* 5. Corrige o Botão de WhatsApp "Falar com um consultor" */
@@ -3241,15 +3336,15 @@ body:not(.dark-mode) .mid-cta-desc {
 
 /* 2. Corrige os botões "Começar" nos cards de Soluções */
 body:not(.dark-mode) .product-card-cta {
-  background-color: #ffffff !important; /* Fundo branco/claro */
-  color: #133868 !important; /* Texto azul escuro */
-  border: 1px solid rgba(87, 197, 234, 0.4) !important;
+  background-color: #57c5ea !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 body:not(.dark-mode) .product-card-cta:hover {
-  background-color: #57c5ea !important; /* Azul ciano brilhante no hover */
-  color: #0f2c58 !important; /* Texto escuro no hover */
-  border-color: #57c5ea !important;
+  background-color: #3bb8e0 !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 /* Garante que o ícone do botão acompanhe a cor do texto */
@@ -3446,5 +3541,114 @@ html {
   }
   .posvenda-pillar {
     width: 100%;
+  }
+}
+
+@media (max-width: 1180px) {
+  .showcase-content .hub-section-title {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .showcase-content .hub-section-title h2 {
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .hub-grid-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .hub-coming-soon-badge {
+    position: static;
+    width: 180px;
+    height: auto;
+    min-height: 96px;
+    padding: 16px 18px;
+    margin-top: -8px;
+  }
+}
+
+/* ============================================================
+   CENTRALIZAR MODAL DE PRODUTOS EM CELULAR E TELAS REDUZIDAS
+   ============================================================ */
+
+@media (max-width: 900px) {
+  #prod-modal.app-modal.prod-modal {
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(680px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: min(90vh, calc(100dvh - 32px)) !important;
+    border-radius: 24px !important;
+    transform: translate(-50%, -50%) scale(0.96) !important;
+    margin: 0 !important;
+  }
+
+  #prod-modal.app-modal.prod-modal.is-open {
+    transform: translate(-50%, -50%) scale(1) !important;
+    opacity: 1 !important;
+  }
+
+  #prod-modal .prod-modal-header {
+    padding: 22px 22px 16px !important;
+  }
+
+  #prod-modal .prod-modal-body {
+    padding: 24px 22px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #prod-modal.app-modal.prod-modal {
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(560px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: min(88vh, calc(100dvh - 24px)) !important;
+    border-radius: 22px !important;
+    transform: translate(-50%, -50%) scale(0.96) !important;
+  }
+
+  #prod-modal.app-modal.prod-modal.is-open {
+    transform: translate(-50%, -50%) scale(1) !important;
+  }
+
+  #prod-modal .prod-modal-body {
+    padding: 22px 18px !important;
+  }
+
+  #prod-modal .prod-modal-nav {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  #prod-modal .hub-btn,
+  #prod-modal .hub-btn-primary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  #prod-modal.app-modal.prod-modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 20px !important;
+  }
+
+  #prod-modal .prod-modal-header {
+    padding: 18px 16px 14px !important;
+  }
+
+  #prod-modal .prod-modal-body {
+    padding: 18px 16px !important;
   }
 }

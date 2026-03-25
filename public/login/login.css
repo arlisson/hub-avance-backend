@@ -364,3 +364,51 @@ body.dark-mode .logo-claro  { display: none;  }
 
 body:not(.dark-mode) .logo-escuro { display: none;  }
 body:not(.dark-mode) .logo-claro  { display: block; }
+
+/* =========================================
+   BOTÃO DE AJUDA
+   ========================================= */
+.help-link {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-primary);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.help-link i,
+.help-link .ph,
+.help-link .ph-whatsapp-logo {
+  color: #25d366 !important;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.help-link span {
+  color: inherit;
+}
+
+.help-link:hover {
+  color: var(--brand-action);
+  transform: translateY(-1px);
+}
+
+body.dark-mode .help-link {
+  color: var(--brand-light);
+}
+
+body.dark-mode .help-link:hover {
+  color: var(--brand-action);
+}
+
+body.dark-mode .help-link i,
+body.dark-mode .help-link .ph,
+body.dark-mode .help-link .ph-whatsapp-logo {
+  color: #25d366 !important;
+}
