@@ -1258,7 +1258,7 @@ function renderProductCards() {
       </ul>
 
       <button type="button" class="product-card-cta" data-product-id="${escapeHtml(p.id)}">
-        Começar <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+        Contratar <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
       </button>
     </article>
   `,

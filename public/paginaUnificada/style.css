@@ -2398,8 +2398,8 @@ body.dark-mode .product-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--brand-primary);
-  color: #fafeff;
+  background: var(--brand-action);
+  color: #0f2c58;
   font-size: 14px;
   font-weight: 700;
   padding: 14px 20px;
@@ -2408,15 +2408,22 @@ body.dark-mode .product-card {
   cursor: pointer;
   width: 100%;
   transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(19, 56, 104, 0.25);
+  box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35);
   letter-spacing: 0.2px;
+  animation: pulse-cta 3s ease-in-out infinite;
+}
+
+@keyframes pulse-cta {
+  0%, 100% { box-shadow: 0 4px 14px rgba(87, 197, 234, 0.35); }
+  50% { box-shadow: 0 4px 24px rgba(87, 197, 234, 0.7); }
 }
 
 .product-card-cta:hover {
-  background: var(--brand-action);
-  color: #131739;
+  background: #3bb8e0;
+  color: #0f2c58;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(87, 197, 234, 0.45);
+  box-shadow: 0 8px 20px rgba(87, 197, 234, 0.55);
+  animation: none;
 }
 
 .product-card-cta i {
@@ -3265,14 +3272,15 @@ body:not(.dark-mode) .hub-cta-section #btn-submit-feedback:hover {
 
 /* 4. Corrige os Botões "Começar" (product-card-cta) nos Cards de Produto */
 body:not(.dark-mode) .product-card-cta {
-  background-color: #f1f5f9 !important; /* Fundo cinza bem claro */
-  color: #1e293b !important; /* Texto escuro */
-  border: 1px solid #cbd5e1 !important; /* Borda cinza clara */
+  background-color: #57c5ea !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 body:not(.dark-mode) .product-card-cta:hover {
-  background-color: #e2e8f0 !important; /* Fundo um pouco mais escuro no hover */
-  border-color: #94a3b8 !important; /* Borda mais escura no hover */
+  background-color: #3bb8e0 !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 /* 5. Corrige o Botão de WhatsApp "Falar com um consultor" */
@@ -3322,15 +3330,15 @@ body:not(.dark-mode) .mid-cta-desc {
 
 /* 2. Corrige os botões "Começar" nos cards de Soluções */
 body:not(.dark-mode) .product-card-cta {
-  background-color: #ffffff !important; /* Fundo branco/claro */
-  color: #133868 !important; /* Texto azul escuro */
-  border: 1px solid rgba(87, 197, 234, 0.4) !important;
+  background-color: #57c5ea !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 body:not(.dark-mode) .product-card-cta:hover {
-  background-color: #57c5ea !important; /* Azul ciano brilhante no hover */
-  color: #0f2c58 !important; /* Texto escuro no hover */
-  border-color: #57c5ea !important;
+  background-color: #3bb8e0 !important;
+  color: #0f2c58 !important;
+  border: none !important;
 }
 
 /* Garante que o ícone do botão acompanhe a cor do texto */
