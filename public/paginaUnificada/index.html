@@ -494,11 +494,11 @@
                 role="group"
                 aria-label="Avaliação de 0 a 5 estrelas"
               >
-                <button type="button" class="star-btn" data-value="1" aria-label="1 estrela"><i class="ph ph-star-fill"></i></button>
-                <button type="button" class="star-btn" data-value="2" aria-label="2 estrelas"><i class="ph ph-star-fill"></i></button>
-                <button type="button" class="star-btn" data-value="3" aria-label="3 estrelas"><i class="ph ph-star-fill"></i></button>
-                <button type="button" class="star-btn" data-value="4" aria-label="4 estrelas"><i class="ph ph-star-fill"></i></button>
-                <button type="button" class="star-btn" data-value="5" aria-label="5 estrelas"><i class="ph ph-star-fill"></i></button>
+                <button type="button" class="star-btn" data-value="1" aria-label="1 estrela">★</button>
+                <button type="button" class="star-btn" data-value="2" aria-label="2 estrelas">★</button>
+                <button type="button" class="star-btn" data-value="3" aria-label="3 estrelas">★</button>
+                <button type="button" class="star-btn" data-value="4" aria-label="4 estrelas">★</button>
+                <button type="button" class="star-btn" data-value="5" aria-label="5 estrelas">★</button>
               </div>
               <span class="footer-rating-label" id="footer-rating-label">5 de 5</span>
             </div>
@@ -593,11 +593,7 @@
 
         function render(val) {
           stars.forEach(function (btn, i) {
-            var active = i < val;
-            btn.classList.toggle("star-active", active);
-            btn.querySelector("i").className = active
-              ? "ph ph-star-fill"
-              : "ph ph-star";
+            btn.classList.toggle("star-active", i < val);
           });
           label.textContent = val === 0 ? "Sem avaliação" : val + " de 5";
         }
@@ -618,9 +614,6 @@
             s.classList.remove("star-active", "star-hover");
             if (i < hval) {
               s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
-              s.querySelector("i").className = "ph ph-star-fill";
-            } else {
-              s.querySelector("i").className = "ph ph-star";
             }
           });
         });
