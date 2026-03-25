@@ -3571,3 +3571,84 @@ html {
     margin-top: -8px;
   }
 }
+
+/* ============================================================
+   CENTRALIZAR MODAL DE PRODUTOS EM CELULAR E TELAS REDUZIDAS
+   ============================================================ */
+
+@media (max-width: 900px) {
+  #prod-modal.app-modal.prod-modal {
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(680px, calc(100vw - 32px)) !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: min(90vh, calc(100dvh - 32px)) !important;
+    border-radius: 24px !important;
+    transform: translate(-50%, -50%) scale(0.96) !important;
+    margin: 0 !important;
+  }
+
+  #prod-modal.app-modal.prod-modal.is-open {
+    transform: translate(-50%, -50%) scale(1) !important;
+    opacity: 1 !important;
+  }
+
+  #prod-modal .prod-modal-header {
+    padding: 22px 22px 16px !important;
+  }
+
+  #prod-modal .prod-modal-body {
+    padding: 24px 22px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #prod-modal.app-modal.prod-modal {
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(560px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: min(88vh, calc(100dvh - 24px)) !important;
+    border-radius: 22px !important;
+    transform: translate(-50%, -50%) scale(0.96) !important;
+  }
+
+  #prod-modal.app-modal.prod-modal.is-open {
+    transform: translate(-50%, -50%) scale(1) !important;
+  }
+
+  #prod-modal .prod-modal-body {
+    padding: 22px 18px !important;
+  }
+
+  #prod-modal .prod-modal-nav {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  #prod-modal .hub-btn,
+  #prod-modal .hub-btn-primary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  #prod-modal.app-modal.prod-modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 20px !important;
+  }
+
+  #prod-modal .prod-modal-header {
+    padding: 18px 16px 14px !important;
+  }
+
+  #prod-modal .prod-modal-body {
+    padding: 18px 16px !important;
+  }
+}
