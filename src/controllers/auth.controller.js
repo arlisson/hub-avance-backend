@@ -226,11 +226,65 @@ async function enviarEmailVerificacao(email, token, name) {
     to: email,
     subject: "Confirme seu cadastro",
     html: `
-      <p>Olá, ${name}</p>
-      <p>Seu cadastro foi criado com sucesso.</p>
-      <p>Para liberar o login, confirme seu e-mail clicando no link abaixo:</p>
-      <p><a href="${verifyUrl}">Confirmar e-mail</a></p>
-      <p>Este link expira em 24 horas.</p>
+      <div style="margin:0;padding:0;background:#f4f7fb;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+                <tr>
+                  <td align="center" style="padding:32px 24px 16px 24px;">
+                    <img
+                      src="https://avancevip.net.br/img/avanceVip.png"
+                      alt="AVANCE"
+                      style="max-width:180px;height:auto;display:block;"
+                    />
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:8px 32px 0 32px;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+                    <p style="margin:0 0 20px 0;font-size:24px;line-height:1.4;font-weight:700;">
+                      Olá, ${name} 👋
+                    </p>
+
+                    <p style="margin:0 0 16px 0;font-size:16px;line-height:1.7;color:#374151;">
+                      Bem-vindo à <strong>AVANCE</strong>! Estamos felizes em ter você com a gente.
+                    </p>
+
+                    <p style="margin:0 0 28px 0;font-size:16px;line-height:1.7;color:#374151;">
+                      Para começar a aproveitar tudo que criamos pra aumentar sua produtividade
+                      e facilitar seu dia a dia, confirme seu e-mail:
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="center" style="padding:0 32px 8px 32px;">
+                    <a
+                      href="${verifyUrl}"
+                      style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;padding:16px 28px;border-radius:999px;"
+                    >
+                      🎯 CONFIRMAR MEU E-MAIL
+                    </a>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:24px 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;color:#6b7280;">
+                    <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">
+                      ⏰ Este link é válido por 24 horas por segurança.
+                    </p>
+
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#9ca3af;">
+                      Se você não criou uma conta, pode ignorar este e-mail.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
     `
   });
 }
