@@ -29,6 +29,85 @@ document.addEventListener("DOMContentLoaded", async () => {
   const operatorField = operatorInput?.closest(".field");
   const activeLinesField = activeLinesInput?.closest(".field");
 
+  // ── Dropdown de operadora ──
+  const operatorBtn = document.getElementById("operator-btn");
+  const operatorList = document.getElementById("operator-list");
+  const operatorSelectedLabel = document.getElementById("operator-selected-label");
+  const operatorCustomWrap = document.getElementById("operator-custom-wrap");
+  const operatorCustomInput = document.getElementById("operator-custom");
+
+  const KNOWN_OPERATORS = ["VIVO", "TIM", "CLARO", "NIO", "EMBRATEL"];
+
+  function setOperatorValue(val) {
+    if (!val) {
+      if (operatorInput) operatorInput.value = "";
+      if (operatorSelectedLabel) {
+        operatorSelectedLabel.textContent = "Selecione a operadora";
+        operatorSelectedLabel.classList.add("operator-placeholder");
+      }
+      operatorList?.querySelectorAll("li").forEach(li => li.removeAttribute("aria-selected"));
+      if (operatorCustomWrap) operatorCustomWrap.hidden = true;
+      if (operatorCustomInput) operatorCustomInput.value = "";
+      return;
+    }
+
+    const upper = val.toUpperCase();
+    const isKnown = KNOWN_OPERATORS.includes(upper);
+    const listVal = isKnown ? upper : "OUTRAS";
+
+    if (operatorInput) operatorInput.value = val;
+    if (operatorSelectedLabel) {
+      operatorSelectedLabel.textContent = val.toUpperCase();
+      operatorSelectedLabel.classList.remove("operator-placeholder");
+    }
+    operatorList?.querySelectorAll("li").forEach(li => {
+      li.dataset.value === listVal
+        ? li.setAttribute("aria-selected", "true")
+        : li.removeAttribute("aria-selected");
+    });
+
+    if (operatorCustomWrap) operatorCustomWrap.hidden = isKnown;
+    if (!isKnown && operatorCustomInput) operatorCustomInput.value = val;
+  }
+
+  function closeOperatorDropdown() {
+    if (operatorList) operatorList.hidden = true;
+    operatorBtn?.setAttribute("aria-expanded", "false");
+  }
+
+  operatorBtn?.addEventListener("click", () => {
+    const isOpen = !operatorList.hidden;
+    operatorList.hidden = isOpen;
+    operatorBtn.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  operatorList?.querySelectorAll("li").forEach(li => {
+    li.addEventListener("click", () => {
+      const val = li.dataset.value;
+      operatorList.querySelectorAll("li").forEach(el => el.removeAttribute("aria-selected"));
+      li.setAttribute("aria-selected", "true");
+      if (operatorInput) operatorInput.value = val === "OUTRAS" ? "" : val;
+      if (operatorSelectedLabel) {
+        operatorSelectedLabel.textContent = val;
+        operatorSelectedLabel.classList.remove("operator-placeholder");
+      }
+      if (operatorCustomWrap) operatorCustomWrap.hidden = val !== "OUTRAS";
+      if (val !== "OUTRAS" && operatorCustomInput) operatorCustomInput.value = "";
+      if (val === "OUTRAS" && operatorCustomInput) operatorCustomInput.focus();
+      closeOperatorDropdown();
+    });
+  });
+
+  operatorCustomInput?.addEventListener("input", () => {
+    if (operatorInput) operatorInput.value = operatorCustomInput.value.trim();
+  });
+
+  document.addEventListener("click", e => {
+    if (!operatorBtn?.contains(e.target) && !operatorList?.contains(e.target)) {
+      closeOperatorDropdown();
+    }
+  });
+
   function syncMobileFields() {
     const hasMobile =
       String(hasMobileInput?.value || "").trim().toLowerCase() === "true";
@@ -49,8 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (!hasMobile) {
-      if (contractTypeInput) contractTypeInput.value = "";
-      if (operatorInput) operatorInput.value = "";
+      setOperatorValue("");
       if (activeLinesInput) activeLinesInput.value = "";
     }
   }
@@ -399,9 +477,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         contract === "CPF" || contract === "CNPJ" ? contract : "";
     }
 
-    if (operatorInput) {
-      operatorInput.value = profile?.operador || "";
-    }
+    setOperatorValue(profile?.operador || "");
 
     if (activeLinesInput) {
       const raw = profile?.active_lines;
