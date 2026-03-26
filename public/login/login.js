@@ -245,7 +245,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const email = (identifierInput.value || "").trim().toLowerCase();
 
       if (!validarEmail(email)) {
-        alert("Digite seu e-mail no campo acima para receber o link de redefinição.");
+        alert("Digite seu e-mail no campo \"E-mail\" para receber o link de redefinição.");
         return;
       }
 
