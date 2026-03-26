@@ -1794,9 +1794,9 @@ function initFooterRating() {
 
   // Função que pinta as estrelas
   function render(val) {
-    stars.forEach((btn, i) => {
-      btn.classList.remove("star-hover");
-      if (i < val) {
+    stars.forEach((btn) => {
+      const v = parseInt(btn.dataset.value, 10);
+      if (v <= val) {
         btn.classList.add("star-active");
       } else {
         btn.classList.remove("star-active");
@@ -1814,24 +1814,7 @@ function initFooterRating() {
     render(current);
   });
 
-  // Evento de passar o mouse por cima (hover) — mouseenter não re-dispara
-  // enquanto o cursor permanece sobre a mesma estrela
-  stars.forEach((star) => {
-    star.addEventListener("mouseenter", () => {
-      const hval = parseInt(star.dataset.value, 10);
-      stars.forEach((s, i) => {
-        s.classList.remove("star-active", "star-hover");
-        if (i < hval) {
-          s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
-        }
-      });
-    });
-  });
-
-  // Evento de tirar o mouse de cima
-  container.addEventListener("mouseleave", () => {
-    render(current);
-  });
+  // Hover visual gerenciado por CSS puro (sem conflito com render)
 
   // Renderiza o estado inicial (5 estrelas)
   render(current);

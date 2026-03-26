@@ -1718,6 +1718,8 @@ body.modal-open .hero-badge {
 
 .star-rating {
   display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
   gap: 4px;
 }
 
@@ -1732,19 +1734,23 @@ body.modal-open .hero-badge {
   transition: transform 0.1s ease, color 0.15s ease;
 }
 
-body.dark-mode .star-btn {
+/* Hover CSS puro: ilumina a estrela e todas as irmãs seguintes (visualmente anteriores) */
+.star-rating:hover .star-btn {
   color: #c8c8c8;
 }
 
-.star-btn.star-active,
-body.dark-mode .star-btn.star-active {
-  color: #f59e0b;
+.star-btn:hover,
+.star-btn:hover ~ .star-btn {
+  color: #f59e0b !important;
 }
 
-.star-btn.star-hover,
-body.dark-mode .star-btn.star-hover {
-  color: #f59e0b;
+.star-btn:hover {
   transform: scale(1.15);
+}
+
+/* Estado selecionado via JS */
+.star-btn.star-active {
+  color: #f59e0b;
 }
 
 .footer-rating-label {
