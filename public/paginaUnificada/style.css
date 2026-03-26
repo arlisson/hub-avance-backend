@@ -49,8 +49,8 @@
   --border-color: rgba(87, 197, 234, 0.3);
   --shadow-color: rgba(19, 56, 104, 0.08);
 
-  /* Destaque de texto adaptativo (ciano no escuro, azul-marinho no claro) */
-  --accent-highlight: #133868;
+  /* Destaque de texto adaptativo (ciano no escuro, azul médio no claro) */
+  --accent-highlight: #1d6fa8;
 }
 
 /* Modo Escuro */
