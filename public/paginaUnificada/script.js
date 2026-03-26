@@ -39,17 +39,18 @@ const APPS = [
     longDesc:
       "Este é o agente mentor estratégico de vendas. Ele permite atendimento diretamente no navegador, com experiência adaptada para desktop e mobile. Use este produto quando precisar operar de qualquer lugar, sem depender de instalação local.",
     youtubeId: "CNFqPBAdglE",
-    enabled: false,
+    enabled: true,
     requiresPermission: false,
     clienteCta: true,
     actions: [
       {
         label: "Acessar",
-        icon: "ph-arrow-square-out",
+        icon: "ph-lock",
         app: "agent",
         metric: "access",
         primary: true,
         targetBlank: false,
+        locked: true,
       },
     ],
   },
@@ -969,32 +970,44 @@ function openAppModal(appId) {
     (app.actions || []).forEach((a) => {
       const el = document.createElement("button");
       el.type = "button";
-      el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
-      el.innerHTML = `
-        <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
-        <span>${escapeHtml(a.label || "Abrir")}</span>
-      `;
 
-      el.addEventListener("click", async () => {
-        try {
-          if (a.app) {
-            await registrarUsoEIrParaDestino(
-              a.app,
-              a.metric || "access",
-              !!a.targetBlank
-            );
-          } else if (a.href) {
-            if (a.targetBlank) {
-              window.open(a.href, "_blank", "noopener,noreferrer");
-            } else {
-              window.location.href = a.href;
+      if (a.locked) {
+        el.className = "hub-btn hub-btn-locked";
+        el.disabled = true;
+        el.title = "Em breve";
+        el.innerHTML = `
+          <i class="ph ph-lock"></i>
+          <span>${escapeHtml(a.label || "Abrir")}</span>
+          <span class="hub-btn-locked-badge">Em breve</span>
+        `;
+      } else {
+        el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
+        el.innerHTML = `
+          <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
+          <span>${escapeHtml(a.label || "Abrir")}</span>
+        `;
+
+        el.addEventListener("click", async () => {
+          try {
+            if (a.app) {
+              await registrarUsoEIrParaDestino(
+                a.app,
+                a.metric || "access",
+                !!a.targetBlank
+              );
+            } else if (a.href) {
+              if (a.targetBlank) {
+                window.open(a.href, "_blank", "noopener,noreferrer");
+              } else {
+                window.location.href = a.href;
+              }
             }
+          } catch (err) {
+            console.error("Erro ao registrar uso do app:", err);
+            alert("Não foi possível abrir a aplicação agora.");
           }
-        } catch (err) {
-          console.error("Erro ao registrar uso do app:", err);
-          alert("Não foi possível abrir a aplicação agora.");
-        }
-      });
+        });
+      }
 
       actionsEl.appendChild(el);
     });

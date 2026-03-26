@@ -970,6 +970,33 @@ body.dark-mode .hub-card-skeleton {
   box-shadow: 0 8px 20px rgba(87, 197, 234, 0.2);
 }
 
+.hub-btn-locked {
+  background-color: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  opacity: 0.45;
+  cursor: not-allowed;
+  gap: 8px;
+}
+
+.hub-btn-locked:hover {
+  transform: none;
+  box-shadow: none;
+  opacity: 0.45;
+}
+
+.hub-btn-locked-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: var(--border-subtle);
+  color: var(--text-primary);
+  padding: 2px 7px;
+  border-radius: 99px;
+  opacity: 0.8;
+}
+
 /* ============================================================
    10. MODAL — BASE COMPARTILHADA
    ============================================================ */
