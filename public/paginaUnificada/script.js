@@ -37,7 +37,7 @@ const APPS = [
     shortDesc:
       "O Preenche Fácil te ajuda a manter sua planilha do Excel organizada, funcionando offline na sua máquina.",
     longDesc:
-      "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet — suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
+      "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet, suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
     youtubeId: "",
     enabled: true,
     requiresPermission: false,
