@@ -1732,18 +1732,18 @@ body.dark-mode .footer-brand {
 }
 
 #btn-submit-rating {
-  background-color: transparent;
-  color: var(--brand-action);
-  border: 1px solid var(--brand-action);
-  box-shadow: none;
+  background-color: transparent !important;
+  color: var(--brand-action) !important;
+  border: 1px solid var(--brand-action) !important;
+  box-shadow: none !important;
   opacity: 0.75;
 }
 
 #btn-submit-rating:hover {
-  background-color: rgba(87, 197, 234, 0.08);
+  background-color: rgba(87, 197, 234, 0.08) !important;
   opacity: 1;
-  transform: none;
-  box-shadow: none;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 @media (max-width: 768px) {
