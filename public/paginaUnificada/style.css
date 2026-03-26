@@ -3782,20 +3782,26 @@ html {
   bottom: 100px;
   width: 52px;
   height: 52px;
-  border: none;
+  border: 2px solid var(--brand-action);
   border-radius: 999px;
-  background: var(--brand-accent, #57c5ea);
-  color: #ffffff;
+  background: transparent;
+  color: var(--brand-action);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22px;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 0 8px rgba(87, 197, 234, 0.5),
+    0 0 20px rgba(87, 197, 234, 0.25),
+    inset 0 0 8px rgba(87, 197, 234, 0.1);
+  text-shadow:
+    0 0 8px rgba(87, 197, 234, 0.8),
+    0 0 16px rgba(87, 197, 234, 0.4);
   opacity: 0;
   visibility: hidden;
   transform: translateY(12px);
-  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease, box-shadow 0.25s ease;
   z-index: 999;
 }
 
@@ -3806,15 +3812,17 @@ html {
 }
 
 .back-to-top:hover {
-  filter: brightness(1.05);
+  box-shadow:
+    0 0 12px rgba(87, 197, 234, 0.8),
+    0 0 30px rgba(87, 197, 234, 0.4),
+    inset 0 0 12px rgba(87, 197, 234, 0.15);
+  text-shadow:
+    0 0 10px rgba(87, 197, 234, 1),
+    0 0 24px rgba(87, 197, 234, 0.6);
 }
 
 .back-to-top:active {
   transform: scale(0.96);
-}
-
-body.light-mode .back-to-top {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
 }
 
 @media (max-width: 768px) {
