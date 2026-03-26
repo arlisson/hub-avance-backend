@@ -1742,6 +1742,7 @@ body.dark-mode .footer-brand {
   width: 100%;
   min-width: 200px;
   max-width: 280px;
+  margin-top: 12px;
   background: transparent;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
@@ -1771,6 +1772,7 @@ body.dark-mode .footer-brand {
   border: 1px solid var(--brand-action) !important;
   box-shadow: none !important;
   opacity: 0.75;
+  max-width: 280px !important;
 }
 
 #btn-submit-rating:hover {
