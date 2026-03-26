@@ -30,31 +30,6 @@ let _currentUserProfile = null; // { name, cpf, whatsapp, operator, active_lines
 
 const APPS = [
   {
-    id: "agent",
-    badge: "Mentor estratégico de vendas",
-    image: "../img/Apolo.png",
-    title: "Mentor estratégico de vendas",
-    shortDesc:
-      "Obtenha treinamentos 100% personalizados com o Apolo, nosso agente de inteligência artificial treinado para te auxiliar no processo de vendas.",
-    longDesc:
-      "O Apolo é o seu mentor estratégico de vendas com inteligência artificial. Ele analisa o perfil do cliente, sugere abordagens personalizadas, ajuda a contornar objeções e orienta cada etapa da negociação, tudo em tempo real, direto no navegador. Ideal para consultores que querem vender com mais confiança, consistência e resultado.",
-    youtubeId: "CNFqPBAdglE",
-    enabled: true,
-    requiresPermission: false,
-    clienteCta: true,
-    actions: [
-      {
-        label: "Acessar",
-        icon: "ph-lock",
-        app: "agent",
-        metric: "access",
-        primary: true,
-        targetBlank: false,
-        locked: true,
-      },
-    ],
-  },
-  {
     id: "desktop",
     badge: "Preenche Fácil",
     image: "../img/PreencheFacil.png",
@@ -115,6 +90,31 @@ const APPS = [
         metric: "access",
         primary: true,
         targetBlank: false,
+      },
+    ],
+  },
+  {
+    id: "agent",
+    badge: "Mentor estratégico de vendas",
+    image: "../img/Apolo.png",
+    title: "Mentor estratégico de vendas",
+    shortDesc:
+      "Obtenha treinamentos 100% personalizados com o Apolo, nosso agente de inteligência artificial treinado para te auxiliar no processo de vendas.",
+    longDesc:
+      "O Apolo é o seu mentor estratégico de vendas com inteligência artificial. Ele analisa o perfil do cliente, sugere abordagens personalizadas, ajuda a contornar objeções e orienta cada etapa da negociação, tudo em tempo real, direto no navegador. Ideal para consultores que querem vender com mais confiança, consistência e resultado.",
+    youtubeId: "CNFqPBAdglE",
+    enabled: true,
+    requiresPermission: false,
+    clienteCta: true,
+    actions: [
+      {
+        label: "Acessar",
+        icon: "ph-lock",
+        app: "agent",
+        metric: "access",
+        primary: true,
+        targetBlank: false,
+        locked: true,
       },
     ],
   },
