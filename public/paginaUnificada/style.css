@@ -3724,7 +3724,7 @@ html {
 .back-to-top {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  bottom: 100px;
   width: 52px;
   height: 52px;
   border: none;
@@ -3764,8 +3764,8 @@ body.light-mode .back-to-top {
 
 @media (max-width: 768px) {
   .back-to-top {
-    right: 16px;
-    bottom: 16px;
+    right: 20px;
+    bottom: 84px;
     width: 48px;
     height: 48px;
     font-size: 20px;
