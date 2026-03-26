@@ -824,8 +824,14 @@ body.dark-mode .hub-card {
 .hub-card-content {
   position: relative;
   z-index: 3;
-  padding: 30px 24px;
-  overflow: hidden;
+  padding: 24px 24px 28px;
+  display: grid;
+  grid-template-rows: auto 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hub-card:hover .hub-card-content {
+  grid-template-rows: auto 1fr;
 }
 
 .hub-card-title {
@@ -835,11 +841,12 @@ body.dark-mode .hub-card {
   margin: 0 0 8px 0;
   text-align: left;
   line-height: 1.3;
+  transform: translateY(0);
   transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hub-card:hover .hub-card-title {
-  transform: translateY(-6px);
+  transform: translateY(-4px);
 }
 
 .hub-card-short-desc {
@@ -849,16 +856,13 @@ body.dark-mode .hub-card {
   margin: 0;
   line-height: 1.5;
   text-align: left;
+  overflow: hidden;
   opacity: 0;
-  transform: translateY(14px);
-  transition:
-    opacity 0.38s ease 0.06s,
-    transform 0.38s cubic-bezier(0.4, 0, 0.2, 1) 0.06s;
+  transition: opacity 0.3s ease 0.12s;
 }
 
 .hub-card:hover .hub-card-short-desc {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .hub-card-disabled {
