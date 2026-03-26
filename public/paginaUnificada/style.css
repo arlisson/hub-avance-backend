@@ -3356,9 +3356,13 @@ body:not(.dark-mode) .top-navbar .user-profile-btn:hover {
   ) !important; /* Fundo um pouco mais escuro no hover */
 }
 
-/* 3. Corrige a Descrição Curta nos Cards do Hub */
+/* 3. Corrige os textos nos Cards do Hub */
+body:not(.dark-mode) .hub-card-title {
+  color: #0f172a !important;
+}
+
 body:not(.dark-mode) .hub-card-short-desc {
-  color: #64748b !important; /* Cinza médio-escuro legível para o parágrafo */
+  color: #334155 !important;
 }
 
 /* ============================================================
