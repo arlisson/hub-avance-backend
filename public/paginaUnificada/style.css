@@ -750,11 +750,15 @@ body.dark-mode .hub-title {
   font-size: 28px;
   font-weight: 800;
   line-height: 1;
-  color: #fff;
+  color: var(--brand-action);
   text-shadow:
     0 0 10px rgba(255, 255, 255, 0.9),
     0 0 24px rgba(87, 197, 234, 0.8),
     0 0 48px rgba(87, 197, 234, 0.4);
+}
+
+body.dark-mode .hub-coming-soon-count {
+  color: #fff;
 }
 
 .hub-card {
