@@ -1758,6 +1758,7 @@ body.dark-mode .footer-brand {
 }
 
 .footer-comment-input::placeholder {
+  color: var(--text-primary);
   opacity: 0.45;
 }
 
