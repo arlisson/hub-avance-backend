@@ -1640,6 +1640,11 @@ body.dark-mode .footer-brand {
   flex-shrink: 0;
 }
 
+.footer-brand-list a:hover {
+  opacity: 1;
+  color: var(--brand-action);
+}
+
 .footer-col-title {
   font-size: 12px;
   font-weight: 700;
