@@ -1748,7 +1748,7 @@ body.dark-mode .star-btn {
   max-width: 280px;
   margin-top: 12px;
   background: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--brand-action);
   border-radius: 8px;
   color: var(--text-primary);
   font-family: inherit;
