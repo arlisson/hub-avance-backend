@@ -3305,12 +3305,12 @@ body:not(.dark-mode) .top-navbar .nav-subtitle {
 }
 
 body:not(.dark-mode) .top-navbar .nav-link {
-  color: #1e293b !important; /* Azul ardósia escuro para os links padrão */
+  color: var(--brand-accent) !important;
 }
 
 body:not(.dark-mode) .top-navbar .nav-link:hover,
 body:not(.dark-mode) .top-navbar .nav-link.active {
-  color: #2563eb !important; /* Azul primário para hover e link ativo */
+  color: var(--brand-action) !important;
 }
 
 /* 2. Corrige o Botão de Perfil/E-mail (settings-btn) na Navbar */
