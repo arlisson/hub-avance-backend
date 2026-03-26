@@ -215,15 +215,22 @@ body:not(.dark-mode) .logo-claro {
   transition: all 0.2s;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.nav-link:hover {
   opacity: 1;
   color: var(--brand-primary);
 }
 
-body.dark-mode .nav-link:hover,
-body.dark-mode .nav-link.active {
+.nav-link.active {
+  opacity: 1;
+  color: var(--accent-highlight);
+}
+
+body.dark-mode .nav-link:hover {
   color: var(--brand-action);
+}
+
+body.dark-mode .nav-link.active {
+  color: var(--accent-highlight);
 }
 
 /* --- Lado direito --- */
@@ -3321,9 +3328,12 @@ body:not(.dark-mode) .top-navbar .nav-link {
   color: var(--brand-accent) !important;
 }
 
-body:not(.dark-mode) .top-navbar .nav-link:hover,
-body:not(.dark-mode) .top-navbar .nav-link.active {
+body:not(.dark-mode) .top-navbar .nav-link:hover {
   color: var(--brand-action) !important;
+}
+
+body:not(.dark-mode) .top-navbar .nav-link.active {
+  color: var(--accent-highlight) !important;
 }
 
 /* 2. Corrige o Botão de Perfil/E-mail (settings-btn) na Navbar */
