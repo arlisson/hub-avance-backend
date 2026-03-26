@@ -27,6 +27,7 @@ const METRICS = [
   { key: "download", label: "Downloads" },
 ];
 
+
 const APP_CATALOG = {
   desktop: {
     label: "Preenche Fácil",
