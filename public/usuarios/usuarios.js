@@ -20,7 +20,7 @@ let selectedOperadoras = new Set();
 let searchDebounceTimer = null;
 
 const LOGIN_URL = "/login/login.html";
-const HUB_URL = "/hub/hub.html";
+const HUB_URL = "/paginaUnificada/index.html";
 
 const METRICS = [
   { key: "access", label: "Acessos" },

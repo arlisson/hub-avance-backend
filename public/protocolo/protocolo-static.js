@@ -1,5 +1,5 @@
 const LOGIN_URL = "/login/login.html";
-const HUB_URL = "/hub/hub.html";
+const HUB_URL = "/paginaUnificada/index.html";
 
 const API_ME_URL = "/api/profile";
 const API_LOGOUT_URL = "/api/logout";
