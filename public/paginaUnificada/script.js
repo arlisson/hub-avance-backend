@@ -1791,7 +1791,6 @@ function initFooterRating() {
 
   const stars = container.querySelectorAll(".star-btn");
   let current = 5; // Começa com 5 estrelas
-  let suppressHover = false;
 
   // Função que pinta as estrelas
   function render(val) {
@@ -1813,26 +1812,24 @@ function initFooterRating() {
     const val = parseInt(btn.dataset.value, 10);
     current = current === val ? 0 : val;
     render(current);
-    if (current === 0) suppressHover = true;
   });
 
-  // Evento de passar o mouse por cima (hover)
-  container.addEventListener("mouseover", (e) => {
-    if (suppressHover) return;
-    const btn = e.target.closest(".star-btn");
-    if (!btn) return;
-    const hval = parseInt(btn.dataset.value, 10);
-    stars.forEach((s, i) => {
-      s.classList.remove("star-active", "star-hover");
-      if (i < hval) {
-        s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
-      }
+  // Evento de passar o mouse por cima (hover) — mouseenter não re-dispara
+  // enquanto o cursor permanece sobre a mesma estrela
+  stars.forEach((star) => {
+    star.addEventListener("mouseenter", () => {
+      const hval = parseInt(star.dataset.value, 10);
+      stars.forEach((s, i) => {
+        s.classList.remove("star-active", "star-hover");
+        if (i < hval) {
+          s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
+        }
+      });
     });
   });
 
   // Evento de tirar o mouse de cima
   container.addEventListener("mouseleave", () => {
-    suppressHover = false;
     render(current);
   });
 
