@@ -1803,9 +1803,18 @@ body.dark-mode .footer-brand {
     align-items: start;
   }
 
-  /* Coluna de contato ocupa as duas colunas pois tem conteúdo largo */
-  .footer-col:has(.footer-links li i) {
+  /* Contato e Avalie-nos ocupam a linha toda */
+  .footer-col:has(.footer-links li i),
+  .footer-col:has(.footer-rating) {
     grid-column: 1 / -1;
+  }
+
+  .footer-col:has(.footer-rating) #btn-submit-rating {
+    max-width: 100% !important;
+  }
+
+  .footer-col:has(.footer-rating) .footer-comment-input {
+    max-width: 100%;
   }
 
   /* Emails longos não vazam */
