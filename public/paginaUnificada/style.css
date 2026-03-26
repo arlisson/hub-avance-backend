@@ -962,6 +962,7 @@ body.dark-mode .hub-card-skeleton {
   background: linear-gradient(135deg, rgba(87, 197, 234, 0.12), rgba(87, 197, 234, 0.06));
   border-color: var(--brand-action);
   color: var(--brand-action);
+  margin-right: auto;
 }
 
 .hub-btn-cta:hover {
@@ -1175,8 +1176,9 @@ body.dark-mode .app-modal-close {
 
 .app-modal-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  gap: 12px;
   padding-top: 10px;
 }
 
