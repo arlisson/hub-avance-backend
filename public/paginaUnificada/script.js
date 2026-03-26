@@ -1795,6 +1795,7 @@ function initFooterRating() {
   // Função que pinta as estrelas
   function render(val) {
     stars.forEach((btn, i) => {
+      btn.classList.remove("star-hover");
       if (i < val) {
         btn.classList.add("star-active");
       } else {
