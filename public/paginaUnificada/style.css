@@ -1771,6 +1771,7 @@ body.dark-mode .footer-brand {
   border: 1px solid var(--brand-action) !important;
   box-shadow: none !important;
   opacity: 0.75;
+  max-width: 280px !important;
 }
 
 #btn-submit-rating:hover {
