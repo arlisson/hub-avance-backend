@@ -1614,10 +1614,6 @@ body.modal-open .hero-badge {
   font-weight: 800;
   font-size: 18px;
   letter-spacing: 2px;
-  color: var(--brand-primary);
-}
-
-body.dark-mode .footer-brand {
   color: var(--brand-action);
 }
 
