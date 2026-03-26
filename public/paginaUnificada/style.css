@@ -1637,11 +1637,7 @@ body.modal-open .hero-badge {
 }
 
 .footer-brand-list li::before {
-  content: "–";
-  color: var(--brand-action);
-  font-weight: 700;
-  opacity: 1;
-  flex-shrink: 0;
+  content: none;
 }
 
 .footer-brand-list a:hover {
