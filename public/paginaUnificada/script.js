@@ -1846,6 +1846,9 @@ function initFooterRating() {
       if (nota === 0) {
         alert("Por favor, selecione uma nota de 1 a 5 estrelas antes de enviar.");
         return;
+      }else if(commentInput.value.trim() === ""){
+        alert("Por favor, preencha o campo de comentário antes de enviar.")
+        return;
       }
 
       // Utiliza o ID da sessão que já existe no seu script.js
