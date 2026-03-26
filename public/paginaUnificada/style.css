@@ -1733,7 +1733,7 @@ body.modal-open .hero-badge {
 }
 
 body.dark-mode .star-btn {
-  color: rgba(255, 255, 255, 0.25);
+  color: #c8c8c8;
 }
 
 .star-btn.star-active {
