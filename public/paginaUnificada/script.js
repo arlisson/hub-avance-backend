@@ -35,9 +35,9 @@ const APPS = [
     image: "../img/Apolo.png",
     title: "Mentor estratégico de vendas",
     shortDesc:
-      "Acesse o sistema online. Ideal para uso em qualquer dispositivo.",
+      "Obtenha treinamentos 100% personalizados com o Apolo, nosso agente de inteligência artificial treinado para te auxiliar no processo de vendas.",
     longDesc:
-      "Este é o agente mentor estratégico de vendas. Ele permite atendimento diretamente no navegador, com experiência adaptada para desktop e mobile. Use este produto quando precisar operar de qualquer lugar, sem depender de instalação local.",
+      "O Apolo é o seu mentor estratégico de vendas com inteligência artificial. Ele analisa o perfil do cliente, sugere abordagens personalizadas, ajuda a contornar objeções e orienta cada etapa da negociação, tudo em tempo real, direto no navegador. Ideal para consultores que querem vender com mais confiança, consistência e resultado.",
     youtubeId: "CNFqPBAdglE",
     enabled: true,
     requiresPermission: false,
@@ -60,7 +60,7 @@ const APPS = [
     image: "../img/PreencheFacil.png",
     title: "Preenche Fácil",
     shortDesc:
-      "O Preenche Fácil organiza automaticamente no Excel, funcionando offline na sua máquina.",
+      "O Preenche Fácil te ajuda a manter sua planilha do Excel organizada, funcionando offline na sua máquina.",
     longDesc:
       "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet — suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
     youtubeId: "",
@@ -82,8 +82,8 @@ const APPS = [
     badge: "Gerador de Protocolo Agendor",
     image: "../img/Protocolo.png",
     title: "Gerador de Protocolo Agendor",
-    shortDesc: "Gera e registra protocolos com um clique.",
-    longDesc: "Ferramenta para geração, registro e envio de protocolos.",
+    shortDesc: "Gera, registra e envia protocolos integrado ao Agendor.",
+    longDesc: "Crie protocolos de atendimento em segundos, com registro automático direto no Agendor. Cada protocolo gerado fica vinculado ao cliente, eliminando o trabalho manual de registro e reduzindo erros no acompanhamento das negociações.",
     youtubeId: "",
     enabled: true,
     requiresPermission: true,
@@ -102,8 +102,8 @@ const APPS = [
     badge: "Gerador de Protocolo",
     image: "../img/Protocolo.png",
     title: "Gerador de Protocolo",
-    shortDesc: "Gera novos protocolos.",
-    longDesc: "Ferramenta para geração de novos protocolos.",
+    shortDesc: "Gere e envie protocolos de atendimento em segundos.",
+    longDesc: "Chega de anotar número de protocolo no papel ou na memória. Com um clique você gera um protocolo único para usar onde quiser e manter tudo organizado, simples, rápido e sem margem para erro.",
     youtubeId: "",
     enabled: true,
     requiresPermission: false,
