@@ -3375,16 +3375,21 @@ body:not(.dark-mode) .hub-cta-section #btn-submit-feedback:hover {
   background-color: #1d4ed8 !important; /* Azul mais escuro no hover */
 }
 
+/* 4b. Botão hero ("Conheça a Avance") — texto branco no tema claro */
+body:not(.dark-mode) .hero-btn {
+  color: #ffffff !important;
+}
+
 /* 4. Corrige os Botões "Começar" (product-card-cta) nos Cards de Produto */
 body:not(.dark-mode) .product-card-cta {
   background-color: #57c5ea !important;
-  color: #0f2c58 !important;
+  color: #ffffff !important;
   border: none !important;
 }
 
 body:not(.dark-mode) .product-card-cta:hover {
   background-color: #3bb8e0 !important;
-  color: #0f2c58 !important;
+  color: #ffffff !important;
   border: none !important;
 }
 
@@ -3436,13 +3441,13 @@ body:not(.dark-mode) .mid-cta-desc {
 /* 2. Corrige os botões "Começar" nos cards de Soluções */
 body:not(.dark-mode) .product-card-cta {
   background-color: #57c5ea !important;
-  color: #0f2c58 !important;
+  color: #ffffff !important;
   border: none !important;
 }
 
 body:not(.dark-mode) .product-card-cta:hover {
   background-color: #3bb8e0 !important;
-  color: #0f2c58 !important;
+  color: #ffffff !important;
   border: none !important;
 }
 
