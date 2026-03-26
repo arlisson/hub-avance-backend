@@ -1780,7 +1780,6 @@ body.dark-mode .star-btn {
   border-color: var(--brand-action);
   opacity: 1;
   box-shadow:
-    0 0 0 3px rgba(87, 197, 234, 0.15),
     0 0 12px rgba(87, 197, 234, 0.25),
     0 0 24px rgba(87, 197, 234, 0.1);
 }
