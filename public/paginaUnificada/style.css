@@ -1756,10 +1756,53 @@ body.dark-mode .footer-brand {
 }
 
 @media (max-width: 480px) {
+  .hub-footer {
+    padding: 40px 20px 32px;
+  }
+
   .footer-grid {
     flex-direction: column;
     align-items: center;
-    gap: 28px;
+    gap: 32px;
+    text-align: center;
+  }
+
+  /* Todas as colunas centralizadas e largura total */
+  .footer-col,
+  .footer-col-brand {
+    width: 100%;
+    align-items: center;
+  }
+
+  /* Título de cada coluna centralizado */
+  .footer-col-title {
+    text-align: center;
+  }
+
+  /* Lista de links centralizada */
+  .footer-links,
+  .footer-brand-list {
+    align-items: center;
+  }
+
+  /* Itens de contato com email longo: deixa quebrar */
+  .footer-links li {
+    justify-content: center;
+    word-break: break-all;
+    text-align: left;
+  }
+
+  /* Seção de avaliação centralizada */
+  .footer-rating {
+    align-items: center;
+  }
+
+  .footer-comment-input {
+    max-width: 100%;
+  }
+
+  #btn-submit-rating {
+    max-width: 100%;
   }
 }
 
