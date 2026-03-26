@@ -1550,12 +1550,8 @@ function buildProductReviewHTML(product) {
       <i class="ph ph-whatsapp-logo" aria-hidden="true"></i>
       Falar com um consultor
     </a>
-    <a href="tel:+${WHATSAPP_NUMBER}" class="phone-btn-modal" id="btn-phone">
-      <i class="ph ph-phone" aria-hidden="true"></i>
-      Ligar para um consultor
-    </a>
     <p class="modal-footer-note">
-      Você será redirecionado para o WhatsApp ou poderá ligar diretamente para um consultor.
+      Você será redirecionado para o WhatsApp para falar com um consultor.
     </p>
   `;
 }
@@ -1595,7 +1591,6 @@ function bindProductModalEvents(product, stepIndex, isReview) {
     };
 
     document.getElementById("btn-whatsapp")?.addEventListener("click", saveLead);
-    document.getElementById("btn-phone")?.addEventListener("click", saveLead);
   }
 
   const input = document.getElementById("step-input");
