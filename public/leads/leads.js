@@ -9,7 +9,7 @@ let searchDebounce = null;
 
 const PAGE_SIZE = 25;
 const LOGIN_URL = "/login/login.html";
-const HUB_URL = "../paginaUnificada/index.html";
+const HUB_URL = "/paginaUnificada/index.html";
 
 // ── Loading ────────────────────────────────────────────────────────────────
 function showLoading(title, message) {
