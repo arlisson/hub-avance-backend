@@ -1736,11 +1736,13 @@ body.dark-mode .star-btn {
   color: #c8c8c8;
 }
 
-.star-btn.star-active {
+.star-btn.star-active,
+body.dark-mode .star-btn.star-active {
   color: #f59e0b;
 }
 
-.star-btn.star-hover {
+.star-btn.star-hover,
+body.dark-mode .star-btn.star-hover {
   color: #f59e0b;
   transform: scale(1.15);
 }
