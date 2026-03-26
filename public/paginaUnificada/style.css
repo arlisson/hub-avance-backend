@@ -1511,7 +1511,7 @@ body.dark-mode .summary-card {
   box-shadow: 0 14px 32px rgba(37, 211, 102, 0.5);
 }
 
-.email-btn-modal {
+.phone-btn-modal {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -1531,12 +1531,12 @@ body.dark-mode .summary-card {
   transition: all 0.25s ease;
 }
 
-.email-btn-modal i {
+.phone-btn-modal i {
   font-size: 20px;
   opacity: 0.8;
 }
 
-.email-btn-modal:hover {
+.phone-btn-modal:hover {
   border-color: var(--brand-action);
   color: var(--brand-action);
   background: rgba(87, 197, 234, 0.06);

@@ -1538,15 +1538,6 @@ function buildProductReviewHTML(product) {
   const rawMessage = product.buildMessage(_answers) + profileSuffix;
   const waUrl = buildWhatsAppUrl(rawMessage);
 
-  const plainMessage = rawMessage
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/_([^_]+)_/g, "$1");
-  const emailUrl =
-    `https://mail.google.com/mail/?view=cm` +
-    `&to=${encodeURIComponent("querosercliente@avancevip.net.br")}` +
-    `&su=${encodeURIComponent(`Solicitação: ${product.title}`)}` +
-    `&body=${encodeURIComponent(plainMessage)}`;
-
   return `
     <h3 class="step-question">Tudo certo! Confirme o seu pedido.</h3>
     <p class="step-hint">Revise as informações abaixo. Um consultor vai receber esses dados e entrará em contato para apresentar as melhores opções.</p>
@@ -1559,12 +1550,12 @@ function buildProductReviewHTML(product) {
       <i class="ph ph-whatsapp-logo" aria-hidden="true"></i>
       Falar com um consultor
     </a>
-    <a href="${emailUrl}" class="email-btn-modal" id="btn-email" target="_blank" rel="noopener noreferrer">
-      <i class="ph ph-envelope" aria-hidden="true"></i>
-      Enviar por e-mail
+    <a href="tel:+${WHATSAPP_NUMBER}" class="phone-btn-modal" id="btn-phone">
+      <i class="ph ph-phone" aria-hidden="true"></i>
+      Ligar para um consultor
     </a>
     <p class="modal-footer-note">
-      Você será redirecionado para o WhatsApp ou e-mail com a sua solicitação já preenchida.
+      Você será redirecionado para o WhatsApp ou poderá ligar diretamente para um consultor.
     </p>
   `;
 }
@@ -1604,7 +1595,7 @@ function bindProductModalEvents(product, stepIndex, isReview) {
     };
 
     document.getElementById("btn-whatsapp")?.addEventListener("click", saveLead);
-    document.getElementById("btn-email")?.addEventListener("click", saveLead);
+    document.getElementById("btn-phone")?.addEventListener("click", saveLead);
   }
 
   const input = document.getElementById("step-input");
