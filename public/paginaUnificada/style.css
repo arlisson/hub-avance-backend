@@ -1891,12 +1891,10 @@ body.modal-open .hero-badge {
 }
 
 .testimonials-container {
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: hidden; /* Fix iOS: overflow-x:auto cria UIScrollView nativa que bloqueia CSS animation em filhos */
   padding: 10px 0;
   -ms-overflow-style: none;
   scrollbar-width: none;
-  scroll-behavior: auto;
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0%,
@@ -1933,6 +1931,9 @@ body.modal-open .hero-badge {
 .testimonials-track.iniciada {
   animation: marquee 150s linear infinite;
   -webkit-animation: marquee 150s linear infinite;
+  will-change: transform; /* Fix iOS: força promoção de layer GPU para a animação ser composta corretamente */
+  -webkit-backface-visibility: hidden; /* Fix iOS: evita flickering durante animação */
+  backface-visibility: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1940,7 +1941,7 @@ body.modal-open .hero-badge {
     animation: none;
   }
   .testimonials-container {
-    overflow-x: auto;
+    overflow-x: auto; /* só reativa scroll manual quando animação está desligada por acessibilidade */
   }
 }
 

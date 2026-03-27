@@ -1180,7 +1180,13 @@ function renderTestimonials(avaliacoes, trackElement) {
     })
     .join("");
 
-  requestAnimationFrame(() => trackElement.classList.add("iniciada"));
+  // Fix Bug #5: double RAF garante que o iOS Safari terminou de calcular
+  // o layout (width: max-content) antes de iniciar a animação CSS.
+  // Um único RAF às vezes dispara antes do reflow, fazendo o translateX(-50%)
+  // ser calculado com largura errada e o loop não fechar.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => trackElement.classList.add("iniciada"))
+  );
 
   const container = trackElement.closest(".testimonials-container");
   iniciarCarrosselInterativo(container, trackElement);
@@ -1191,24 +1197,49 @@ function iniciarCarrosselInterativo(container, track) {
 
   let isDown = false;
   let startX;
-  let scrollLeft;
+  let currentTx; // Fix Bug #3: guarda translateX atual, não scrollLeft
+
+  // Fix Bug #4: usa DOMMatrix em vez de split(",")[4]
+  // getComputedStyle durante animação CSS ativa retorna o valor interpolado
+  // correto via DOMMatrix, enquanto split pode falhar em Safari/iOS com
+  // matrix3d ou valores formatados de forma diferente.
+  function getCurrentTx() {
+    const style = window.getComputedStyle(track);
+    const transform = style.transform || style.webkitTransform;
+    if (!transform || transform === "none") return 0;
+    try {
+      return new DOMMatrix(transform).m41;
+    } catch {
+      // Fallback para browsers sem DOMMatrix
+      const parts = transform.match(/matrix.*\((.+)\)/);
+      if (!parts) return 0;
+      const values = parts[1].split(", ");
+      return parseFloat(values[4]) || 0;
+    }
+  }
 
   function pauseAnim() {
-    const matrix = window.getComputedStyle(track).transform;
-    const tx = matrix && matrix !== "none" ? parseFloat(matrix.split(",")[4]) || 0 : 0;
+    const tx = getCurrentTx();
     track.style.animationPlayState = "paused";
     track.style.webkitAnimationPlayState = "paused";
-    if (tx) track.style.transform = `translateX(${tx}px)`;
+    // Congela visualmente no ponto atual da animação
+    track.style.transform = `translateX(${tx}px)`;
+    track.style.webkitTransform = `translateX(${tx}px)`;
+    currentTx = tx;
   }
 
   function resumeAnim() {
+    // Remove transform inline para a animação CSS voltar a controlar
+    track.style.transform = "";
+    track.style.webkitTransform = "";
     track.style.animationPlayState = "";
     track.style.webkitAnimationPlayState = "";
   }
 
-  // Mouse events
+  // ── Mouse events ──────────────────────────────────────────
   container.addEventListener("mouseenter", () => container.classList.add("grab"));
   container.addEventListener("mouseleave", () => {
+    if (isDown) resumeAnim();
     isDown = false;
     container.classList.remove("grabbing", "grab");
   });
@@ -1216,8 +1247,7 @@ function iniciarCarrosselInterativo(container, track) {
     isDown = true;
     container.classList.replace("grab", "grabbing");
     pauseAnim();
-    startX = e.pageX - container.offsetLeft;
-    scrollLeft = container.scrollLeft;
+    startX = e.pageX;
   });
   container.addEventListener("mouseup", () => {
     isDown = false;
@@ -1227,25 +1257,31 @@ function iniciarCarrosselInterativo(container, track) {
   container.addEventListener("mousemove", (e) => {
     if (!isDown) return;
     e.preventDefault();
-    container.scrollLeft = scrollLeft - (e.pageX - container.offsetLeft - startX) * 1.5;
+    const dx = (e.pageX - startX) * 1.5;
+    track.style.transform = `translateX(${currentTx + dx}px)`;
+    track.style.webkitTransform = `translateX(${currentTx + dx}px)`;
   });
 
-  // Touch events (iOS)
+  // ── Touch events (iOS) ────────────────────────────────────
+  // Fix Bug #3: drag agora move o track via translateX, não via scrollLeft.
+  // Como overflow:hidden remove o scroll nativo, scrollLeft é sempre 0 —
+  // a única forma de mover o conteúdo é pelo transform.
   container.addEventListener("touchstart", (e) => {
     isDown = true;
     pauseAnim();
-    startX = e.touches[0].pageX - container.offsetLeft;
-    scrollLeft = container.scrollLeft;
+    startX = e.touches[0].pageX;
   }, { passive: true });
 
   container.addEventListener("touchend", () => {
     isDown = false;
     resumeAnim();
-  });
+  }, { passive: true });
 
   container.addEventListener("touchmove", (e) => {
     if (!isDown) return;
-    container.scrollLeft = scrollLeft - (e.touches[0].pageX - container.offsetLeft - startX) * 1.5;
+    const dx = (e.touches[0].pageX - startX) * 1.5;
+    track.style.transform = `translateX(${currentTx + dx}px)`;
+    track.style.webkitTransform = `translateX(${currentTx + dx}px)`;
   }, { passive: true });
 }
 
