@@ -1195,115 +1195,115 @@ function renderTestimonials(avaliacoes, trackElement) {
 function iniciarCarrosselInterativo(container, track) {
   if (!container || !track) return;
 
-  let isDown = false;
+  // Remove a animação do CSS para que o JavaScript assuma o controle total
+  track.classList.remove("iniciada");
+  track.style.animation = "none";
+  track.style.webkitAnimation = "none";
+
+  let isDragging = false;
+  let isHovered = false;
   let startX;
-  let currentTx; // Fix Bug #3: guarda translateX atual, não scrollLeft
+  let currentTx = 0;
+  
+  // Velocidade do carrossel automático (ajuste se quiser mais rápido ou devagar)
+  const speed = 0.5;
 
-  // Fix Bug #4: usa DOMMatrix em vez de split(",")[4]
-  // getComputedStyle durante animação CSS ativa retorna o valor interpolado
-  // correto via DOMMatrix, enquanto split pode falhar em Safari/iOS com
-  // matrix3d ou valores formatados de forma diferente.
-  function getCurrentTx() {
-    const style = window.getComputedStyle(track);
-    const transform = style.transform || style.webkitTransform;
-    if (!transform || transform === "none") return 0;
-    try {
-      return new DOMMatrix(transform).m41;
-    } catch {
-      // Fallback para browsers sem DOMMatrix
-      const parts = transform.match(/matrix.*\((.+)\)/);
-      if (!parts) return 0;
-      const values = parts[1].split(", ");
-      return parseFloat(values[4]) || 0;
+  // Calcula a metade da largura para fazer o loop infinito (o conteúdo já é duplicado)
+  let halfWidth = track.scrollWidth / 2;
+  window.addEventListener("resize", () => {
+    halfWidth = track.scrollWidth / 2;
+  });
+
+  // Loop de animação de alta performance
+  function animate() {
+    // Só rola automaticamente se o mouse não estiver em cima e não estiver arrastando
+    if (!isDragging && !isHovered) {
+      currentTx -= speed;
     }
+
+    // Regra do Loop Infinito:
+    // Se rolou até a metade (fim do primeiro bloco), reseta a posição discretamente.
+    if (currentTx <= -halfWidth) {
+      currentTx += halfWidth;
+    } else if (currentTx > 0) { // Se arrastar para trás (direita)
+      currentTx -= halfWidth;
+    }
+
+    track.style.transform = `translateX(${currentTx}px)`;
+    track.style.webkitTransform = `translateX(${currentTx}px)`;
+
+    requestAnimationFrame(animate);
   }
 
-  function pauseAnim() {
-    const tx = getCurrentTx();
-    track.style.animationPlayState = "paused";
-    track.style.webkitAnimationPlayState = "paused";
-    // Congela visualmente no ponto atual da animação
-    track.style.transform = `translateX(${tx}px)`;
-    track.style.webkitTransform = `translateX(${tx}px)`;
-    currentTx = tx;
-  }
+  // Inicia a animação
+  requestAnimationFrame(animate);
 
-  function resumeAnim() {
-    // Remove transform inline para a animação CSS voltar a controlar
-    track.style.transform = "";
-    track.style.webkitTransform = "";
-    track.style.animationPlayState = "";
-    track.style.webkitAnimationPlayState = "";
-  }
-
-  // ── Mouse events ──────────────────────────────────────────
-  container.addEventListener("mouseenter", () => container.classList.add("grab"));
+  // ── Eventos de Mouse ──────────────────────────────────────────
+  container.addEventListener("mouseenter", () => {
+    isHovered = true;
+    container.classList.add("grab");
+  });
+  
   container.addEventListener("mouseleave", () => {
-    if (isDown) resumeAnim();
-    isDown = false;
+    isHovered = false;
+    isDragging = false;
     container.classList.remove("grabbing", "grab");
   });
+  
   container.addEventListener("mousedown", (e) => {
-    isDown = true;
+    isDragging = true;
     container.classList.replace("grab", "grabbing");
-    pauseAnim();
     startX = e.pageX;
   });
+  
   container.addEventListener("mouseup", () => {
-    isDown = false;
+    isDragging = false;
     container.classList.replace("grabbing", "grab");
-    resumeAnim();
   });
+  
   container.addEventListener("mousemove", (e) => {
-    if (!isDown) return;
+    if (!isDragging) return;
     e.preventDefault();
-    const dx = (e.pageX - startX) * 1.5;
-    track.style.transform = `translateX(${currentTx + dx}px)`;
-    track.style.webkitTransform = `translateX(${currentTx + dx}px)`;
+    const dx = e.pageX - startX;
+    startX = e.pageX; // Atualiza o ponto inicial para o próximo frame
+    currentTx += dx * 1.5; // Multiplicador para a sensação de arraste
   });
 
-  // ── Touch events ──────────────────────────────────────────
+  // ── Eventos de Toque (Mobile) ─────────────────────────────────
   let startY;
-  let gestureDecided = false; // evita recalcular direção a cada frame
+  let gestureDecided = false;
 
   container.addEventListener("touchstart", (e) => {
-    isDown = true;
+    isDragging = true;
     gestureDecided = false;
-    pauseAnim();
     startX = e.touches[0].pageX;
     startY = e.touches[0].pageY;
   }, { passive: true });
 
   container.addEventListener("touchend", () => {
-    isDown = false;
+    isDragging = false;
     gestureDecided = false;
-    resumeAnim();
   }, { passive: true });
 
-  // passive:false permite chamar preventDefault() e evitar scroll vertical
-  // da página quando o gesto for horizontal (carrossel)
   container.addEventListener("touchmove", (e) => {
-    if (!isDown) return;
+    if (!isDragging) return;
     const dx = e.touches[0].pageX - startX;
     const dy = e.touches[0].pageY - startY;
 
     if (!gestureDecided) {
-      // Decide direção apenas uma vez por gesto
+      // Se o movimento for mais vertical do que horizontal, o usuário quer rolar a página
       if (Math.abs(dx) < Math.abs(dy)) {
-        // Gesto mais vertical → cancela drag e deixa página scrollar
-        isDown = false;
-        resumeAnim();
+        isDragging = false;
         return;
       }
       gestureDecided = true;
     }
 
-    e.preventDefault(); // impede scroll vertical enquanto arrasta o carrossel
-    track.style.transform = `translateX(${currentTx + dx * 1.5}px)`;
-    track.style.webkitTransform = `translateX(${currentTx + dx * 1.5}px)`;
+    e.preventDefault(); // Impede o scroll da página enquanto arrasta o carrossel
+    startX = e.touches[0].pageX;
+    currentTx += dx * 1.5;
   }, { passive: false });
 }
-
 // ============================================================
 // CARDS DE PRODUTO
 // ============================================================
