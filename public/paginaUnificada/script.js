@@ -1206,7 +1206,7 @@ function iniciarCarrosselInterativo(container, track) {
   let currentTx = 0;
   
   // Velocidade do carrossel automático (ajuste se quiser mais rápido ou devagar)
-  const speed = 0.5;
+  const speed = 0.8;
 
   // Calcula a metade da largura para fazer o loop infinito (o conteúdo já é duplicado)
   let halfWidth = track.scrollWidth / 2;
