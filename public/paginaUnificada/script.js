@@ -357,14 +357,14 @@ function escapeHtml(s) {
 }
 
 function buildWhatsAppUrl(message) {
-  // Força a codificação segura de *, _ e ~ para que o WhatsApp 
-  // não embaralhe a formatação durante o redirecionamento.
+  // Protege a formatação
   const safeMessage = encodeURIComponent(message)
     .replace(/\*/g, '%2A')
     .replace(/_/g, '%5F')
     .replace(/~/g, '%7E');
     
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${safeMessage}`;
+  // TROCAMOS o wa.me pela API oficial, que evita o bug do app Desktop já aberto
+  return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${safeMessage}`;
 }
 
 function normalizeLoginUrl(url) {
