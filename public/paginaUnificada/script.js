@@ -32,7 +32,7 @@ const APPS = [
   {
     id: "desktop",
     badge: "Preenche Fácil",
-    image: "../img/PreencheFacil.png",
+    image: "../img/PreencheFacilCortado.png",
     title: "Preenche Fácil",
     shortDesc:
       "O Preenche Fácil te ajuda a manter sua planilha do Excel organizada, funcionando offline na sua máquina.",
@@ -55,7 +55,7 @@ const APPS = [
   {
     id: "protocol",
     badge: "Gerador de Protocolo Agendor",
-    image: "../img/Protocolo.png",
+    image: "../img/ProtocoloCortado.png",
     title: "Gerador de Protocolo Agendor",
     shortDesc: "Gera, registra e envia protocolos integrado ao Agendor.",
     longDesc: "Crie protocolos de atendimento em segundos, com registro automático direto no Agendor. Cada protocolo gerado fica vinculado ao cliente, eliminando o trabalho manual de registro e reduzindo erros no acompanhamento das negociações.",
@@ -75,7 +75,7 @@ const APPS = [
   {
     id: "static-protocol",
     badge: "Gerador de Protocolo",
-    image: "../img/Protocolo.png",
+    image: "../img/ProtocoloCortado.png",
     title: "Gerador de Protocolo",
     shortDesc: "Gere e envie protocolos de atendimento em segundos.",
     longDesc: "Chega de anotar número de protocolo no papel ou na memória. Com um clique você gera um protocolo único para usar onde quiser e manter tudo organizado, simples, rápido e sem margem para erro.",
@@ -96,7 +96,7 @@ const APPS = [
   {
     id: "agent",
     badge: "Mentor estratégico de vendas",
-    image: "../img/Apolo.png",
+    image: "../img/ApoloCortado.png",
     title: "Mentor estratégico de vendas",
     shortDesc:
       "Crie treinamentos 100% personalizados com o Apolo, nosso agente de inteligência artificial treinado para te auxiliar no processo de vendas.",

@@ -1169,16 +1169,7 @@ body.dark-mode .app-modal-close {
   overflow-y: auto;
 }
 
-.app-modal-content-row {
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
-  align-items: flex-start;
-}
-
 .app-modal-desc {
-  flex: 1;
-  min-width: 0;
   margin: 0;
   opacity: 0.85;
   font-size: 16px;
@@ -1187,14 +1178,14 @@ body.dark-mode .app-modal-close {
 }
 
 .app-modal-video {
-  flex: 0 0 45%;
-  aspect-ratio: 16 / 9;
-  height: auto;
+  width: 100%;
   border-radius: 16px;
   overflow: hidden;
   background: #000;
   border: 1px solid var(--border-subtle);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  height: min(450px, 50vh);
+  flex: 0 0 auto;
 }
 
 .app-modal-video iframe {
@@ -3554,14 +3545,6 @@ html {
   .app-modal-body {
     padding: 20px !important;
     gap: 16px !important;
-  }
-  .app-modal-content-row {
-    flex-direction: column !important;
-  }
-  .app-modal-video {
-    flex: none !important;
-    width: 100% !important;
-    aspect-ratio: 16 / 9;
   }
   /* Botão WhatsApp ocupa largura total no modal mobile */
   .whatsapp-btn-modal {
