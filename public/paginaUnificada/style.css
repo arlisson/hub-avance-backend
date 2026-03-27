@@ -1923,6 +1923,7 @@ body.modal-open .hero-badge {
 
 .testimonials-track.iniciada {
   animation: marquee 150s linear infinite;
+  -webkit-animation: marquee 150s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2024,12 +2025,13 @@ body.dark-mode .testimonial-card {
 }
 
 @keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@-webkit-keyframes marquee {
+  from { -webkit-transform: translateX(0); transform: translateX(0); }
+  to { -webkit-transform: translateX(-50%); transform: translateX(-50%); }
 }
 
 /* ============================================================

@@ -1193,41 +1193,60 @@ function iniciarCarrosselInterativo(container, track) {
   let startX;
   let scrollLeft;
 
-  container.addEventListener("mouseenter", () =>
-    container.classList.add("grab"),
-  );
+  function pauseAnim() {
+    const matrix = window.getComputedStyle(track).transform;
+    const tx = matrix && matrix !== "none" ? parseFloat(matrix.split(",")[4]) || 0 : 0;
+    track.style.animationPlayState = "paused";
+    track.style.webkitAnimationPlayState = "paused";
+    if (tx) track.style.transform = `translateX(${tx}px)`;
+  }
 
+  function resumeAnim() {
+    track.style.animationPlayState = "";
+    track.style.webkitAnimationPlayState = "";
+  }
+
+  // Mouse events
+  container.addEventListener("mouseenter", () => container.classList.add("grab"));
   container.addEventListener("mouseleave", () => {
     isDown = false;
     container.classList.remove("grabbing", "grab");
   });
-
   container.addEventListener("mousedown", (e) => {
     isDown = true;
     container.classList.replace("grab", "grabbing");
-
-    const matrix = window.getComputedStyle(track).transform;
-    const tx =
-      matrix && matrix !== "none" ? parseFloat(matrix.split(",")[4]) || 0 : 0;
-    track.style.animationPlayState = "paused";
-    if (tx) track.style.transform = `translateX(${tx}px)`;
-
+    pauseAnim();
     startX = e.pageX - container.offsetLeft;
     scrollLeft = container.scrollLeft;
   });
-
   container.addEventListener("mouseup", () => {
     isDown = false;
     container.classList.replace("grabbing", "grab");
-    track.style.animationPlayState = "";
+    resumeAnim();
   });
-
   container.addEventListener("mousemove", (e) => {
     if (!isDown) return;
     e.preventDefault();
-    container.scrollLeft =
-      scrollLeft - (e.pageX - container.offsetLeft - startX) * 1.5;
+    container.scrollLeft = scrollLeft - (e.pageX - container.offsetLeft - startX) * 1.5;
   });
+
+  // Touch events (iOS)
+  container.addEventListener("touchstart", (e) => {
+    isDown = true;
+    pauseAnim();
+    startX = e.touches[0].pageX - container.offsetLeft;
+    scrollLeft = container.scrollLeft;
+  }, { passive: true });
+
+  container.addEventListener("touchend", () => {
+    isDown = false;
+    resumeAnim();
+  });
+
+  container.addEventListener("touchmove", (e) => {
+    if (!isDown) return;
+    container.scrollLeft = scrollLeft - (e.touches[0].pageX - container.offsetLeft - startX) * 1.5;
+  }, { passive: true });
 }
 
 // ============================================================
