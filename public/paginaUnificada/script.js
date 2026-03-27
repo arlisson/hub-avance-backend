@@ -357,7 +357,14 @@ function escapeHtml(s) {
 }
 
 function buildWhatsAppUrl(message) {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  // Força a codificação segura de *, _ e ~ para que o WhatsApp 
+  // não embaralhe a formatação durante o redirecionamento.
+  const safeMessage = encodeURIComponent(message)
+    .replace(/\*/g, '%2A')
+    .replace(/_/g, '%5F')
+    .replace(/~/g, '%7E');
+    
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${safeMessage}`;
 }
 
 function normalizeLoginUrl(url) {
