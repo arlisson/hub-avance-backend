@@ -1694,9 +1694,17 @@ body.modal-open .hero-badge {
   opacity: 1;
 }
 
+.footer-links li:has(.ph-whatsapp-logo) a {
+  color: #25d366;
+}
+
 .footer-links li i.ph-instagram-logo {
   color: #e1306c;
   opacity: 1;
+}
+
+.footer-links li:has(.ph-instagram-logo) a {
+  color: #e1306c;
 }
 
 .footer-links a {
