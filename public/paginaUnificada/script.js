@@ -30,38 +30,14 @@ let _currentUserProfile = null; // { name, cpf, whatsapp, operator, active_lines
 
 const APPS = [
   {
-    id: "agent",
-    badge: "Mentor estratégico de vendas",
-    image: "../img/Apolo.png",
-    title: "Mentor estratégico de vendas",
-    shortDesc:
-      "Acesse o sistema online. Ideal para uso em qualquer dispositivo.",
-    longDesc:
-      "Este é o agente mentor estratégico de vendas. Ele permite atendimento diretamente no navegador, com experiência adaptada para desktop e mobile. Use este produto quando precisar operar de qualquer lugar, sem depender de instalação local.",
-    youtubeId: "CNFqPBAdglE",
-    enabled: false,
-    requiresPermission: false,
-    clienteCta: true,
-    actions: [
-      {
-        label: "Acessar",
-        icon: "ph-arrow-square-out",
-        app: "agent",
-        metric: "access",
-        primary: true,
-        targetBlank: false,
-      },
-    ],
-  },
-  {
     id: "desktop",
     badge: "Preenche Fácil",
     image: "../img/PreencheFacil.png",
     title: "Preenche Fácil",
     shortDesc:
-      "O Preenche Fácil organiza automaticamente no Excel, funcionando offline na sua máquina.",
+      "O Preenche Fácil te ajuda a manter sua planilha do Excel organizada, funcionando offline na sua máquina.",
     longDesc:
-      "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet — suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
+      "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet, suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
     youtubeId: "",
     enabled: true,
     requiresPermission: false,
@@ -81,8 +57,8 @@ const APPS = [
     badge: "Gerador de Protocolo Agendor",
     image: "../img/Protocolo.png",
     title: "Gerador de Protocolo Agendor",
-    shortDesc: "Gera e registra protocolos com um clique.",
-    longDesc: "Ferramenta para geração, registro e envio de protocolos.",
+    shortDesc: "Gera, registra e envia protocolos integrado ao Agendor.",
+    longDesc: "Crie protocolos de atendimento em segundos, com registro automático direto no Agendor. Cada protocolo gerado fica vinculado ao cliente, eliminando o trabalho manual de registro e reduzindo erros no acompanhamento das negociações.",
     youtubeId: "",
     enabled: true,
     requiresPermission: true,
@@ -101,8 +77,8 @@ const APPS = [
     badge: "Gerador de Protocolo",
     image: "../img/Protocolo.png",
     title: "Gerador de Protocolo",
-    shortDesc: "Gera novos protocolos.",
-    longDesc: "Ferramenta para geração de novos protocolos.",
+    shortDesc: "Gere e envie protocolos de atendimento em segundos.",
+    longDesc: "Chega de anotar número de protocolo no papel ou na memória. Com um clique você gera um protocolo único para usar onde quiser e manter tudo organizado, simples, rápido e sem margem para erro.",
     youtubeId: "",
     enabled: true,
     requiresPermission: false,
@@ -114,6 +90,31 @@ const APPS = [
         metric: "access",
         primary: true,
         targetBlank: false,
+      },
+    ],
+  },
+  {
+    id: "agent",
+    badge: "Mentor estratégico de vendas",
+    image: "../img/Apolo.png",
+    title: "Mentor estratégico de vendas",
+    shortDesc:
+      "Crie treinamentos 100% personalizados com o Apolo, nosso agente de inteligência artificial treinado para te auxiliar no processo de vendas.",
+    longDesc:
+      "O Apolo é o seu mentor estratégico de vendas com inteligência artificial. Ele analisa o perfil do cliente, sugere abordagens personalizadas, ajuda a contornar objeções e orienta cada etapa da negociação, tudo em tempo real, direto no navegador. Ideal para consultores que querem vender com mais confiança, consistência e resultado.",
+    youtubeId: "CNFqPBAdglE",
+    enabled: true,
+    requiresPermission: false,
+    clienteCta: true,
+    actions: [
+      {
+        label: "Acessar",
+        icon: "ph-lock",
+        app: "agent",
+        metric: "access",
+        primary: true,
+        targetBlank: false,
+        locked: true,
       },
     ],
   },
@@ -356,7 +357,14 @@ function escapeHtml(s) {
 }
 
 function buildWhatsAppUrl(message) {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  // Protege a formatação
+  const safeMessage = encodeURIComponent(message)
+    .replace(/\*/g, '%2A')
+    .replace(/_/g, '%5F')
+    .replace(/~/g, '%7E');
+    
+  // TROCAMOS o wa.me pela API oficial, que evita o bug do app Desktop já aberto
+  return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${safeMessage}`;
 }
 
 function normalizeLoginUrl(url) {
@@ -969,32 +977,44 @@ function openAppModal(appId) {
     (app.actions || []).forEach((a) => {
       const el = document.createElement("button");
       el.type = "button";
-      el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
-      el.innerHTML = `
-        <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
-        <span>${escapeHtml(a.label || "Abrir")}</span>
-      `;
 
-      el.addEventListener("click", async () => {
-        try {
-          if (a.app) {
-            await registrarUsoEIrParaDestino(
-              a.app,
-              a.metric || "access",
-              !!a.targetBlank
-            );
-          } else if (a.href) {
-            if (a.targetBlank) {
-              window.open(a.href, "_blank", "noopener,noreferrer");
-            } else {
-              window.location.href = a.href;
+      if (a.locked) {
+        el.className = "hub-btn hub-btn-locked";
+        el.disabled = true;
+        el.title = "Em breve";
+        el.innerHTML = `
+          <i class="ph ph-lock"></i>
+          <span>${escapeHtml(a.label || "Abrir")}</span>
+          <span class="hub-btn-locked-badge">Em breve</span>
+        `;
+      } else {
+        el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
+        el.innerHTML = `
+          <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
+          <span>${escapeHtml(a.label || "Abrir")}</span>
+        `;
+
+        el.addEventListener("click", async () => {
+          try {
+            if (a.app) {
+              await registrarUsoEIrParaDestino(
+                a.app,
+                a.metric || "access",
+                !!a.targetBlank
+              );
+            } else if (a.href) {
+              if (a.targetBlank) {
+                window.open(a.href, "_blank", "noopener,noreferrer");
+              } else {
+                window.location.href = a.href;
+              }
             }
+          } catch (err) {
+            console.error("Erro ao registrar uso do app:", err);
+            alert("Não foi possível abrir a aplicação agora.");
           }
-        } catch (err) {
-          console.error("Erro ao registrar uso do app:", err);
-          alert("Não foi possível abrir a aplicação agora.");
-        }
-      });
+        });
+      }
 
       actionsEl.appendChild(el);
     });
@@ -1167,7 +1187,13 @@ function renderTestimonials(avaliacoes, trackElement) {
     })
     .join("");
 
-  requestAnimationFrame(() => trackElement.classList.add("iniciada"));
+  // Fix Bug #5: double RAF garante que o iOS Safari terminou de calcular
+  // o layout (width: max-content) antes de iniciar a animação CSS.
+  // Um único RAF às vezes dispara antes do reflow, fazendo o translateX(-50%)
+  // ser calculado com largura errada e o loop não fechar.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => trackElement.classList.add("iniciada"))
+  );
 
   const container = trackElement.closest(".testimonials-container");
   iniciarCarrosselInterativo(container, trackElement);
@@ -1176,47 +1202,115 @@ function renderTestimonials(avaliacoes, trackElement) {
 function iniciarCarrosselInterativo(container, track) {
   if (!container || !track) return;
 
-  let isDown = false;
+  // Remove a animação do CSS para que o JavaScript assuma o controle total
+  track.classList.remove("iniciada");
+  track.style.animation = "none";
+  track.style.webkitAnimation = "none";
+
+  let isDragging = false;
+  let isHovered = false;
   let startX;
-  let scrollLeft;
+  let currentTx = 0;
+  
+  // Velocidade do carrossel automático (ajuste se quiser mais rápido ou devagar)
+  const speed = 1.2;
 
-  container.addEventListener("mouseenter", () =>
-    container.classList.add("grab"),
-  );
+  // Calcula a metade da largura para fazer o loop infinito (o conteúdo já é duplicado)
+  let halfWidth = track.scrollWidth / 2;
+  window.addEventListener("resize", () => {
+    halfWidth = track.scrollWidth / 2;
+  });
 
+  // Loop de animação de alta performance
+  function animate() {
+    // Só rola automaticamente se o mouse não estiver em cima e não estiver arrastando
+    if (!isDragging && !isHovered) {
+      currentTx -= speed;
+    }
+
+    // Regra do Loop Infinito:
+    // Se rolou até a metade (fim do primeiro bloco), reseta a posição discretamente.
+    if (currentTx <= -halfWidth) {
+      currentTx += halfWidth;
+    } else if (currentTx > 0) { // Se arrastar para trás (direita)
+      currentTx -= halfWidth;
+    }
+
+    track.style.transform = `translateX(${currentTx}px)`;
+    track.style.webkitTransform = `translateX(${currentTx}px)`;
+
+    requestAnimationFrame(animate);
+  }
+
+  // Inicia a animação
+  requestAnimationFrame(animate);
+
+  // ── Eventos de Mouse ──────────────────────────────────────────
+  container.addEventListener("mouseenter", () => {
+    isHovered = true;
+    container.classList.add("grab");
+  });
+  
   container.addEventListener("mouseleave", () => {
-    isDown = false;
+    isHovered = false;
+    isDragging = false;
     container.classList.remove("grabbing", "grab");
   });
-
+  
   container.addEventListener("mousedown", (e) => {
-    isDown = true;
+    isDragging = true;
     container.classList.replace("grab", "grabbing");
-
-    const matrix = window.getComputedStyle(track).transform;
-    const tx =
-      matrix && matrix !== "none" ? parseFloat(matrix.split(",")[4]) || 0 : 0;
-    track.style.animationPlayState = "paused";
-    if (tx) track.style.transform = `translateX(${tx}px)`;
-
-    startX = e.pageX - container.offsetLeft;
-    scrollLeft = container.scrollLeft;
+    startX = e.pageX;
   });
-
+  
   container.addEventListener("mouseup", () => {
-    isDown = false;
+    isDragging = false;
     container.classList.replace("grabbing", "grab");
-    track.style.animationPlayState = "";
   });
-
+  
   container.addEventListener("mousemove", (e) => {
-    if (!isDown) return;
+    if (!isDragging) return;
     e.preventDefault();
-    container.scrollLeft =
-      scrollLeft - (e.pageX - container.offsetLeft - startX) * 1.5;
+    const dx = e.pageX - startX;
+    startX = e.pageX; // Atualiza o ponto inicial para o próximo frame
+    currentTx += dx * 1.5; // Multiplicador para a sensação de arraste
   });
-}
 
+  // ── Eventos de Toque (Mobile) ─────────────────────────────────
+  let startY;
+  let gestureDecided = false;
+
+  container.addEventListener("touchstart", (e) => {
+    isDragging = true;
+    gestureDecided = false;
+    startX = e.touches[0].pageX;
+    startY = e.touches[0].pageY;
+  }, { passive: true });
+
+  container.addEventListener("touchend", () => {
+    isDragging = false;
+    gestureDecided = false;
+  }, { passive: true });
+
+  container.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    const dx = e.touches[0].pageX - startX;
+    const dy = e.touches[0].pageY - startY;
+
+    if (!gestureDecided) {
+      // Se o movimento for mais vertical do que horizontal, o usuário quer rolar a página
+      if (Math.abs(dx) < Math.abs(dy)) {
+        isDragging = false;
+        return;
+      }
+      gestureDecided = true;
+    }
+
+    e.preventDefault(); // Impede o scroll da página enquanto arrasta o carrossel
+    startX = e.touches[0].pageX;
+    currentTx += dx * 1.5;
+  }, { passive: false });
+}
 // ============================================================
 // CARDS DE PRODUTO
 // ============================================================
@@ -1525,15 +1619,6 @@ function buildProductReviewHTML(product) {
   const rawMessage = product.buildMessage(_answers) + profileSuffix;
   const waUrl = buildWhatsAppUrl(rawMessage);
 
-  const plainMessage = rawMessage
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/_([^_]+)_/g, "$1");
-  const emailUrl =
-    `https://mail.google.com/mail/?view=cm` +
-    `&to=${encodeURIComponent("querosercliente@avancevip.net.br")}` +
-    `&su=${encodeURIComponent(`Solicitação: ${product.title}`)}` +
-    `&body=${encodeURIComponent(plainMessage)}`;
-
   return `
     <h3 class="step-question">Tudo certo! Confirme o seu pedido.</h3>
     <p class="step-hint">Revise as informações abaixo. Um consultor vai receber esses dados e entrará em contato para apresentar as melhores opções.</p>
@@ -1546,12 +1631,8 @@ function buildProductReviewHTML(product) {
       <i class="ph ph-whatsapp-logo" aria-hidden="true"></i>
       Falar com um consultor
     </a>
-    <a href="${emailUrl}" class="email-btn-modal" id="btn-email" target="_blank" rel="noopener noreferrer">
-      <i class="ph ph-envelope" aria-hidden="true"></i>
-      Enviar por e-mail
-    </a>
     <p class="modal-footer-note">
-      Você será redirecionado para o WhatsApp ou e-mail com a sua solicitação já preenchida.
+      Você será redirecionado para o WhatsApp para falar com um consultor.
     </p>
   `;
 }
@@ -1591,7 +1672,6 @@ function bindProductModalEvents(product, stepIndex, isReview) {
     };
 
     document.getElementById("btn-whatsapp")?.addEventListener("click", saveLead);
-    document.getElementById("btn-email")?.addEventListener("click", saveLead);
   }
 
   const input = document.getElementById("step-input");
@@ -1790,8 +1870,9 @@ function initFooterRating() {
 
   // Função que pinta as estrelas
   function render(val) {
-    stars.forEach((btn, i) => {
-      if (i < val) {
+    stars.forEach((btn) => {
+      const v = parseInt(btn.dataset.value, 10);
+      if (v <= val) {
         btn.classList.add("star-active");
       } else {
         btn.classList.remove("star-active");
@@ -1809,23 +1890,7 @@ function initFooterRating() {
     render(current);
   });
 
-  // Evento de passar o mouse por cima (hover)
-  container.addEventListener("mouseover", (e) => {
-    const btn = e.target.closest(".star-btn");
-    if (!btn) return;
-    const hval = parseInt(btn.dataset.value, 10);
-    stars.forEach((s, i) => {
-      s.classList.remove("star-active", "star-hover");
-      if (i < hval) {
-        s.classList.add(i === hval - 1 ? "star-hover" : "star-active");
-      }
-    });
-  });
-
-  // Evento de tirar o mouse de cima
-  container.addEventListener("mouseleave", () => {
-    render(current);
-  });
+  // Hover visual gerenciado por CSS puro (sem conflito com render)
 
   // Renderiza o estado inicial (5 estrelas)
   render(current);
@@ -1841,6 +1906,9 @@ function initFooterRating() {
 
       if (nota === 0) {
         alert("Por favor, selecione uma nota de 1 a 5 estrelas antes de enviar.");
+        return;
+      }else if(commentInput.value.trim() === ""){
+        alert("Por favor, preencha o campo de comentário antes de enviar.")
         return;
       }
 
@@ -1950,3 +2018,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = normalizeLoginUrl(LOGIN_URL);
   }
 });
+
+const backToTopBtn = document.getElementById("back-to-top");
+
+if (backToTopBtn) {
+  const toggleBackToTop = () => {
+    if (window.scrollY > 250) {
+      backToTopBtn.classList.add("show");
+    } else {
+      backToTopBtn.classList.remove("show");
+    }
+  };
+
+  window.addEventListener("scroll", toggleBackToTop);
+
+  backToTopBtn.addEventListener("click", () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  });
+
+  toggleBackToTop();
+}

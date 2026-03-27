@@ -20,7 +20,11 @@ let selectedOperadoras = new Set();
 let searchDebounceTimer = null;
 
 const LOGIN_URL = "/login/login.html";
+<<<<<<< HEAD
 const HUB_URL = "/parignaUnificada/index.html";
+=======
+const HUB_URL = "/paginaUnificada/index.html";
+>>>>>>> dev
 
 const METRICS = [
   { key: "access", label: "Acessos" },
@@ -316,7 +320,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           
 
         if (!hasAccess) {
-          alert("Você não tem permissão para acessar esta tela.");
+          //alert("Você não tem permissão para acessar esta tela.");
           window.location.href = HUB_URL;
           return;
         }
@@ -717,10 +721,23 @@ function aggregateUsageFromUsers(users) {
         key: normalizedKey,
         label: getAppMeta(normalizedKey)?.label || normalizedKey,
         accesses: 0,
+        downloads: 0,
         updated_at: null,
       };
 
       current.accesses += Number(appData?.access || 0);
+      current.downloads += Number(appData?.download || 0);
+
+      const updatedAt = appData?.updated_at || appData?.last_update || null;
+      if (updatedAt) {
+        const currentDate = current.updated_at ? new Date(current.updated_at) : null;
+        const nextDate = new Date(updatedAt);
+
+        if (!currentDate || nextDate > currentDate) {
+          current.updated_at = updatedAt;
+        }
+      }
+
       totals.set(normalizedKey, current);
     });
   });
@@ -1121,7 +1138,7 @@ function renderAppUsageDashboard(records) {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td colspan="4" style="text-align:center; color: var(--text-secondary); padding: 24px;">
+      <td colspan="5" style="text-align:center; color: var(--text-secondary); padding: 24px;">
         Nenhum dado de uso disponível.
       </td>
     `;
@@ -1147,6 +1164,7 @@ function renderAppUsageDashboard(records) {
       <td>${escapeHtml(record.label)}</td>
       <td>${escapeHtml(record.key)}</td>
       <td>${formatNumber(record.accesses)}</td>
+      <td>${formatNumber(record.downloads)}</td>
       <td>${escapeHtml(formatDateTime(record.updated_at))}</td>
     `;
     tbody.appendChild(tr);
@@ -1161,6 +1179,7 @@ function orderUsageRecords(records) {
       key,
       label: meta.label,
       accesses: 0,
+      downloads: 0,
       updated_at: null,
     });
   });
@@ -1171,6 +1190,7 @@ function orderUsageRecords(records) {
       key: record.key,
       label: record.label || getAppMeta(record.key)?.label || record.key,
       accesses: Number(record.accesses || 0),
+      downloads: Number(record.downloads || 0),
       updated_at: record.updated_at || null,
     });
   });
