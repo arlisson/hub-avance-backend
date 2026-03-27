@@ -1262,27 +1262,46 @@ function iniciarCarrosselInterativo(container, track) {
     track.style.webkitTransform = `translateX(${currentTx + dx}px)`;
   });
 
-  // ── Touch events (iOS) ────────────────────────────────────
-  // Fix Bug #3: drag agora move o track via translateX, não via scrollLeft.
-  // Como overflow:hidden remove o scroll nativo, scrollLeft é sempre 0 —
-  // a única forma de mover o conteúdo é pelo transform.
+  // ── Touch events ──────────────────────────────────────────
+  let startY;
+  let gestureDecided = false; // evita recalcular direção a cada frame
+
   container.addEventListener("touchstart", (e) => {
     isDown = true;
+    gestureDecided = false;
     pauseAnim();
     startX = e.touches[0].pageX;
+    startY = e.touches[0].pageY;
   }, { passive: true });
 
   container.addEventListener("touchend", () => {
     isDown = false;
+    gestureDecided = false;
     resumeAnim();
   }, { passive: true });
 
+  // passive:false permite chamar preventDefault() e evitar scroll vertical
+  // da página quando o gesto for horizontal (carrossel)
   container.addEventListener("touchmove", (e) => {
     if (!isDown) return;
-    const dx = (e.touches[0].pageX - startX) * 1.5;
-    track.style.transform = `translateX(${currentTx + dx}px)`;
-    track.style.webkitTransform = `translateX(${currentTx + dx}px)`;
-  }, { passive: true });
+    const dx = e.touches[0].pageX - startX;
+    const dy = e.touches[0].pageY - startY;
+
+    if (!gestureDecided) {
+      // Decide direção apenas uma vez por gesto
+      if (Math.abs(dx) < Math.abs(dy)) {
+        // Gesto mais vertical → cancela drag e deixa página scrollar
+        isDown = false;
+        resumeAnim();
+        return;
+      }
+      gestureDecided = true;
+    }
+
+    e.preventDefault(); // impede scroll vertical enquanto arrasta o carrossel
+    track.style.transform = `translateX(${currentTx + dx * 1.5}px)`;
+    track.style.webkitTransform = `translateX(${currentTx + dx * 1.5}px)`;
+  }, { passive: false });
 }
 
 // ============================================================
