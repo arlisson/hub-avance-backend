@@ -951,8 +951,7 @@ export async function login(req, res) {
     console.error("Erro em /api/login:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 }
@@ -1006,8 +1005,7 @@ export async function me(req, res) {
     console.error("Erro em /api/me:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 }
