@@ -1748,7 +1748,7 @@ function handleProductNext(product, stepIndex) {
 
 function initCtaGeral() {
   const waUrl = buildWhatsAppUrl(
-    "Olá! Gostaria de saber mais sobre as soluções da AVANCE. Poderia me ajudar?",
+    "Olá! Acessei o site da AvanceVip e queria tirar algumas dúvidas. Podem me ajudar?",
   );
 
   const ids = [
