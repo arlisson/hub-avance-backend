@@ -1,10 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const LOGIN_URL = "/login/login.html";
-<<<<<<< HEAD
-  const HUB_URL = "/parignaUnificada/index.html";
-=======
   const HUB_URL = "/paginaUnificada/index.html";
->>>>>>> dev
 
   let sb;
   let session;
