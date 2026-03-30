@@ -1167,6 +1167,25 @@ body.dark-mode .app-modal-close {
   gap: 24px;
   padding: 30px 40px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-action) transparent;
+}
+
+.app-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-modal-body::-webkit-scrollbar-thumb {
+  background: var(--brand-action);
+  border-radius: 99px;
+}
+
+.app-modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-accent);
 }
 
 .app-modal-desc {
