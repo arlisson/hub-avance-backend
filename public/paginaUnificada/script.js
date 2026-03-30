@@ -38,7 +38,7 @@ const APPS = [
       "O Preenche Fácil te ajuda a manter sua planilha do Excel organizada, funcionando offline na sua máquina.",
     longDesc:
       "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet, suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
-    youtubeId: "",
+    youtubeId: "a9bAP6Kn2l4",
     enabled: true,
     requiresPermission: false,
     actions: [
@@ -79,7 +79,7 @@ const APPS = [
     title: "Gerador de Protocolo",
     shortDesc: "Gere e envie protocolos de atendimento em segundos.",
     longDesc: "Chega de anotar número de protocolo no papel ou na memória. Com um clique você gera um protocolo único para usar onde quiser e manter tudo organizado, simples, rápido e sem margem para erro.",
-    youtubeId: "",
+    youtubeId: "qA_WD02eEbM",
     enabled: true,
     requiresPermission: false,
     actions: [
@@ -102,7 +102,7 @@ const APPS = [
       "Crie treinamentos 100% personalizados com o Apolo, nosso agente de inteligência artificial treinado para te auxiliar no processo de vendas.",
     longDesc:
       "O Apolo é o seu mentor estratégico de vendas com inteligência artificial. Ele analisa o perfil do cliente, sugere abordagens personalizadas, ajuda a contornar objeções e orienta cada etapa da negociação, tudo em tempo real, direto no navegador. Ideal para consultores que querem vender com mais confiança, consistência e resultado.",
-    youtubeId: "CNFqPBAdglE",
+    youtubeId: "KNljC_oggjc",
     enabled: true,
     requiresPermission: false,
     clienteCta: true,
