@@ -1045,6 +1045,8 @@ function openAppModal(appId) {
   backdrop.hidden = false;
   modal.hidden = false;
   document.body.classList.add("modal-open");
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
 
   requestAnimationFrame(() =>
     requestAnimationFrame(() => modal.classList.add("is-open")),
@@ -1087,6 +1089,8 @@ function closeAppModal() {
   }
 
   document.body.classList.remove("modal-open");
+  document.documentElement.style.overflow = "";
+  document.body.style.overflow = "";
 
   if (_lastFocusedBeforeModal) {
     _lastFocusedBeforeModal.focus();
@@ -1383,6 +1387,8 @@ function openProductModal(product) {
   );
 
   document.body.classList.add("modal-open");
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
   renderProductStep();
 
   document.addEventListener("keydown", _onProdEscKey);
@@ -1396,6 +1402,8 @@ function closeProductModal() {
 
   modal.classList.remove("is-open");
   document.body.classList.remove("modal-open");
+  document.documentElement.style.overflow = "";
+  document.body.style.overflow = "";
 
   setTimeout(() => {
     backdrop.hidden = true;
