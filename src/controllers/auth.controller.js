@@ -144,7 +144,7 @@ export async function changePassword(req, res) {
     console.error("Erro em /api/change-password:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message
+      error: "Erro interno. Tente novamente."
     });
   }
 }
@@ -551,7 +551,7 @@ export async function register(req, res) {
 
     return res.status(500).json({
       ok: false,
-      error: error.message
+      error: "Erro interno. Tente novamente."
     });
   } finally {
     conn.release();
@@ -934,6 +934,13 @@ export async function login(req, res) {
       [user.id]
     );
 
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 12 * 60 * 60 * 1000,
+    });
+
     return res.json({
       ok: true,
       token,
@@ -951,7 +958,7 @@ export async function login(req, res) {
     console.error("Erro em /api/login:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message
+      error: "Erro interno. Tente novamente."
     });
   }
 }
@@ -1005,12 +1012,18 @@ export async function me(req, res) {
     console.error("Erro em /api/me:", error);
     return res.status(500).json({
       ok: false,
-      error: error.message
+      error: "Erro interno. Tente novamente."
     });
   }
 }
 
 export async function logout(req, res) {
+  res.clearCookie("auth_token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+
   return res.json({
     ok: true,
     message: "Logout realizado com sucesso."
@@ -1044,6 +1057,20 @@ export async function forgotPassword(req, res) {
     const user = rows[0];
 
     if (!user || !user.ativo) {
+      return res.json({
+        ok: true,
+        message:
+          "Se esse e-mail existir e estiver cadastrado no sistema, enviaremos as instruções de redefinição."
+      });
+    }
+
+    const [recentRows] = await conn.query(
+      `SELECT COUNT(*) AS total FROM password_resets
+       WHERE user_id = ? AND expires_at > NOW()`,
+      [user.id]
+    );
+
+    if (Number(recentRows[0]?.total) >= 2) {
       return res.json({
         ok: true,
         message:
@@ -1090,7 +1117,7 @@ export async function forgotPassword(req, res) {
 
     return res.status(500).json({
       ok: false,
-      error: error.message
+      error: "Erro interno. Tente novamente."
     });
   } finally {
     conn.release();
@@ -1196,7 +1223,7 @@ export async function resetPassword(req, res) {
 
     return res.status(500).json({
       ok: false,
-      error: error.message
+      error: "Erro interno. Tente novamente."
     });
   } finally {
     conn.release();

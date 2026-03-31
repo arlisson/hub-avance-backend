@@ -98,19 +98,14 @@ function setValid(inputEl) {
 }
 
 async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem("auth_token");
-
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   const resp = await fetch(url, {
     ...options,
+    credentials: "include",
     headers,
   });
 
@@ -227,13 +222,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   let cepLookupController = null;
 
   try {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      const me = await apiFetch("/api/me", { method: "GET" });
-      if (me?.ok && me?.user) {
-        window.location.href = "../hub/hub.html";
-        return;
-      }
+    const me = await apiFetch("/api/me", { method: "GET" });
+    if (me?.ok && me?.user) {
+      window.location.href = "../hub/hub.html";
+      return;
     }
   } catch {
   }

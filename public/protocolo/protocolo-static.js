@@ -21,16 +21,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnCopyMsg = document.getElementById("btn-copy-msg");
 
   try {
-    const token = getAccessToken();
-
-    if (!token) {
-      window.location.href = LOGIN_URL;
-      return;
-    }
-
     const meResp = await apiFetch(API_ME_URL, {
       method: "GET",
-      token,
     });
 
     if (!meResp?.ok || !meResp?.user) {
@@ -76,13 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (menuLogout) {
     menuLogout.addEventListener("click", async () => {
       try {
-        const currentToken = getAccessToken();
-        if (currentToken) {
-          await apiFetch(API_LOGOUT_URL, {
-            method: "POST",
-            token: currentToken,
-          });
-        }
+        await apiFetch(API_LOGOUT_URL, { method: "POST" });
       } catch (err) {
         console.warn("Falha no logout remoto:", err);
       } finally {
@@ -180,40 +166,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-function getAccessToken() {
-  return (
-    localStorage.getItem("auth_token") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("auth_token") ||
-    sessionStorage.getItem("token") ||
-    sessionStorage.getItem("authToken") ||
-    sessionStorage.getItem("access_token") ||
-    ""
-  );
-}
+function clearAuthToken() {}
 
-function clearAuthToken() {
-  localStorage.removeItem("auth_token");
-  localStorage.removeItem("token");
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("access_token");
-
-  sessionStorage.removeItem("auth_token");
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("authToken");
-  sessionStorage.removeItem("access_token");
-}
-
-async function apiFetch(url, { method = "GET", token = "", body } = {}) {
+async function apiFetch(url, { method = "GET", body } = {}) {
   const headers = {
     Accept: "application/json",
   };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -221,6 +179,7 @@ async function apiFetch(url, { method = "GET", token = "", body } = {}) {
 
   const resp = await fetch(url, {
     method,
+    credentials: "include",
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });

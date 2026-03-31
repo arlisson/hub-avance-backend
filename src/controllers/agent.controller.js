@@ -4,6 +4,17 @@ function getUserId(req) {
   return req.user?.id || null;
 }
 
+export function requireClienteAvance(req, res, next) {
+  const role = String(req.user?.role || "").toLowerCase();
+  const isAdmin = role === "admin" || role === "administrador";
+
+  if (!isAdmin) {
+    return res.status(403).json({ ok: false, error: "Acesso negado." });
+  }
+
+  return next();
+}
+
 function getUserEmail(req) {
   return req.user?.email || "";
 }

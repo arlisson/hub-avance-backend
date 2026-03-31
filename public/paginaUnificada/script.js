@@ -393,27 +393,16 @@ function clearAgentChatSessionStorage() {
 // AUTH / API HELPERS
 // ============================================================
 
-function getAuthToken() {
-  return localStorage.getItem("auth_token") || "";
-}
-
-function clearAuthToken() {
-  localStorage.removeItem("auth_token");
-}
-
-function buildAuthHeaders(extra = {}) {
-  const token = getAuthToken();
-  return {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...extra,
-  };
-}
+function clearAuthToken() {}
 
 async function apiFetch(url, options = {}) {
-  const headers = buildAuthHeaders(options.headers || {});
   const resp = await fetch(url, {
     ...options,
-    headers,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
   });
 
   let data = null;
@@ -1123,7 +1112,7 @@ async function carregarAvaliacoes() {
   }
 
   try {
-    const data = await fetch("/api/avaliacoes", { cache: "no-store" });
+    const data = await fetch("/api/avaliacoes", { cache: "no-store", credentials: "include" });
     const json = await data.json().catch(() => null);
 
     if (!data.ok || !json?.ok || !Array.isArray(json.avaliacoes)) {
@@ -1926,11 +1915,12 @@ function initFooterRating() {
       try {
         const res = await fetch("/api/avaliacoes/nova", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             cliente_id: cliente_id,
-            nota: nota, 
-            comentario: comentario 
+            nota: nota,
+            comentario: comentario
           })
         });
 

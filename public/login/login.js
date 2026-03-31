@@ -47,17 +47,9 @@ function setValid(inputEl) {
   if (err) err.textContent = "";
 }
 
-function salvarToken(token) {
-  localStorage.setItem("auth_token", token);
-}
-
-function obterToken() {
-  return localStorage.getItem("auth_token");
-}
-
-function removerToken() {
-  localStorage.removeItem("auth_token");
-}
+function salvarToken() {}
+function obterToken() { return null; }
+function removerToken() {}
 
 async function fetchComErroTratado(url, options = {}) {
   const resp = await fetch(url, {
@@ -118,23 +110,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!identifierInput || !passwordInput || !loginForm) return;
 
   try {
-    const token = obterToken();
+    const me = await fetchComErroTratado("/api/me", {
+      method: "GET",
+      credentials: "include",
+    });
 
-    if (token) {
-      const me = await fetchComErroTratado("/api/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (me?.ok) {
-        window.location.href = "/paginaUnificada/index.html";
-        return;
-      }
+    if (me?.ok) {
+      window.location.href = "/paginaUnificada/index.html";
+      return;
     }
   } catch {
-    removerToken();
+    // sessão inválida, permanece na tela de login
   }
 
   identifierInput.addEventListener("input", () => {
@@ -215,7 +201,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error("Token não retornado pelo servidor.");
       }
 
-      salvarToken(data.token);
       window.location.href = "/paginaUnificada/index.html";
     } catch (error) {
       if (error?.status === 403) {

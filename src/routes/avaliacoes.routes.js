@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { listAvaliacoes, criarAvaliacaoSite } from "../controllers/avaliacoes.controller.js";
+import { authenticateToken } from "../middlewares/auth.js";
 
 const router = Router();
 
-// pública
-router.get("/avaliacoes", listAvaliacoes);
-router.post("/avaliacoes/nova", criarAvaliacaoSite);
+router.get("/avaliacoes", authenticateToken, listAvaliacoes);
+router.post("/avaliacoes/nova", authenticateToken, criarAvaliacaoSite);
 
 export default router;

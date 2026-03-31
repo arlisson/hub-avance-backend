@@ -1,20 +1,20 @@
 // middlewares/auth.js
 import jwt from "jsonwebtoken";
 
-function getTokenFromHeader(req) {
-  const authHeader = req.headers.authorization || "";
-  const [scheme, token] = authHeader.split(" ");
-
-  if (scheme !== "Bearer" || !token) {
-    return null;
+function getTokenFromRequest(req) {
+  if (req.cookies?.auth_token) {
+    return req.cookies.auth_token;
   }
 
+  const authHeader = req.headers.authorization || "";
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) return null;
   return token;
 }
 
 export function authenticateToken(req, res, next) {
   try {
-    const token = getTokenFromHeader(req);
+    const token = getTokenFromRequest(req);
 
     if (!token) {
       return res.status(401).json({
