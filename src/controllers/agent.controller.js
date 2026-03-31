@@ -4,6 +4,24 @@ function getUserId(req) {
   return req.user?.id || null;
 }
 
+export async function requireClienteAvance(req, res, next) {
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ ok: false, error: "Não autorizado." });
+  }
+
+  const [rows] = await pool.query(
+    "SELECT cliente_avance FROM profiles WHERE id = ? LIMIT 1",
+    [userId]
+  );
+
+  if (!rows[0]?.cliente_avance) {
+    return res.status(403).json({ ok: false, error: "Acesso negado." });
+  }
+
+  return next();
+}
+
 function getUserEmail(req) {
   return req.user?.email || "";
 }

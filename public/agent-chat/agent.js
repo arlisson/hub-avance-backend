@@ -51,6 +51,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     currentUser = meResp.user;
 
+    if (!currentUser.cliente_avance) {
+      window.location.href = HUB_URL;
+      return;
+    }
+
     if (userEmailEl) {
       userEmailEl.textContent = currentUser.email || "";
       userEmailEl.title = currentUser.email || "";
