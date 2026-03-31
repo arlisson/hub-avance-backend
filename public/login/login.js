@@ -194,6 +194,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const data = await fetchComErroTratado("/api/login", {
         method: "POST",
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
