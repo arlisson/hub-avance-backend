@@ -93,8 +93,28 @@ export async function createLead(req, res) {
   }
 }
 
+async function userCanManageLeads(userId) {
+  const [rows] = await pool.query(
+    `SELECT r.nome AS role_nome, p.protocol
+     FROM users u
+     INNER JOIN roles r ON r.id = u.role_id
+     LEFT JOIN profiles p ON p.id = u.id
+     WHERE u.id = ? LIMIT 1`,
+    [userId]
+  );
+  const user = rows[0];
+  if (!user) return false;
+  const role = String(user.role_nome || "").toLowerCase();
+  return role === "admin" || role === "administrador" || Number(user.protocol) === 1;
+}
+
 export async function listLeads(req, res) {
   try {
+    const userId = req.user?.id;
+    if (!userId || !(await userCanManageLeads(userId))) {
+      return res.status(403).json({ ok: false, error: "FORBIDDEN" });
+    }
+
     const servico = trimText(req.query?.servico).toLowerCase();
     const limitRaw = Number(req.query?.limit || 100);
     const limit = Number.isInteger(limitRaw)
