@@ -1112,7 +1112,7 @@ async function carregarAvaliacoes() {
   }
 
   try {
-    const data = await fetch("/api/avaliacoes", { cache: "no-store" });
+    const data = await fetch("/api/avaliacoes", { cache: "no-store", credentials: "include" });
     const json = await data.json().catch(() => null);
 
     if (!data.ok || !json?.ok || !Array.isArray(json.avaliacoes)) {
@@ -1915,11 +1915,12 @@ function initFooterRating() {
       try {
         const res = await fetch("/api/avaliacoes/nova", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             cliente_id: cliente_id,
-            nota: nota, 
-            comentario: comentario 
+            nota: nota,
+            comentario: comentario
           })
         });
 

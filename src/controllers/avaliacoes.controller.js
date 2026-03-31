@@ -17,8 +17,8 @@ async function isAdmin(userId) {
 
 export async function criarAvaliacaoSite(req, res) {
   const userId = req.user?.id;
-  if (!userId || !(await isAdmin(userId))) {
-    return res.status(403).json({ ok: false, error: "FORBIDDEN" });
+  if (!userId) {
+    return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
   }
 
   const { cliente_id, nota, comentario } = req.body;
