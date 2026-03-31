@@ -271,15 +271,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       "Carregando usuários",
       "Validando acesso e buscando dados...",
       async () => {
-        const token = getAccessToken();
-
-        if (!token) {
-          window.location.href = LOGIN_URL;
-          return;
-        }
-
-        window.__USER_ACCESS_TOKEN__ = token;
-
         const profileResponse = await apiFetch("/api/me", {
           method: "GET",
         });
