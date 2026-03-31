@@ -3536,6 +3536,11 @@ html {
   overflow-x: hidden;
 }
 
+body.modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
 /* ── Modal como bottom sheet (≤ 640px) ────────────────────
    Sobe da parte inferior em vez de centralizar — mais natural
    no toque e não conflita com o teclado virtual.
