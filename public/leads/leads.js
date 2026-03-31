@@ -579,12 +579,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     await withLoading("Carregando leads", "Validando acesso...", async () => {
-      const token = getAuthToken();
-      if (!token) {
-        window.location.href = LOGIN_URL;
-        return;
-      }
-
       const sessionData = await getCurrentSession();
       if (!sessionData?.ok || !sessionData?.user) {
         clearAuthToken();

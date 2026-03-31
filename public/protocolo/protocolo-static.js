@@ -166,8 +166,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-function getAccessToken() { return ""; }
-
 function clearAuthToken() {}
 
 async function apiFetch(url, { method = "GET", body } = {}) {

@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         showApiFeedback("Chave validada e salva com sucesso.", "sucesso");
-        await refreshAgentStatus(getAccessToken(), chatMessages);
+        await refreshAgentStatus(chatMessages);
 
         setTimeout(() => {
           fecharModal();
@@ -287,8 +287,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     mensagemApi.className = "mensagem-feedback";
   }
 });
-
-function getAccessToken() { return ""; }
 
 function clearAuthToken() {}
 
