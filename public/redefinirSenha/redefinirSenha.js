@@ -11,19 +11,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!form || !pass || !currentPassInput) return;
 
   async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("auth_token");
-
     const headers = {
       "Content-Type": "application/json",
       ...(options.headers || {}),
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
     const resp = await fetch(url, {
       ...options,
+      credentials: "include",
       headers,
     });
 
@@ -43,7 +38,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } catch (err) {
     alert("Sua sessão expirou. Faça login novamente.");
-    localStorage.removeItem("auth_token");
     window.location.href = "../login/login.html";
     return;
   }
@@ -152,8 +146,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       alert(out?.message || "Senha atualizada com sucesso. Faça login novamente.");
-
-      localStorage.removeItem("auth_token");
       window.location.href = "../login/login.html";
     } catch (err) {
       alert(err?.message || "Falha ao atualizar a senha.");

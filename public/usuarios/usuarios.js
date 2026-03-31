@@ -66,34 +66,10 @@ async function withLoading(title, message, task) {
   }
 }
 
-function getAccessToken() {
-  return (
-    localStorage.getItem("auth_token") ||
-    sessionStorage.getItem("auth_token") ||
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token") ||
-    localStorage.getItem("authToken") ||
-    sessionStorage.getItem("authToken") ||
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token") ||
-    ""
-  );
-}
-
-function clearAuthToken() {
-  ["auth_token", "token", "authToken", "access_token"].forEach((key) => {
-    localStorage.removeItem(key);
-    sessionStorage.removeItem(key);
-  });
-}
+function clearAuthToken() {}
 
 async function apiFetch(url, options = {}) {
-  const token = window.__USER_ACCESS_TOKEN__ || getAccessToken();
-
   const headers = new Headers(options.headers || {});
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
 
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
@@ -101,6 +77,7 @@ async function apiFetch(url, options = {}) {
 
   const response = await fetch(url, {
     ...options,
+    credentials: "include",
     headers,
   });
 

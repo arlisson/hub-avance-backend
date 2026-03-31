@@ -38,18 +38,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const token = getAccessToken();
-  if (!token) {
-    window.location.href = LOGIN_URL;
-    return;
-  }
-
   let currentUser = null;
 
   try {
     const meResp = await apiFetch(API_ME_URL, {
       method: "GET",
-      token,
     });
 
     if (!meResp?.ok || !meResp?.user) {
@@ -86,7 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   renderHistory(chatMessages, chatState.messages);
 
-  await refreshAgentStatus(token, chatMessages);
+  await refreshAgentStatus(chatMessages);
 
   if (menuBackHub) {
     menuBackHub.addEventListener("click", () => {
@@ -99,7 +92,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         await apiFetch(API_LOGOUT_URL, {
           method: "POST",
-          token: getAccessToken(),
         });
       } catch (err) {
         console.warn("Falha no logout remoto:", err);
@@ -142,7 +134,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         const statusResp = await apiFetch(API_AGENT_STATUS_URL, {
           method: "GET",
-          token: getAccessToken(),
         });
 
         if (statusResp?.hasApiKey && inputApiKey) {
@@ -205,7 +196,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         const resp = await apiFetch(API_AGENT_KEY_URL, {
           method: "POST",
-          token: getAccessToken(),
           body: { apiKey },
         });
 
@@ -248,7 +238,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const resp = await apiFetch(API_AGENT_CHAT_URL, {
         method: "POST",
-        token: getAccessToken(),
         body: {
           chatInput: text,
           sessionId: chatState.sessionId,
@@ -299,40 +288,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-function getAccessToken() {
-  return (
-    localStorage.getItem("auth_token") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("auth_token") ||
-    sessionStorage.getItem("token") ||
-    sessionStorage.getItem("authToken") ||
-    sessionStorage.getItem("access_token") ||
-    ""
-  );
-}
+function getAccessToken() { return ""; }
 
-function clearAuthToken() {
-  localStorage.removeItem("auth_token");
-  localStorage.removeItem("token");
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("access_token");
+function clearAuthToken() {}
 
-  sessionStorage.removeItem("auth_token");
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("authToken");
-  sessionStorage.removeItem("access_token");
-}
-
-async function apiFetch(url, { method = "GET", token = "", body } = {}) {
+async function apiFetch(url, { method = "GET", body } = {}) {
   const headers = {
     Accept: "application/json",
   };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -340,6 +303,7 @@ async function apiFetch(url, { method = "GET", token = "", body } = {}) {
 
   const resp = await fetch(url, {
     method,
+    credentials: "include",
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
@@ -363,11 +327,10 @@ async function apiFetch(url, { method = "GET", token = "", body } = {}) {
   return data;
 }
 
-async function refreshAgentStatus(token, chatMessages) {
+async function refreshAgentStatus(chatMessages) {
   try {
     const resp = await apiFetch("/api/agent/status", {
       method: "GET",
-      token,
     });
 
     const isOnline = !!resp?.hasApiKey;
