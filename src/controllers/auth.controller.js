@@ -1051,6 +1051,20 @@ export async function forgotPassword(req, res) {
       });
     }
 
+    const [recentRows] = await conn.query(
+      `SELECT COUNT(*) AS total FROM password_resets
+       WHERE user_id = ? AND expires_at > NOW()`,
+      [user.id]
+    );
+
+    if (Number(recentRows[0]?.total) >= 2) {
+      return res.json({
+        ok: true,
+        message:
+          "Se esse e-mail existir e estiver cadastrado no sistema, enviaremos as instruções de redefinição."
+      });
+    }
+
     const { token, tokenHash, expiresAt } = gerarTokenResetSenha();
 
     await conn.beginTransaction();
