@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { isAdminRole } from "../utils/roles.js";
 
 function parseJsonSafe(value, fallback = null) {
   if (value == null) return fallback;
@@ -58,7 +59,7 @@ async function ensureAdmin(req, res) {
   try {
     const role = String(req.user?.role || "").toLowerCase();
 
-    if (role === "admin" || role === "administrador") {
+    if (isAdminRole(role)) {
       return true;
     }
 
