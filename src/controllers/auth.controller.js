@@ -67,7 +67,7 @@ export async function changePassword(req, res) {
       });
     }
 
-    if (newPassword.length < 8 || !/\d/.test(newPassword)) {
+    if (newPassword.length < 8 || newPassword.length > 72 || !/\d/.test(newPassword)) {
       return res.status(400).json({
         ok: false,
         error: "A nova senha deve ter no mínimo 8 caracteres e pelo menos 1 número."
@@ -382,6 +382,13 @@ export async function register(req, res) {
       });
     }
 
+    if (passwordNorm.length > 72) {
+      return res.status(400).json({
+        ok: false,
+        error: "A senha deve ter no máximo 72 caracteres."
+      });
+    }
+
     const [emailRows] = await conn.query(
       `SELECT id FROM users WHERE email = ? LIMIT 1`,
       [emailNorm]
@@ -643,6 +650,13 @@ export async function login(req, res) {
       return res.status(400).json({
         ok: false,
         error: "E-mail e senha são obrigatórios."
+      });
+    }
+
+    if (password.length > 72) {
+      return res.status(401).json({
+        ok: false,
+        error: "Credenciais inválidas."
       });
     }
 
@@ -922,7 +936,7 @@ export async function resetPassword(req, res) {
       });
     }
 
-    if (password.length < 8 || !/\d/.test(password)) {
+    if (password.length < 8 || password.length > 72 || !/\d/.test(password)) {
       return res.status(400).json({
         ok: false,
         error: "A senha deve ter no mínimo 8 caracteres e pelo menos 1 número."
