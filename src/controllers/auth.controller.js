@@ -382,10 +382,10 @@ export async function register(req, res) {
       });
     }
 
-    if (passwordNorm.length > 72) {
+    if (passwordNorm.length < 8 || passwordNorm.length > 72 || !/\d/.test(passwordNorm)) {
       return res.status(400).json({
         ok: false,
-        error: "A senha deve ter no máximo 72 caracteres."
+        error: "A senha deve ter no mínimo 8 caracteres e pelo menos 1 número."
       });
     }
 
