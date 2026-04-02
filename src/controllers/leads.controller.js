@@ -54,6 +54,14 @@ export async function createLead(req, res) {
       });
     }
 
+    const dadosJson = dados ? JSON.stringify(dados) : null;
+    if (dadosJson && dadosJson.length > 5000) {
+      return res.status(400).json({
+        ok: false,
+        error: "Dados inválidos.",
+      });
+    }
+
     const id = randomUUID();
 
     await pool.query(
@@ -74,7 +82,7 @@ export async function createLead(req, res) {
         cpf,
         whatsapp,
         servico,
-        dados ? JSON.stringify(dados) : null,
+        dadosJson,
         0,
       ]
     );
