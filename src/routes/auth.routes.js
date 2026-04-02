@@ -10,9 +10,7 @@ import {
   verifyEmail,
   resetPassword,
   changePassword,
-  testSmtp,
-  testEmail,
-  debugSmtpEnv
+
 } from "../controllers/auth.controller.js";
 import {registerAppUsage} from "../controllers/counter.controller.js"
 import { authenticateToken } from "../middlewares/auth.js";
@@ -53,9 +51,5 @@ router.get("/verify-email", verifyEmail);
 router.post("/change-password", authenticateToken, changePassword);
 router.post("/contador", authenticateToken, registerAppUsage);
 
-// ROTAS DE TESTE SMTP (protegidas)
-router.get("/test-smtp", authenticateToken, testSmtp);
-router.get("/test-email", authenticateToken, testEmail);
-router.get("/debug-smtp-env", authenticateToken, debugSmtpEnv);
 
 export default router;
