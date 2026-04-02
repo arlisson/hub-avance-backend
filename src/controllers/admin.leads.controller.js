@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { canManage } from "../utils/roles.js";
 
 function trimText(value) {
   return String(value || "").trim();
@@ -52,8 +53,7 @@ async function userCanManageLeads(userId) {
   const user = rows[0];
   if (!user) return false;
 
-  const roleNome = String(user.role_nome || "").toLowerCase();
-  return roleNome === "admin" || roleNome === "administrador" || Number(user.protocol) === 1;
+  return canManage(user.role_nome, user.protocol);
 }
 
 export async function listAdminLeads(req, res) {

@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { pool } from "../config/db.js";
+import { canManage } from "../utils/roles.js";
 
 const SERVICOS_VALIDOS = new Set(["movel", "internet", "fixa"]);
 
@@ -112,8 +113,7 @@ async function userCanManageLeads(userId) {
   );
   const user = rows[0];
   if (!user) return false;
-  const role = String(user.role_nome || "").toLowerCase();
-  return role === "admin" || role === "administrador" || Number(user.protocol) === 1;
+  return canManage(user.role_nome, user.protocol);
 }
 
 export async function listLeads(req, res) {

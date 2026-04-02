@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { isAdminRole } from "../utils/roles.js";
 
 function getUserId(req) {
   return req.user?.id || null;
@@ -6,9 +7,8 @@ function getUserId(req) {
 
 export function requireClienteAvance(req, res, next) {
   const role = String(req.user?.role || "").toLowerCase();
-  const isAdmin = role === "admin" || role === "administrador";
 
-  if (!isAdmin) {
+  if (!isAdminRole(role)) {
     return res.status(403).json({ ok: false, error: "Acesso negado." });
   }
 
