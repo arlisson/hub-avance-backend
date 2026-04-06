@@ -1017,6 +1017,29 @@ body.dark-mode .hub-card-skeleton {
   opacity: 0.8;
 }
 
+.hub-btn-tutorial {
+  background-color: #e8000d;
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(232, 0, 13, 0.35);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hub-btn-tutorial:hover {
+  background-color: #c4000b;
+  color: #fff;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(232, 0, 13, 0.50);
+}
+
+.app-modal-tutorial {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
 /* ============================================================
    10. MODAL — BASE COMPARTILHADA
    ============================================================ */
@@ -1203,11 +1226,16 @@ body.dark-mode .app-modal-close {
   background: #000;
   border: 1px solid var(--border-subtle);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  height: min(450px, 50vh);
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: auto;
   flex: 0 0 auto;
 }
 
 .app-modal-video iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border: 0;
