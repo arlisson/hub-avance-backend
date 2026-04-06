@@ -40,6 +40,7 @@ const APPS = [
       "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet, suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
     youtubeId: "a9bAP6Kn2l4",
     tutorialLabel: "Como instalar e utilizar",
+    tutorialUrl: "https://youtu.be/Dtc7xb1TGco",
     enabled: true,
     requiresPermission: false,
     actions: [
@@ -82,6 +83,7 @@ const APPS = [
     longDesc: "Chega de anotar número de protocolo no papel ou na memória. Com um clique você gera um protocolo único para usar onde quiser e manter tudo organizado, simples, rápido e sem margem para erro.",
     youtubeId: "qA_WD02eEbM",
     tutorialLabel: "Como utilizar",
+    tutorialUrl: "https://youtu.be/8mPhZytUcYA",
     enabled: true,
     requiresPermission: false,
     actions: [
@@ -1047,9 +1049,9 @@ function openAppModal(appId) {
   const tutorialEl = document.getElementById("app-modal-tutorial");
   if (tutorialEl) {
     tutorialEl.innerHTML = "";
-    if (app.tutorialLabel && app.youtubeId) {
+    if (app.tutorialLabel && app.tutorialUrl) {
       const btn = document.createElement("a");
-      btn.href = `https://www.youtube.com/watch?v=${encodeURIComponent(app.youtubeId)}`;
+      btn.href = app.tutorialUrl;
       btn.target = "_blank";
       btn.rel = "noopener noreferrer";
       btn.className = "hub-btn hub-btn-tutorial";
