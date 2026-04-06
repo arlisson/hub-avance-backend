@@ -39,6 +39,7 @@ const APPS = [
     longDesc:
       "O Preenche Fácil é uma ferramenta simples de usar, feita para facilitar sua rotina. Você preenche os dados pelo programa e ele organiza tudo automaticamente no Excel. O programa funciona na sua máquina, sem internet, suas informações ficam com você. Depois de baixar, ele é seu para sempre.",
     youtubeId: "a9bAP6Kn2l4",
+    tutorialLabel: "Como instalar e utilizar",
     enabled: true,
     requiresPermission: false,
     actions: [
@@ -80,6 +81,7 @@ const APPS = [
     shortDesc: "Gere e envie protocolos de atendimento em segundos.",
     longDesc: "Chega de anotar número de protocolo no papel ou na memória. Com um clique você gera um protocolo único para usar onde quiser e manter tudo organizado, simples, rápido e sem margem para erro.",
     youtubeId: "qA_WD02eEbM",
+    tutorialLabel: "Como utilizar",
     enabled: true,
     requiresPermission: false,
     actions: [
@@ -1042,6 +1044,20 @@ function openAppModal(appId) {
     }
   }
 
+  const tutorialEl = document.getElementById("app-modal-tutorial");
+  if (tutorialEl) {
+    tutorialEl.innerHTML = "";
+    if (app.tutorialLabel && app.youtubeId) {
+      const btn = document.createElement("a");
+      btn.href = `https://www.youtube.com/watch?v=${encodeURIComponent(app.youtubeId)}`;
+      btn.target = "_blank";
+      btn.rel = "noopener noreferrer";
+      btn.className = "hub-btn hub-btn-tutorial";
+      btn.innerHTML = `<i class="ph ph-play-circle"></i><span>${escapeHtml(app.tutorialLabel)}</span>`;
+      tutorialEl.appendChild(btn);
+    }
+  }
+
   backdrop.hidden = false;
   modal.hidden = false;
   document.body.classList.add("modal-open");
@@ -1061,8 +1077,10 @@ function closeAppModal() {
   const backdrop = document.getElementById("app-modal-backdrop");
   const modal = document.getElementById("app-modal");
   const videoEl = document.getElementById("app-modal-video");
+  const tutorialEl = document.getElementById("app-modal-tutorial");
 
   if (videoEl) videoEl.innerHTML = "";
+  if (tutorialEl) tutorialEl.innerHTML = "";
 
   if (modal) {
     removeFocusTrap(modal);
