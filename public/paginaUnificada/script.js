@@ -18,7 +18,7 @@
 // ============================================================
 
 /** Número do WhatsApp do consultor (com DDI, sem espaços ou símbolos). */
-const WHATSAPP_NUMBER = "5522988124656";
+const WHATSAPP_NUMBER = "5521995012737";
 
 let LOGIN_URL = "/login/login.html";
 let CURRENT_USER_ID = "";
