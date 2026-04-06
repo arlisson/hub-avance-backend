@@ -107,6 +107,8 @@ const APPS = [
     longDesc:
       "O Apolo é o seu mentor estratégico de vendas com inteligência artificial. Ele analisa o perfil do cliente, sugere abordagens personalizadas, ajuda a contornar objeções e orienta cada etapa da negociação, tudo em tempo real, direto no navegador. Ideal para consultores que querem vender com mais confiança, consistência e resultado.",
     youtubeId: "KNljC_oggjc",
+    tutorialLabel: "Como utilizar",
+    tutorialUrl: "https://www.youtube.com/watch?v=DP9geaeu10o",
     enabled: true,
     requiresPermission: false,
     clienteCta: true,
