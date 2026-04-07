@@ -15,6 +15,12 @@
   </head>
 
   <body>
+    <script>
+      (function () {
+        if (localStorage.getItem("theme") !== "light")
+          document.body.classList.add("dark-mode");
+      })();
+    </script>
     <div class="reset-container">
       <div class="reset-card">
         <div class="reset-header">
