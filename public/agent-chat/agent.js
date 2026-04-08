@@ -51,7 +51,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     currentUser = meResp.user;
 
-    if (!currentUser.protocol) {
+    const role = String(currentUser.role || "").toLowerCase();
+    const isAdmin = role === "admin" || role === "administrador";
+
+    if (!isAdmin) {
       window.location.href = HUB_URL;
       return;
     }
@@ -234,19 +237,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading(chatMessages);
 
     try {
-      const historyForApi = chatState.messages
-        .slice(-12)
-        .map((msg) => ({
-          role: msg.role === "bot" ? "model" : "user",
-          text: msg.text,
-        }));
-
       const resp = await apiFetch(API_AGENT_CHAT_URL, {
         method: "POST",
         body: {
           chatInput: text,
           sessionId: chatState.sessionId,
-          history: historyForApi,
         },
       });
 
