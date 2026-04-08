@@ -50,6 +50,39 @@ async function validateGeminiApiKey(apiKey) {
   }
 }
 
+async function callN8nAgent({ chatInput, sessionId, email }) {
+  const webhookUrl = process.env.N8N_AGENT_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    const err = new Error("Agente não configurado no servidor.");
+    err.status = 503;
+    throw err;
+  }
+
+  const resp = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chatInput, sessionId, email }),
+  });
+
+  const text = await resp.text();
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
+  if (!resp.ok) {
+    const err = new Error(data?.error || "Falha ao contactar o agente.");
+    err.status = 502;
+    throw err;
+  }
+
+  return data?.output || data?.text || "";
+}
+
 async function getStoredApiKeyByUserId(userId) {
   const [rows] = await pool.query(
     "SELECT chave_api FROM profiles WHERE id = ? LIMIT 1",
@@ -227,7 +260,7 @@ export async function sendAgentMessage(req, res) {
     const userId = getUserId(req);
     const email = getUserEmail(req);
     const chatInput = String(req.body?.chatInput || "").trim();
-    const history = normalizeHistory(req.body?.history);
+    const sessionId = String(req.body?.sessionId || "").trim();
 
     if (!userId || !email) {
       return res.status(401).json({
@@ -252,11 +285,7 @@ export async function sendAgentMessage(req, res) {
       });
     }
 
-    const output = await callGemini({
-      apiKey,
-      history,
-      chatInput,
-    });
+    const output = await callN8nAgent({ chatInput, sessionId, email });
 
     return res.json({
       ok: true,
