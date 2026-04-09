@@ -268,9 +268,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Extrai o último evento "data:" do stream SSE
       let result = null;
+      let currentEvent = "";
       for (const line of raw.split("\n")) {
-        if (line.startsWith("data: ")) {
+        if (line.startsWith("event: ")) {
+          currentEvent = line.slice(7).trim();
+        } else if (line.startsWith("data: ") && currentEvent !== "ping") {
           try { result = JSON.parse(line.slice(6)); } catch {}
+          currentEvent = "";
         }
       }
 

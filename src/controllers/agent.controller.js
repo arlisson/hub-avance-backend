@@ -85,7 +85,7 @@ async function callN8nAgent({ chatInput, sessionId, email, apiKey }) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55000);
+  const timeout = setTimeout(() => controller.abort(), 180000);
 
   let resp;
   try {
@@ -264,8 +264,8 @@ export async function sendAgentMessage(req, res) {
 
   // Ping a cada 15s para o proxy não cortar
   const ping = setInterval(() => {
-    res.write(": ping\n\n");
-  }, 15000);
+    res.write("event: ping\ndata: {}\n\n");
+  }, 10000);
 
   const finish = (data) => {
     clearInterval(ping);
