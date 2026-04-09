@@ -27,7 +27,7 @@ function decryptApiKey(stored) {
   const [ivHex, tagHex, encHex] = parts;
   const decipher = createDecipheriv(ALGO, getEncryptionKey(), Buffer.from(ivHex, "hex"));
   decipher.setAuthTag(Buffer.from(tagHex, "hex"));
-  return decipher.update(Buffer.from(encHex, "hex")) + decipher.final("utf8");
+  return decipher.update(Buffer.from(encHex, "hex"), undefined, "utf8") + decipher.final("utf8");
 }
 
 function getUserId(req) {
