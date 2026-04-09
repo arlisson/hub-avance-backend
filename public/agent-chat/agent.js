@@ -237,54 +237,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading(chatMessages);
 
     try {
-      const fetchResp = await fetch(API_AGENT_CHAT_URL, {
+      const startResp = await apiFetch(API_AGENT_CHAT_URL, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-        body: JSON.stringify({ chatInput: text, sessionId: chatState.sessionId }),
+        body: { chatInput: text, sessionId: chatState.sessionId },
       });
 
-      if (!fetchResp.ok) {
-        const errData = await fetchResp.json().catch(() => ({}));
-        if (fetchResp.status === 401) {
-          clearAuthToken();
-          window.location.href = LOGIN_URL;
-          return;
-        }
-        throw new Error(errData?.error || "Erro de conexão.");
+      if (!startResp?.ok) {
+        throw new Error(startResp?.error || "Erro ao iniciar agente.");
       }
 
-      const reader = fetchResp.body.getReader();
-      const decoder = new TextDecoder();
-      let raw = "";
+      const jobId = startResp.jobId;
+      const deadline = Date.now() + 3 * 60 * 1000; // 3 minutos
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        raw += decoder.decode(value, { stream: true });
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 3000));
+
+        const poll = await apiFetch(`/api/agent/result/${jobId}`);
+
+        if (poll?.status === "pending") continue;
+
+        removeLoading();
+
+        if (!poll?.ok) {
+          appendMessage(chatMessages, chatState, storageKey, "bot", poll?.error || "Erro do agente.");
+        } else {
+          appendMessage(chatMessages, chatState, storageKey, "bot", poll?.output || "Desculpe, não entendi.");
+        }
+        return;
       }
 
       removeLoading();
-
-      // Extrai o último evento "data:" do stream SSE
-      let result = null;
-      let currentEvent = "";
-      for (const line of raw.split("\n")) {
-        if (line.startsWith("event: ")) {
-          currentEvent = line.slice(7).trim();
-        } else if (line.startsWith("data: ") && currentEvent !== "ping") {
-          try { result = JSON.parse(line.slice(6)); } catch {}
-          currentEvent = "";
-        }
-      }
-
-      if (result?.ok === false) {
-        appendMessage(chatMessages, chatState, storageKey, "bot", result.error || "Erro do agente.");
-      } else {
-        appendMessage(chatMessages, chatState, storageKey, "bot", result?.output || "Desculpe, não entendi.");
-      }
+      appendMessage(chatMessages, chatState, storageKey, "bot", "O agente demorou demais para responder. Tente novamente.");
     } catch (err) {
       removeLoading();
+      if (err?.status === 401) {
+        clearAuthToken();
+        window.location.href = LOGIN_URL;
+        return;
+      }
       appendMessage(chatMessages, chatState, storageKey, "bot", err?.message || "Erro de conexão.");
     }
   }

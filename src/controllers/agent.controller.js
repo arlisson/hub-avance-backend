@@ -234,6 +234,17 @@ export async function deleteAgentApiKey(req, res) {
   }
 }
 
+// Jobs em memória: jobId -> { status, output, error }
+const agentJobs = new Map();
+
+function createJob() {
+  const jobId = randomBytes(16).toString("hex");
+  agentJobs.set(jobId, { status: "pending" });
+  // Remove após 10 minutos para não vazar memória
+  setTimeout(() => agentJobs.delete(jobId), 10 * 60 * 1000);
+  return jobId;
+}
+
 export async function sendAgentMessage(req, res) {
   const userId = getUserId(req);
   const email = getUserEmail(req);
@@ -248,36 +259,44 @@ export async function sendAgentMessage(req, res) {
     return res.status(400).json({ ok: false, error: "Digite uma mensagem." });
   }
 
-  const apiKey = await getStoredApiKeyByUserId(userId);
-  if (!apiKey) {
+  const storedKey = await getStoredApiKeyByUserId(userId);
+  if (!storedKey) {
     return res.status(400).json({
       ok: false,
       error: "O agente está offline. Cadastre uma chave Gemini.",
     });
   }
 
-  // Abre conexão SSE
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders();
+  const jobId = createJob();
 
-  // Ping a cada 15s para o proxy não cortar
-  const ping = setInterval(() => {
-    res.write("event: ping\ndata: {}\n\n");
-  }, 10000);
+  // Processa em background sem await
+  callN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(storedKey) })
+    .then((output) => agentJobs.set(jobId, { status: "done", output }))
+    .catch((error) => {
+      console.error("Erro em sendAgentMessage:", error);
+      agentJobs.set(jobId, { status: "error", error: error?.message || "Não foi possível processar a mensagem." });
+    });
 
-  const finish = (data) => {
-    clearInterval(ping);
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-    res.end();
-  };
+  return res.json({ ok: true, jobId });
+}
 
-  try {
-    const output = await callN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(apiKey) });
-    finish({ ok: true, output });
-  } catch (error) {
-    console.error("Erro em sendAgentMessage:", error);
-    finish({ ok: false, error: error?.message || "Não foi possível processar a mensagem." });
+export function getAgentJobResult(req, res) {
+  const jobId = String(req.params.jobId || "");
+  const job = agentJobs.get(jobId);
+
+  if (!job) {
+    return res.status(404).json({ ok: false, error: "Job não encontrado." });
   }
+
+  if (job.status === "pending") {
+    return res.json({ ok: true, status: "pending" });
+  }
+
+  agentJobs.delete(jobId);
+
+  if (job.status === "error") {
+    return res.json({ ok: false, error: job.error });
+  }
+
+  return res.json({ ok: true, status: "done", output: job.output });
 }

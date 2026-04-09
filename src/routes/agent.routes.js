@@ -5,6 +5,7 @@ import {
   saveAgentApiKey,
   deleteAgentApiKey,
   sendAgentMessage,
+  getAgentJobResult,
   requireClienteAvance,
 } from "../controllers/agent.controller.js";
 
@@ -21,5 +22,6 @@ router.get("/agent/status", authenticateToken, requireClienteAvance, getAgentSta
 router.post("/agent/api-key", authenticateToken, requireClienteAvance, saveAgentApiKey);
 router.delete("/agent/api-key", authenticateToken, requireClienteAvance, deleteAgentApiKey);
 router.post("/agent", authenticateToken, requireClienteAvance, sendAgentMessage);
+router.get("/agent/result/:jobId", authenticateToken, requireClienteAvance, getAgentJobResult);
 
 export default router;
