@@ -94,6 +94,7 @@ async function callN8nAgent({ chatInput, sessionId, email }) {
     throw err;
   }
 
+  console.log("[callN8nAgent] resposta do n8n:", JSON.stringify(data)?.slice(0, 300));
   return data?.output || data?.text || "";
 }
 

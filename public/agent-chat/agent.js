@@ -256,23 +256,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const reader = fetchResp.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
-      let result = null;
+      let raw = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try { result = JSON.parse(line.slice(6)); } catch {}
-          }
-        }
+        raw += decoder.decode(value, { stream: true });
       }
 
       removeLoading();
+
+      // Extrai o último evento "data:" do stream SSE
+      let result = null;
+      for (const line of raw.split("\n")) {
+        if (line.startsWith("data: ")) {
+          try { result = JSON.parse(line.slice(6)); } catch {}
+        }
+      }
 
       if (result?.ok === false) {
         appendMessage(chatMessages, chatState, storageKey, "bot", result.error || "Erro do agente.");
