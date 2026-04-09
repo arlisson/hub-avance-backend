@@ -263,7 +263,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           continue; // erro de rede temporário, tenta de novo
         }
 
-        if (poll?.status === "pending") continue;
+        if (!poll || poll?.status === "pending") continue;
 
         removeLoading();
 

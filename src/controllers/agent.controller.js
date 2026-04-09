@@ -75,56 +75,32 @@ async function validateGeminiApiKey(apiKey) {
   }
 }
 
-async function callN8nAgent({ chatInput, sessionId, email, apiKey }) {
+function triggerN8nAgent({ chatInput, sessionId, email, apiKey, jobId }) {
   const webhookUrl = process.env.N8N_AGENT_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    const err = new Error("Agente não configurado no servidor.");
-    err.status = 503;
-    throw err;
+    agentJobs.set(jobId, { status: "error", error: "Agente não configurado no servidor." });
+    return;
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 180000);
-
-  let resp;
-  try {
-    resp = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chatInput, sessionId, email, geminiApiKey: apiKey }),
-      signal: controller.signal,
+  // Fire and forget: responde imediatamente, n8n chama /api/agent/callback/:jobId quando terminar
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chatInput, sessionId, email, geminiApiKey: apiKey, callbackJobId: jobId }),
+  })
+    .then(async (resp) => {
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        console.error(`[triggerN8nAgent] n8n retornou ${resp.status}:`, text.slice(0, 300));
+        agentJobs.set(jobId, { status: "error", error: "Falha ao acionar o agente." });
+      }
+      // Se n8n respondeu ok, o resultado virá pelo callback — não faz nada aqui
+    })
+    .catch((err) => {
+      console.error("[triggerN8nAgent] Erro ao acionar n8n:", err);
+      agentJobs.set(jobId, { status: "error", error: "Não foi possível conectar ao agente." });
     });
-  } catch (fetchErr) {
-    clearTimeout(timeout);
-    if (fetchErr.name === "AbortError") {
-      const err = new Error("O agente demorou demais para responder. Tente novamente.");
-      err.status = 504;
-      throw err;
-    }
-    throw fetchErr;
-  }
-  clearTimeout(timeout);
-
-  const text = await resp.text();
-  let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
-  }
-
-  if (!resp.ok) {
-    console.error(`[callN8nAgent] n8n retornou ${resp.status} para ${webhookUrl}`);
-    console.error(`[callN8nAgent] corpo da resposta:`, text.slice(0, 500));
-    const err = new Error(data?.error || "Falha ao contactar o agente.");
-    err.status = 502;
-    throw err;
-  }
-
-  console.log("[callN8nAgent] resposta do n8n:", JSON.stringify(data)?.slice(0, 300));
-  return data?.output || data?.text || "";
 }
 
 async function getStoredApiKeyByUserId(userId) {
@@ -269,15 +245,28 @@ export async function sendAgentMessage(req, res) {
 
   const jobId = createJob();
 
-  // Processa em background sem await
-  callN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(storedKey) })
-    .then((output) => agentJobs.set(jobId, { status: "done", output }))
-    .catch((error) => {
-      console.error("Erro em sendAgentMessage:", error);
-      agentJobs.set(jobId, { status: "error", error: error?.message || "Não foi possível processar a mensagem." });
-    });
+  // Dispara n8n sem aguardar — n8n chama /api/agent/callback/:jobId quando terminar
+  triggerN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(storedKey), jobId });
 
   return res.json({ ok: true, jobId });
+}
+
+export function receiveAgentCallback(req, res) {
+  const jobId = String(req.params.jobId || "");
+  const secret = String(req.headers["x-callback-secret"] || "");
+
+  if (!process.env.N8N_CALLBACK_SECRET || secret !== process.env.N8N_CALLBACK_SECRET) {
+    return res.status(403).json({ ok: false, error: "Não autorizado." });
+  }
+
+  if (!agentJobs.has(jobId)) {
+    return res.status(404).json({ ok: false, error: "Job não encontrado ou expirado." });
+  }
+
+  const output = String(req.body?.output || "");
+  agentJobs.set(jobId, { status: "done", output });
+
+  return res.json({ ok: true });
 }
 
 export function getAgentJobResult(req, res) {
