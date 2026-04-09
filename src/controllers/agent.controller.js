@@ -27,18 +27,6 @@ function getUserEmail(req) {
   return req.user?.email || "";
 }
 
-function normalizeHistory(history) {
-  if (!Array.isArray(history)) return [];
-
-  return history
-    .filter((item) => item && typeof item.text === "string" && item.text.trim())
-    .slice(-12)
-    .map((item) => ({
-      role: item.role === "model" ? "model" : "user",
-      text: item.text.trim(),
-    }));
-}
-
 async function validateGeminiApiKey(apiKey) {
   const resp = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`
@@ -119,71 +107,6 @@ async function getStoredApiKeyByUserId(userId) {
   return rows[0]?.chave_api || null;
 }
 
-async function callGemini({ apiKey, history, chatInput }) {
-  const systemInstruction = `
-Você é o Apolo, mentor estratégico de vendas da AVANCE.
-Responda em português do Brasil.
-Seja objetivo, claro e útil.
-Quando fizer sentido, use tópicos curtos e sugestões práticas.
-`.trim();
-
-  const contents = [
-    {
-      role: "user",
-      parts: [{ text: systemInstruction }],
-    },
-    {
-      role: "model",
-      parts: [{ text: "Entendido. Vou agir como Apolo, mentor estratégico de vendas da AVANCE." }],
-    },
-  ];
-
-  for (const item of history) {
-    contents.push({
-      role: item.role === "model" ? "model" : "user",
-      parts: [{ text: item.text }],
-    });
-  }
-
-  contents.push({
-    role: "user",
-    parts: [{ text: chatInput }],
-  });
-
-  const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 1024,
-        },
-      }),
-    }
-  );
-
-  const data = await resp.json().catch(() => null);
-
-  if (!resp.ok) {
-    const message = data?.error?.message || "Falha ao consultar o Gemini.";
-    const err = new Error(message);
-    err.status = resp.status || 502;
-    throw err;
-  }
-
-  const output =
-    data?.candidates?.[0]?.content?.parts
-      ?.map((part) => part?.text || "")
-      .join("")
-      .trim() || "";
-
-  return output || "Não consegui gerar uma resposta agora.";
-}
 
 export async function getAgentStatus(req, res) {
   try {
