@@ -1,5 +1,34 @@
 import { pool } from "../config/db.js";
 import { isAdminRole } from "../utils/roles.js";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+
+const ALGO = "aes-256-gcm";
+
+function getEncryptionKey() {
+  const key = process.env.API_KEY_SECRET;
+  if (!key || key.length < 32) {
+    throw new Error("API_KEY_SECRET não configurado ou muito curto (mínimo 32 caracteres).");
+  }
+  return Buffer.from(key.slice(0, 32), "utf8");
+}
+
+function encryptApiKey(plain) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv(ALGO, getEncryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  // formato: iv(12):tag(16):ciphertext — tudo em hex
+  return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`;
+}
+
+function decryptApiKey(stored) {
+  const parts = stored.split(":");
+  if (parts.length !== 3) return stored; // fallback: chave ainda não criptografada
+  const [ivHex, tagHex, encHex] = parts;
+  const decipher = createDecipheriv(ALGO, getEncryptionKey(), Buffer.from(ivHex, "hex"));
+  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  return decipher.update(Buffer.from(encHex, "hex")) + decipher.final("utf8");
+}
 
 function getUserId(req) {
   return req.user?.id || null;
@@ -105,7 +134,13 @@ async function getStoredApiKeyByUserId(userId) {
   );
 
   if (!rows.length) return null;
-  return rows[0]?.chave_api || null;
+  const raw = rows[0]?.chave_api;
+  if (!raw) return null;
+  try {
+    return decryptApiKey(raw);
+  } catch {
+    return null;
+  }
 }
 
 
@@ -160,7 +195,7 @@ export async function saveAgentApiKey(req, res) {
 
     await pool.query(
       "UPDATE profiles SET chave_api = ? WHERE id = ? LIMIT 1",
-      [apiKey, userId]
+      [encryptApiKey(apiKey), userId]
     );
 
     return res.json({
