@@ -205,46 +205,49 @@ export async function deleteAgentApiKey(req, res) {
 }
 
 export async function sendAgentMessage(req, res) {
-  try {
-    const userId = getUserId(req);
-    const email = getUserEmail(req);
-    const chatInput = String(req.body?.chatInput || "").trim();
-    const sessionId = String(req.body?.sessionId || "").trim();
+  const userId = getUserId(req);
+  const email = getUserEmail(req);
+  const chatInput = String(req.body?.chatInput || "").trim();
+  const sessionId = String(req.body?.sessionId || "").trim();
 
-    if (!userId || !email) {
-      return res.status(401).json({
-        ok: false,
-        error: "Não autorizado.",
-      });
-    }
+  if (!userId || !email) {
+    return res.status(401).json({ ok: false, error: "Não autorizado." });
+  }
 
-    if (!chatInput) {
-      return res.status(400).json({
-        ok: false,
-        error: "Digite uma mensagem.",
-      });
-    }
+  if (!chatInput) {
+    return res.status(400).json({ ok: false, error: "Digite uma mensagem." });
+  }
 
-    const apiKey = await getStoredApiKeyByUserId(userId);
-
-    if (!apiKey) {
-      return res.status(400).json({
-        ok: false,
-        error: "O agente está offline. Cadastre uma chave Gemini.",
-      });
-    }
-
-    const output = await callN8nAgent({ chatInput, sessionId, email });
-
-    return res.json({
-      ok: true,
-      output,
+  const apiKey = await getStoredApiKeyByUserId(userId);
+  if (!apiKey) {
+    return res.status(400).json({
+      ok: false,
+      error: "O agente está offline. Cadastre uma chave Gemini.",
     });
+  }
+
+  // Abre conexão SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  // Ping a cada 15s para o proxy não cortar
+  const ping = setInterval(() => {
+    res.write(": ping\n\n");
+  }, 15000);
+
+  const finish = (data) => {
+    clearInterval(ping);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    res.end();
+  };
+
+  try {
+    const output = await callN8nAgent({ chatInput, sessionId, email });
+    finish({ ok: true, output });
   } catch (error) {
     console.error("Erro em sendAgentMessage:", error);
-    return res.status(error?.status || 500).json({
-      ok: false,
-      error: error?.message || "Não foi possível processar a mensagem.",
-    });
+    finish({ ok: false, error: error?.message || "Não foi possível processar a mensagem." });
   }
 }

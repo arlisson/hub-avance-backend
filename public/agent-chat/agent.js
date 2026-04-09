@@ -237,39 +237,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading(chatMessages);
 
     try {
-      const resp = await apiFetch(API_AGENT_CHAT_URL, {
+      const fetchResp = await fetch(API_AGENT_CHAT_URL, {
         method: "POST",
-        body: {
-          chatInput: text,
-          sessionId: chatState.sessionId,
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        body: JSON.stringify({ chatInput: text, sessionId: chatState.sessionId }),
       });
 
-      removeLoading();
-
-      appendMessage(
-        chatMessages,
-        chatState,
-        storageKey,
-        "bot",
-        resp?.output || "Desculpe, não entendi."
-      );
-    } catch (err) {
-      removeLoading();
-
-      if (err?.status === 401) {
-        clearAuthToken();
-        window.location.href = LOGIN_URL;
-        return;
+      if (!fetchResp.ok) {
+        const errData = await fetchResp.json().catch(() => ({}));
+        if (fetchResp.status === 401) {
+          clearAuthToken();
+          window.location.href = LOGIN_URL;
+          return;
+        }
+        throw new Error(errData?.error || "Erro de conexão.");
       }
 
-      appendMessage(
-        chatMessages,
-        chatState,
-        storageKey,
-        "bot",
-        extractApiError(err) || "Erro de conexão."
-      );
+      const reader = fetchResp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let result = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try { result = JSON.parse(line.slice(6)); } catch {}
+          }
+        }
+      }
+
+      removeLoading();
+
+      if (result?.ok === false) {
+        appendMessage(chatMessages, chatState, storageKey, "bot", result.error || "Erro do agente.");
+      } else {
+        appendMessage(chatMessages, chatState, storageKey, "bot", result?.output || "Desculpe, não entendi.");
+      }
+    } catch (err) {
+      removeLoading();
+      appendMessage(chatMessages, chatState, storageKey, "bot", err?.message || "Erro de conexão.");
     }
   }
 
