@@ -252,7 +252,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 3000));
 
-        const poll = await apiFetch(`/api/agent/result/${jobId}`);
+        let poll = null;
+        try {
+          const pollResp = await fetch(`/api/agent/result/${jobId}`, {
+            credentials: "include",
+            headers: { Accept: "application/json" },
+          });
+          poll = await pollResp.json().catch(() => null);
+        } catch {
+          continue; // erro de rede temporário, tenta de novo
+        }
 
         if (poll?.status === "pending") continue;
 
