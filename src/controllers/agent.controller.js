@@ -7,8 +7,9 @@ function getUserId(req) {
 
 export function requireClienteAvance(req, res, next) {
   const role = String(req.user?.role || "").toLowerCase();
+  const isCliente = Boolean(req.user?.cliente_avance);
 
-  if (!isAdminRole(role)) {
+  if (!isAdminRole(role) && !isCliente) {
     return res.status(403).json({ ok: false, error: "Acesso negado." });
   }
 
@@ -59,11 +60,27 @@ async function callN8nAgent({ chatInput, sessionId, email }) {
     throw err;
   }
 
-  const resp = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chatInput, sessionId, email }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+
+  let resp;
+  try {
+    resp = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatInput, sessionId, email }),
+      signal: controller.signal,
+    });
+  } catch (fetchErr) {
+    clearTimeout(timeout);
+    if (fetchErr.name === "AbortError") {
+      const err = new Error("O agente demorou demais para responder. Tente novamente.");
+      err.status = 504;
+      throw err;
+    }
+    throw fetchErr;
+  }
+  clearTimeout(timeout);
 
   const text = await resp.text();
   let data = null;

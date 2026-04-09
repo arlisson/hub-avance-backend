@@ -52,9 +52,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentUser = meResp.user;
 
     const role = String(currentUser.role || "").toLowerCase();
-    const isAdmin = role === "admin" || role === "administrador";
+    const canAccess = role === "admin" || role === "administrador" || currentUser.cliente_avance === true;
 
-    if (!isAdmin) {
+    if (!canAccess) {
       window.location.href = HUB_URL;
       return;
     }
