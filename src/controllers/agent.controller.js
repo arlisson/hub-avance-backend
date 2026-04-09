@@ -17,18 +17,18 @@ function encryptApiKey(plain) {
   const cipher = createCipheriv(ALGO, getEncryptionKey(), iv);
   const encrypted = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
-  // formato: iv(12):tag(16):ciphertext — tudo em hex
   return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`;
 }
 
 function decryptApiKey(stored) {
   const parts = stored.split(":");
-  if (parts.length !== 3) return stored; // fallback: chave ainda não criptografada
+  if (parts.length !== 3) return stored; // fallback: chave em texto puro (legado)
   const [ivHex, tagHex, encHex] = parts;
   const decipher = createDecipheriv(ALGO, getEncryptionKey(), Buffer.from(ivHex, "hex"));
   decipher.setAuthTag(Buffer.from(tagHex, "hex"));
   return decipher.update(Buffer.from(encHex, "hex"), undefined, "utf8") + decipher.final("utf8");
 }
+
 
 function getUserId(req) {
   return req.user?.id || null;
@@ -75,7 +75,7 @@ async function validateGeminiApiKey(apiKey) {
   }
 }
 
-async function callN8nAgent({ chatInput, sessionId, email }) {
+async function callN8nAgent({ chatInput, sessionId, email, apiKey }) {
   const webhookUrl = process.env.N8N_AGENT_WEBHOOK_URL;
 
   if (!webhookUrl) {
@@ -92,7 +92,7 @@ async function callN8nAgent({ chatInput, sessionId, email }) {
     resp = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chatInput, sessionId, email }),
+      body: JSON.stringify({ chatInput, sessionId, email, geminiApiKey: apiKey }),
       signal: controller.signal,
     });
   } catch (fetchErr) {
@@ -134,13 +134,7 @@ async function getStoredApiKeyByUserId(userId) {
   );
 
   if (!rows.length) return null;
-  const raw = rows[0]?.chave_api;
-  if (!raw) return null;
-  try {
-    return decryptApiKey(raw);
-  } catch {
-    return null;
-  }
+  return rows[0]?.chave_api || null;
 }
 
 
@@ -280,7 +274,7 @@ export async function sendAgentMessage(req, res) {
   };
 
   try {
-    const output = await callN8nAgent({ chatInput, sessionId, email });
+    const output = await callN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(apiKey) });
     finish({ ok: true, output });
   } catch (error) {
     console.error("Erro em sendAgentMessage:", error);
