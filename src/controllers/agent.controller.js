@@ -5,15 +5,22 @@ function getUserId(req) {
   return req.user?.id || null;
 }
 
-export function requireClienteAvance(req, res, next) {
+export async function requireClienteAvance(req, res, next) {
   const role = String(req.user?.role || "").toLowerCase();
-  const isCliente = Boolean(req.user?.cliente_avance);
 
-  if (!isAdminRole(role) && !isCliente) {
-    return res.status(403).json({ ok: false, error: "Acesso negado." });
+  if (isAdminRole(role)) return next();
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT cliente_avance FROM profiles WHERE id = ? LIMIT 1",
+      [req.user?.id]
+    );
+    if (rows[0]?.cliente_avance) return next();
+  } catch {
+    // falha silenciosa, nega acesso
   }
 
-  return next();
+  return res.status(403).json({ ok: false, error: "Acesso negado." });
 }
 
 function getUserEmail(req) {
