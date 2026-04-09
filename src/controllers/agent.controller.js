@@ -75,6 +75,8 @@ async function callN8nAgent({ chatInput, sessionId, email }) {
   }
 
   if (!resp.ok) {
+    console.error(`[callN8nAgent] n8n retornou ${resp.status} para ${webhookUrl}`);
+    console.error(`[callN8nAgent] corpo da resposta:`, text.slice(0, 500));
     const err = new Error(data?.error || "Falha ao contactar o agente.");
     err.status = 502;
     throw err;

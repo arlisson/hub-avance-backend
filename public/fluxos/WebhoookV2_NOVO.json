@@ -1,0 +1,531 @@
+{
+  "name": "WebhoookV3",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Recebe pergunta1').item.json.body.chatInput }}",
+        "options": {
+          "systemMessage": "=[REGRAS MÁXIMAS DE INTERAÇÃO]\n- ANTES DE ENVIAR QUALQUER PERGUNTA, BUSQUE A RESPOSTA NO DADOS DO CLIENTE, caso não ache, pergunte ao usuário.\n- VOCÊ NUNCA, Sob nenhuma circunstância você deve retornar uma resposta vazia ou em branco, independente da resposta do usuário.\n- Se o usuário apenas validar uma informação ou concordar com você, SEMPRE responda com pelo menos uma frase confirmando o entendimento e sugerindo o próximo passo.\n- AO LISTAR ITENS/PERGUNTAS COLOQUE UM ESPAÇAMENTO CONSIDERÁVEL DE UMA LINHA PARA A OUTRA\n\n[CONTEXTO OBRIGATÓRIO]\n- CASO HAJA DADOS DO CLIENTE, inicie a conversa de forma calorosa, fazendo um breve resumo amigável de tudo o que você já sabe sobre a empresa dele para confirmar se as informações estão atualizadas, e então continue de onde pararam.\n\n[DADOS DO CLIENTE]\nnome: {{ $('Traz dados salvos do usuário1').item.json.dados.nome }}\nsetor: {{ $('Traz dados salvos do usuário1').item.json.dados.setor }}\nproduto/servico: {{ $('Traz dados salvos do usuário1').item.json.dados['produto/servico'] }}\nprospeccao: {{ $('Traz dados salvos do usuário1').item.json.dados.prospeccao }}\nnegociacao: {{ $('Traz dados salvos do usuário1').item.json.dados.negociacao }}\nfechamento: {{ $('Traz dados salvos do usuário1').item.json.dados.fechamento }}\ndor: {{ $('Traz dados salvos do usuário1').item.json.dados.dor }}\n\n[PERSONA]\n- VOCÊ é o Apolo, Mentor Estratégico de Vendas sênior e um escritor genial. Sua comunicação é empática, altamente profissional, focada em resultados e, acima de tudo, acessível e por isso deve EVITA ACIMA DE TUDO utilizar muitos termos técnicos, busque ser explicativa.\n- Você precisa se tornar especialista no negócio do usuário. Além disso, você é especialista em spin selling e deve buscar resolver as dores da empresa aplicando APENAS ESSA METODOLOGIA.\n- VOCÊ DEVE escrever de forma leve e flúida, utilize markdown e espaçamentos para que o usuário não sinta preguiça, não deixe seus textos longos demais, seja o melhor comunicador POSSÍVEL.\n\n[REGRAS RÍGIDAS DE COMUNICAÇÃO]\n- UMA PERGUNTA POR VEZ: Nunca, sob nenhuma circunstância, envie uma lista de perguntas. Faça estritamente uma pergunta e aguarde a resposta.\n- ACESSIBILIDADE E CLAREZA: Toda pergunta deve ser extremamente fácil de entender. Quando estiver investigando o pilar do \"Processo\" e \"Dor Principal\" sempre forneça um exemplo prático ou um cenário para ilustrar o que você está perguntando.\n- EVITE AO MÁXIMO UTILIZAR TERMOS MUITO TÉCNICOS\n- INVESTIGAÇÃO LIVRE: Você tem tópicos principais a seguir, mas SOMENTE SE NECESSÁRIO você para fazer perguntas secundárias e se aprofundar. ATENÇÃO PARA NÃO SER REDUNDANTE!\n- ESTRUTURAÇÃO VISUAL OBRIGATÓRIA: Para cada tópico ou fase explicada, você deve obrigatoriamente pular DUAS LINHAS antes de começar o próximo.\n- USO DE RÉGUAS: Utilize o separador markdown --- entre grandes blocos de conteúdo para criar uma divisão visual clara. Deixe uma linha vazia para o texto não ficar colado à divisória antes e após utilizar esse o separador markdown ---.\n- HIERARQUIA DE TEXTO: Utilize sub-títulos (##) para as seções principais. Os tópicos numerados devem ter o título em negrito e o texto de apoio logo abaixo, com um recuo ou bullet point.\n- ESPAÇAMENTO DE LISTAS: Ao listar itens ou trazer exemplos, coloque um espaçamento considerável de uma linha vazia entre um item e outro para que o texto \"respire\".\n\n[FLUXO DE ATENDIMENTO - SIGA ESTA ORDEM - ANTES DE ENTRAR VEJA O DADOS DO CLIENTE ACIMA]\nFASE 1: DIAGNÓSTICO PROFUNDO E VALIDAÇÃO ITERATIVA\nSeu objetivo é mapear os 3 pilares abaixo (um por vez):\n1. Identidade: Nome, setor de atuação e o que exatamente a empresa vende.\n2. Processo: Como é o ciclo de vendas atual (prospecção, negociação, fechamento).\n3. Dor Principal: Qual o maior obstáculo que impede o time de vender mais hoje.\n-> REGRA CRÍTICA DE VALIDAÇÃO: \nAo terminar de investigar TODOS os pilares e sentir que compreendeu 100% daquela empresa, PARE as perguntas e envie um RESUMO BEM ESCRITO do que você entendeu. \nPeça para o usuário validar: \"Foi isso mesmo que entendi? Podemos avançar ou deixei algo passar?\"\n- Se o usuário validar, avance para a FASE 2: APRESENTAÇÃO DE METODOLOGIA.\n- Se o usuário corrigir ou disser \"Não\": Faça mais perguntas sobre o mesmo pilar até o entendimento ser perfeito.\nFASE 2: APRESENTAÇÃO DE METODOLOGIA\nAssim que todos os 3 pilares forem mapeados e validados, NÃO gere o material final ainda.\n- Analise o cenário e apresente a metodologia de venda que será utilizada, no caso você SEMPRE optará por utlizar SPIN SELLING.\n- Explique essa metodologia por completo de forma muito didática EVITANDO TERMOS TÉCNICOS.\n- Ao final da explicação, pergunte: \"Essa abordagem e essas metodologias fazem sentido para a realidade do seu negócio?\" (Aguarde a aprovação do usuário).\n- Ao obter a aprovação do usuário: Avance para FASE 3: A ENTREGA(O E-BOOK FINAL)\nFASE 3: A ENTREGA (ACIONAMENTO DA FERRAMENTA)\nQuando o usuário validar as metodologias da Fase 2, o diagnóstico estará 100% concluído ou quando o usuário solicitar o ebook. Após isso, vá IMEDIATAMENTE PARA A FASE 3\n[LEI ABSOLUTA DA FASE 3]: A partir deste momento, você DEVE OBRIGATORIAMENTE acionar a ferramenta de gerar o PDF, você NÃO DEVE AVISAR AO USUÁRIO QUE VAI ACIONAR A FERRAMENTA, APÓS ELE VALIDAR ACIONE E SÓ RESPONDA COM OS CAPÍTULOS COMPLETOS GERADOS PELA FERRAMENTA.\n[REGRAS DE USO DA FERRAMENTA]:\n- Você deve criar EXATAMENTE 4 capítulos bem definidos para resolver o problema do cliente. (Nem mais, nem menos).\n- Para chamar a ferramenta, envie APENAS o parâmetro chamado `estrutura_capitulos`.\n- O parâmetro `estrutura_capitulos` DEVE SER um Array JSON válido com as chaves 'titulo' 'instrucoes' e 'email': '{{ $('Recebe pergunta1').item.json.body.email }}'.\n[REGRAS APÓS RECEBER O RETORNO DA FERRAMENTA]\n- Ao gerar o treinamento, a ferramenta vai te devolver todos os capítulos no output, você deve imprimir tudo isso no chat para o usuário validar.\n- Quando o usuário enviar uma resposta positiva e satisfeita com o treinamento, acione a ferramenta responsável por eenviar o treinamento pelo email do usuário.\n[PROIBIÇÕES ABSOLUTAS]:\n- NUNCA envie o código JSON como mensagem de texto no chat.\n- NUNCA adicione parâmetros soltos como 'dor', 'setor' ou 'nome' na chamada da ferramenta. Use ÚNICA e EXCLUSIVAMENTE o parâmetro `estrutura_capitulos`.\n- Você NUNCA, sob nenhuma circunstância, deve acionar a ferramenta enviando um JSON vazio {} ou parâmetros em branco. A sua PRIMEIRA e ÚNICA chamada já deve conter o array JSON completo com os 4 capítulos dentro de estrutura_capitulos. Pense na estrutura antes de apertar o botão.\n[AÇÃO INICIAL]\nSe os DADOS DO CLIENTE estiver vazio, apresente-se brevemente como Apolo, Mentor Estratégico, e inicie a Fase 1.",
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -3520,
+        1008
+      ],
+      "id": "ab617ee8-b822-4288-9774-045d69e0a31e",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Recebe pergunta1').item.json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -3504,
+        1312
+      ],
+      "id": "0501bf94-a1c5-43d0-a7c4-37751e55b58f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -3072,
+        992
+      ],
+      "id": "0c3d20a7-2010-4abf-bfef-97f668578495",
+      "name": "Envia resposta1"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "agente-avance-v3",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -4320,
+        1008
+      ],
+      "id": "c95ce1b5-fd7a-4cce-a674-0eab51862af6",
+      "name": "Recebe pergunta1",
+      "webhookId": "06881bfd-dfcd-4438-85f2-d467cb6fc4e8"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Recebe pergunta1').item.json.body.chatInput }}",
+        "options": {
+          "systemMessage": "=Seu objetivo é analisar a última interação e extrair APENAS informações NOVAS ou atualizadas sobre a empresa do cliente.\n[REGRAS ABSOLUTAS]\n- Retorne APENAS um JSON válido com os dados novos. Não inclua informações que o usuário ou a IA não mencionou nesta rodada. Retire os dados do cliente e da IA.\n- CASO NÃO ENCONTRE NADA RELEVANTE, RESPONDA COM: \"{}\"\n- CASO ENCONTRE UM DADO RELEVANTE PREENCHA O CAMPO RESPECTIVO DO JSON ABAIXO COM O NOVO DADO, UTILIZE O CAMPO NECESSÁRIO NO MODELO ABAIXO, CASO NÃO FOR UTILIZAR ALGUM CAMPO NÃO ENVIE ELE.\n{\n\t\"nome\":\n\t\"setor\":\n\t\"produto/servico\":\n\t\"prospeccao\":\n\t\"negociacao\":\n\t\"fechamento\":\n\t\"dor\":\n}\n- NÃO CRIE NOVOS CAMPOS NO JSON RESPOSTA\n- NÃO ALUCINE\n- NÃO ADICIONE NADA ANTES DO JSON, NAO É NECESSÁRIO ESCREVER \"JSON\" e nem \"json\"\n- NÃO LEVE EM CONSIDERAÇÃO OS EXEMPLOS QUE A IA UTILIZA PARA EXPLICAR AO CLIENTE, ENTÃO SE ATENTE A PALAVRA \"exemplo:\" E IGNORE TUDO QUE VENHA ABAIO"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2688,
+        944
+      ],
+      "id": "cb008fe7-9101-492e-99cd-88468ec52d1a",
+      "name": "AI Agent3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO perfil_cliente (user_email, dados, atualizado_em)\nVALUES (\n  '{{ $('Recebe pergunta1').item.json.body.email }}',\n  '{{ JSON.stringify($json.dados_finais).replace(/'/g, \"''\") }}',\n  NOW()\n)\nON DUPLICATE KEY UPDATE\n  dados = VALUES(dados),\n  atualizado_em = NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        -1840,
+        880
+      ],
+      "id": "1dc43190-db04-4fd4-8be1-ca80b8dea0b1",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "mySql": {
+          "id": "JNlXaGnrOKPCTug0",
+          "name": "MySQL Hostinger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let fichaAntiga = {};\ntry {\n  // @ts-ignore\n  fichaAntiga = $('Traz dados salvos do usuário1').item.json.dados || {};\n} catch(e) {\n  fichaAntiga = {};\n}\n\nlet fichaNova = {};\ntry {\n  let outputIA = $json.output || $json.text || $json.message?.content; \n  \n  if (typeof outputIA === 'object' && outputIA !== null) {\n      fichaNova = outputIA;\n  } else if (typeof outputIA === 'string') {\n      let textoLimpo = outputIA.replace(/```json/g, '').replace(/```/g, '').trim();\n      fichaNova = JSON.parse(textoLimpo);\n  }\n} catch(e) {\n  const mensagemErro = e instanceof Error ? e.message : String(e);\n  console.log(\"Erro ao converter JSON da IA:\", mensagemErro);\n  fichaNova = {};\n}\n\nlet fichaNovaLimpa = {};\nfor (const [chave, valor] of Object.entries(fichaNova)) {\n    if (valor !== null && valor !== \"\" && valor !== \"null\") {\n        fichaNovaLimpa[chave] = valor;\n    }\n}\n\nconst fichaFundida = { ...fichaAntiga, ...fichaNovaLimpa };\nconst temDadoNovo = Object.keys(fichaNovaLimpa).length > 0;\n\nreturn { \n  json: { \n    dados_finais: fichaFundida,\n    salvar_no_banco: temDadoNovo,\n    _debug_output_original: $json.output || $json.text\n  } \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2320,
+        896
+      ],
+      "id": "f8402c53-440d-44d9-bdaf-fd5e9c5b3d68",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "faafb892-a780-487a-922d-cb5036aa466d",
+              "leftValue": "={{ $json.salvar_no_banco }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2080,
+        1008
+      ],
+      "id": "484c31af-ef48-403a-a7fc-50c734b19c66",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "description": "=Use esta ferramenta ÚNICA E EXCLUSIVAMENTE quando o diagnóstico estiver 100% concluído, todas as 4 perguntas foram respondidas e o usuário já validou as metodologias sugeridas. Esta ferramenta serve para gerar e enviar o E-book final para o cliente.\n[REGRAS DE USO]:\n- OBRIGATÓRIO. Antes de criar os capítulos, escreva aqui um parágrafo resumindo quem é o cliente, o que ele vende e qual é a sua dor principal. usando a estrutura abaixo:\n{\n\"resumo_diagnostico\":\n}\n- OBRIGATÓRIO. Sempre enviar o título de 4 capítulos e as instruções de cada um como descrito no prompt do sistema\n- OBRIGATÓRIO. Envie sempre o email do usuário para a ferramenta usando a estrutura abaixo:\n{\n\"email\": \"{{ $('Recebe pergunta1').item.json.body.email }}\"\n}\n- NUNCA, EM HIPOTESE NENHUM, JAMAIS, ENVIE UM JSON VAZIO",
+        "workflowId": {
+          "__rl": true,
+          "value": "9QVgjPRs4OgIDGKX",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/9QVgjPRs4OgIDGKX",
+          "cachedResultName": "CriarPDF"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "resumo_diagnostico": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('resumo_diagnostico', `OBRIGATÓRIO. Antes de criar os capítulos, escreva aqui um parágrafo resumindo quem é o cliente, o que ele vende e qual é a sua dor principal.`, 'string') }}",
+            "estrutura_parametros": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('estrutura_parametros', `Sempre enviar o título de 4 capítulos e as instruções de cada um como descrito no prompt do sistema`, 'string') }}",
+            "email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email', `Envie aqui o email do usuário`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "resumo_diagnostico",
+              "displayName": "resumo_diagnostico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "estrutura_parametros",
+              "displayName": "estrutura_parametros",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -3200,
+        1280
+      ],
+      "id": "d97746e1-f5da-4adb-8f9b-67985844bc7d",
+      "name": "Call 'CriarPDF'1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -3648,
+        1216
+      ],
+      "id": "fae9400c-34ac-4cac-af3b-94eab972fd6a",
+      "name": "Google Gemini Chat Model2",
+      "notesInFlow": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "toDBxa5YOAc6tS2d",
+          "name": "Usuario"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "=models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2784,
+        1200
+      ],
+      "id": "aa647dd5-1b8c-42e7-bb86-89f051203894",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kRbeCWAQ1ZNqM0r5",
+          "name": "Usuario"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT dados FROM perfil_cliente WHERE user_email = '{{ $json.body.email }}';\nSELECT chave_api FROM profiles WHERE email = '{{ $('Recebe pergunta1').item.json.body.email }}';",
+        "options": {
+          "queryReplacement": "={{ $('Recebe pergunta1').item.json.body.email }}"
+        }
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        -3920,
+        992
+      ],
+      "id": "2d1b1ed8-dfea-49d0-b6ea-48eeb99420fe",
+      "name": "Traz dados salvos do usuário1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "JNlXaGnrOKPCTug0",
+          "name": "MySQL Hostinger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use esta ferramenta ÚNICA E EXCLUSIVAMENTE quando o usuário tiver validado o treinamento que você enviou. Esta ferramenta só pode ser ativada após imprimir o treinamento para o usuário serve para enviar o E-book final para o cliente via Email.",
+        "workflowId": {
+          "__rl": true,
+          "value": "xon83mPnDUrLQ5GQ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/xon83mPnDUrLQ5GQ",
+          "cachedResultName": "Enviar por Email"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email', `mande o email do usuário aqui`, 'string') }}",
+            "ebook": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('ebook', `envie o ebook COMPLETO que o usuário validou`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "ebook",
+              "displayName": "ebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -3344,
+        1376
+      ],
+      "id": "b28b365e-6e4e-4db1-9809-4be6412b6ee7",
+      "name": "Enviar email1"
+    }
+  ],
+  "pinData": {
+    "Recebe pergunta1": [
+      {
+        "json": {
+          "headers": {
+            "connection": "Upgrade",
+            "host": "n8n.clientevip.net.br",
+            "x-real-ip": "82.25.67.28",
+            "x-forwarded-for": "82.25.67.28",
+            "x-forwarded-proto": "https",
+            "content-length": "462",
+            "content-type": "application/json",
+            "accept": "*/*",
+            "accept-language": "*",
+            "sec-fetch-mode": "cors",
+            "user-agent": "node",
+            "accept-encoding": "br, gzip, deflate"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "chatInput": "marcamos uma reunião onde o cliente nos explica oq ele deseja, ou algum processo repetitivo e tudo sobre o negócio dele para podermos desenvolver a solução. Com isso, pedimos um tempo para analisarmos o caso dele e desenvolvemos uma apresentação completa com proposta, expectativas e tudo mais. Caso ele aceite nós fechamos um orçamento e começamos a produção",
+            "sessionId": "sess_1775657086995_ggf8oks2y",
+            "email": "admin@avancevip.net.br"
+          },
+          "webhookUrl": "https://n8n.clientevip.net.br/webhook-test/agente-avance-v3",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Envia resposta1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia resposta1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recebe pergunta1": {
+      "main": [
+        [
+          {
+            "node": "Traz dados salvos do usuário1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'CriarPDF'1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traz dados salvos do usuário1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar email1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "3ed29d1f-081e-455b-8aa6-d4a363bc438f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bcb6f337f0eca1d543878926b069f0862e185e0122a69880d4f93be2b3308e1"
+  },
+  "id": "wXOhsZd2i7ykPKSf",
+  "tags": []
+}

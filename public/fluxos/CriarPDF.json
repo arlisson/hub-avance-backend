@@ -1,0 +1,281 @@
+{
+  "name": "CriarPDF",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "resumo_diagnostico"
+            },
+            {
+              "name": "estrutura_parametros"
+            },
+            {
+              "name": "email"
+            }
+          ]
+        }
+      },
+      "id": "2148ee5e-4f19-4107-84a4-822d3a3ef1e9",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -736,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Split Out').item.json.capitulos_prontos }}",
+        "options": {
+          "systemMessage": "=Persona: Você é um Copywriter Sênior com foco em Resposta Direta e Psicologia de Vendas. Sua voz é a de um mentor/irmão mais velho e por isso deve evitar ao máximo utilizar termos técnicos, seja direto, empático, mas extremamente pragmático e acessível. Você não desperdiça palavras; você resolve problemas de forma clara e com palvras conhecidas.\n\nMissão: Escrever um capítulo específico de um E-book de consultoria estratégica utilizando o Spin Selling como a unica metodologia.\n\nContexto da Empresa (O Paciente):\n{{ $('When Executed by Another Workflow').item.json.resumo_diagnostico }}\n\nFoco do Capítulo:\n\nTítulo: {{ $('Split Out').item.json.capitulos_prontos.titulo }}\n\nDiretrizes Específicas: {{ $('Split Out').item.json.capitulos_prontos.instrucoes }}\n\nDiretrizes de Escrita (Tom e Voz):\n\nPersonalização Máxima: Se este for o Capítulo 1, crie um título para o Ebook inteiro que seja magnético e que faça o leitor sentir que este livro foi escrito exclusivamente para a realidade dele.\n\nSem \"Encheção de Linguiça\": Elimine frases de transição óbvias. Comece o texto já no \"olho do furacão\". O leitor deve sentir que cada parágrafo economiza tempo e gera dinheiro.\n\nArquitetura de Solução: Identifique a dor citada no resumo e entregue a solução como se estivesse desenhando o caminho em um guardanapo para um amigo de confiança.\n\n[REGRA PRIMORDIAL ABSOLUTA INCONTESTÁVEL]\n- PROIBIÇÃO TOTAL DE DIVISORES: É terminantemente proibido o uso de qualquer caractere de repetição para criar linhas (ex: -------, =======, |-----|, *** e quais quer outro tipo independente da quantidade NÃO UTILIZE ESSE TIPO DE ESCRITA).\n- Não utlize arte ASCII\n- O texto deve conter APENAS palavras e Markdown\n- Não crie tabelas\n\n[REGRAS ABSOLUTAS DE FORMATAÇÃO - CRÍTICO]\n- Markdown Puro: Use estritamente ## para títulos e ** para ênfase.\n- Proibição de Arte ASCII: NUNCA UTILIZE divisores manuais. O output VAI ser processado por um conversor HTML, portanto, qualquer caractere especial de divisão quebrará o layout.\n\n\nEstrutura: Vá direto ao conteúdo de alto valor. Proibido introduções meta-linguísticas (ex: \"Claro, vou escrever o capítulo...\")."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        736,
+        32
+      ],
+      "id": "9319c357-8ea2-4df0-847c-22031fc9e756",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let textoDaIA = $json.estrutura_parametros;\nlet listaDeCapitulos = [];\n\ntry {\n  // Se a IA mandou como texto, a gente converte. Se já for objeto, a gente só copia.\n  listaDeCapitulos = typeof textoDaIA === 'string' ? JSON.parse(textoDaIA) : textoDaIA;\n} catch(e) {\n  const erro = e instanceof Error ? e.message : String(e);\n  console.log(\"Erro ao abrir a caixa de capítulos:\", erro);\n}\n\n// Retornamos a lista limpa dentro de uma nova variável\nreturn {\n  json: {\n    capitulos_prontos: listaDeCapitulos\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -32
+      ],
+      "id": "897ea6d3-833e-4675-88bf-fbcd311377c4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "capitulos_prontos",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -32
+      ],
+      "id": "a91d6075-26c4-4356-8d6a-ba227fc4d61c",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        624,
+        240
+      ],
+      "id": "d21b1e81-3979-464b-8199-b82184c2a325",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kRbeCWAQ1ZNqM0r5",
+          "name": "Usuario"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT email, chave_api\nFROM profiles \nWHERE email = '{{ $('When Executed by Another Workflow').item.json.email }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        -32
+      ],
+      "id": "f4ced444-a0fe-489c-b432-8de08ce0f017",
+      "name": "Traz chave de API",
+      "credentials": {
+        "postgres": {
+          "id": "fK9joQY1M9ytWKwy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When Executed by Another Workflow').item.json.email }}",
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        272
+      ],
+      "id": "375caedc-0e6f-4455-8613-671b5f3c2e18",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\n// A chave mestra agora será idêntica à do outro fluxo\nconst MASTER_KEY = $input.first().json.master_key_transito || \"\";\n\nreturn $input.all().map(item => {\n    try {\n        const encryptedData = $('Traz chave de API').first().json.chave_api;\n\n        if (!encryptedData || !encryptedData.includes(':')) {\n            throw new Error(\"Formato de chave inválido ou dado não encontrado no banco.\");\n        }\n\n        // Separa o IV do texto criptografado de forma mais direta\n        const [ivHex, encryptedHex] = encryptedData.split(':');\n\n        // Cria o decifrador (o IV precisa ser transformado de volta em Buffer)\n        const decipher = crypto.createDecipheriv('aes-256-cbc', MASTER_KEY, Buffer.from(ivHex, 'hex'));\n        \n        // Decifra convertendo direto de 'hex' para 'utf8' (texto limpo original)\n        let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');\n        decrypted += decipher.final('utf8');\n\n        // Chave pronta para uso!\n        item.json.api_key_final = decrypted;\n        \n    } catch (e) {\n        item.json.error_desc = \"Erro técnico na descriptografia: \" + e.message;\n    }\n\n    return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -32
+      ],
+      "id": "eb71dc84-9a80-40e2-89a9-e79f685ae8c2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "29aaf1e1-43fd-418b-a8b2-5f6ecd6658fc",
+              "name": "=master_key_transito",
+              "value": "={{ $env[\"N8N_ENCRYPTION_KEY\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -32
+      ],
+      "id": "7b6404ed-46ff-4fa0-b8c1-0cddf6d24430",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "estrutura_parametros": "[\n  {\n    \"titulo\": \"Mapeando a Operação: O Início do SPIN Selling no ISP\",\n    \"instrucoes\": \"Neste capítulo, ensine o vendedor a fazer perguntas de Situação (S) que revelem o volume de chamados repetitivos e a carga de trabalho do time humano. Foque em métricas como tempo médio de atendimento e custo por chamado humano.\"\n  },\n  {\n    \"titulo\": \"A Dor do Churn: Transformando Problemas em Urgência\",\n    \"instrucoes\": \"Instrua sobre como usar perguntas de Problema (P) e Implicação (I) para conectar falhas no suporte humano (demora, erros de triagem) com a perda de clientes e faturamento. Mostre como o medo do dono do provedor sobre gírias pode ser combatido demonstrando que o problema real é a demora no atendimento, não o sotaque da IA.\"\n  },\n  {\n    \"titulo\": \"Humanizando a IA: Quebrando a Objeção do Contexto Regional\",\n    \"instrucoes\": \"Este capítulo foca na Necessidade de Solução (N). Forneça roteiros para mostrar como a IA da Connecta aprende gírias e resolve 70% dos chamados no primeiro contato. O objetivo é fazer o cliente pedir pela solução ao perceber que ela protege a base de assinantes.\"\n  },\n  {\n    \"titulo\": \"O Consenso Final: Alinhando NOC e Financeiro para o Contrato\",\n    \"instrucoes\": \"Oriente sobre o fechamento da venda SaaS de longo prazo. Como apresentar os guardrails para o Financeiro e o SLA para o NOC, garantindo que a implementação técnica seja vista como segura e o retorno financeiro (ROI) seja claro através da redução de transbordos humanos.\"\n  }\n]",
+          "email": "brenooh7@gmail.com",
+          "resumo_diagnostico": "A Connecta AI Agents vende agentes de IA para Provedores de Internet (ISPs). O principal desafio é convencer os donos de provedores de que a IA compreende o contexto regional e gírias locais, evitando o churn. Além disso, a venda requer consenso entre o NOC (técnico) e o Financeiro (regras de negócio) para fechar contratos SaaS de longo prazo."
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Traz chave de API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traz chave de API": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b7289420-4012-4801-b2c8-4af300a1e16d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bcb6f337f0eca1d543878926b069f0862e185e0122a69880d4f93be2b3308e1"
+  },
+  "id": "9QVgjPRs4OgIDGKX",
+  "tags": []
+}

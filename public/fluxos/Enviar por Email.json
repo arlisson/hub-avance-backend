@@ -1,0 +1,173 @@
+{
+  "name": "Enviar por Email",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "email"
+            },
+            {
+              "name": "ebook"
+            }
+          ]
+        }
+      },
+      "id": "ee443980-6120-4ec9-a1c8-85737e0ea522",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -208,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "ebook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6bed9446-9758-478b-9cef-5072b7ae1941",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega a lista de capítulos que o nó Aggregate juntou\nconst listaDeTextos = $input.first().json.ebook; \n\n// Junta todos eles colocando duas quebras de linha e uma linha divisória entre cada capítulo\nconst ebookCompleto = listaDeTextos.join('\\n\\n---\\n\\n'); \n\nreturn {\n  json: {\n    ebook_finalizado: ebookCompleto\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        176
+      ],
+      "id": "ac7ff851-9497-4914-801b-36d81901227b",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.ebook_finalizado }}",
+        "destinationKey": "HTML",
+        "options": {
+          "completeHTMLDocument": true,
+          "encodeEmails": true
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        464,
+        16
+      ],
+      "id": "cf0a0d0f-69d2-4742-82d7-4dbbd709f8bb",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('When Executed by Another Workflow').item.json.email }}",
+        "subject": "Seu treinamento chegou!",
+        "message": "={{ $json.HTML }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        160
+      ],
+      "id": "0b53617d-f176-4eb2-aa75-a56ebaba1be5",
+      "name": "Send a message",
+      "webhookId": "1b80af68-ccd0-4853-961f-c20e1b31c464",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bZpDwlVXoDO0Ui7l",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "email": "brenooh7@gmail.com",
+          "ebook": "teste ebook"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "57bb261b-1a33-4046-a5d3-902759a5183b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bcb6f337f0eca1d543878926b069f0862e185e0122a69880d4f93be2b3308e1"
+  },
+  "id": "xon83mPnDUrLQ5GQ",
+  "tags": []
+}

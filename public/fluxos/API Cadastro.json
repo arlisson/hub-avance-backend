@@ -1,0 +1,145 @@
+{
+  "name": "API Cadastro",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chave_api",
+              "fieldValue": "={{ $json.encrypted_key }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -48
+      ],
+      "id": "df1123ed-b0eb-4c83-9bed-dd96fe75a8cd",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "aqRWUmETe2MqkT9n",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "registro_api",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        64
+      ],
+      "id": "aa20a053-d9b2-4c99-b663-60b28001fcfa",
+      "name": "Webhook",
+      "webhookId": "6f68dfcc-157a-406f-a3c9-261a35db8556"
+    },
+    {
+      "parameters": {
+        "jsCode": "const key = $input.first().json.master_key_transito || \"\";\nconst crypto = require('crypto');\n\nreturn $input.all().map(item => {\n  try {\n    // 1. Busca o valor com segurança (o '?.' evita quebrar se o 'body' não existir)\n    const text = $('Webhook').first().json.body?.chave_gemini_recebida;\n    \n    // 2. Valida se o texto realmente chegou antes de tentar criptografar\n    if (!text) {\n      throw new Error(\"O campo 'chave_gemini_recebida' não foi encontrado no payload do Webhook.\");\n    }\n\n    const iv = crypto.randomBytes(16);\n    // Nota: Como você usa aes-256-cbc, a chave de trânsito precisa ter exatamente 32 caracteres.\n    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);\n    \n    let encrypted = cipher.update(text, 'utf8', 'hex');\n    encrypted += cipher.final('hex');\n    \n    item.json.encrypted_key = iv.toString('hex') + ':' + encrypted;\n  } catch (e) {\n    item.json.error = e.message;\n  }\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        112
+      ],
+      "id": "60c4581e-cd7e-4876-87a1-e3e76a900394",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "414b9af7-301c-4f9f-9a82-1f5f63f361be",
+              "name": "=master_key_transito",
+              "value": "={{ $env[\"N8N_ENCRYPTION_KEY\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        0
+      ],
+      "id": "6fde12b7-ded4-4c12-b5e3-0803e372e2d5",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "835b2f21-2d39-4676-868e-25d245098f70",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bcb6f337f0eca1d543878926b069f0862e185e0122a69880d4f93be2b3308e1"
+  },
+  "id": "g2hDqPY3MdDw3574",
+  "tags": []
+}

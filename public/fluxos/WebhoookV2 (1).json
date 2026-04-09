@@ -1,0 +1,717 @@
+{
+  "name": "WebhoookV2",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Recebe pergunta').item.json.body.chatInput }}",
+        "options": {
+          "systemMessage": "=[REGRAS MÁXIMAS DE INTERAÇÃO]\n- ANTES DE ENVIAR QUALQUER PERGUNTA, BUSQUE A RESPOSTA NO DADOS DO CLIENTE, caso não ache, pergunte ao usuário.\n- VOCÊ NUNCA, Sob nenhuma circunstância você deve retornar uma resposta vazia ou em branco, independente da resposta do usuário.\n- Se o usuário apenas validar uma informação ou concordar com você, SEMPRE responda com pelo menos uma frase confirmando o entendimento e sugerindo o próximo passo.\n- AO LISTAR ITENS/PERGUNTAS COLOQUE UM ESPAÇAMENTO CONSIDERÁVEL DE UMA LINHA PARA A OUTRA\n\n[CONTEXTO OBRIGATÓRIO]\n- CASO HAJA DADOS DO CLIENTE, inicie a conversa de forma calorosa, fazendo um breve resumo amigável de tudo o que você já sabe sobre a empresa dele para confirmar se as informações estão atualizadas, e então continue de onde pararam.\n\n[DADOS DO CLIENTE]\nnome: {{ $('Traz dados salvos do usuário').item.json.dados.nome }}\nsetor: {{ $('Traz dados salvos do usuário').item.json.dados.setor }}\nproduto/servico: {{ $('Traz dados salvos do usuário').item.json.dados['produto/servico'] }}\nprospeccao: {{ $('Traz dados salvos do usuário').item.json.dados.prospeccao }}\nnegociacao: {{ $('Traz dados salvos do usuário').item.json.dados.negociacao }}\nfechamento: {{ $('Traz dados salvos do usuário').item.json.dados.fechamento }}\ndor: {{ $('Traz dados salvos do usuário').item.json.dados.dor }}\n\n[PERSONA]\n- VOCÊ é o Apolo, Mentor Estratégico de Vendas sênior e um escritor genial. Sua comunicação é empática, altamente profissional, focada em resultados e, acima de tudo, acessível e por isso deve EVITA ACIMA DE TUDO utilizar muitos termos técnicos, busque ser explicativa.\n- Você precisa se tornar especialista no negócio do usuário. Além disso, você é especialista em spin selling e deve buscar resolver as dores da empresa aplicando APENAS ESSA METODOLOGIA.\n- VOCÊ DEVE escrever de forma leve e flúida, utilize markdown e espaçamentos para que o usuário não sinta preguiça, não deixe seus textos longos demais, seja o melhor comunicador POSSÍVEL.\n\n[REGRAS RÍGIDAS DE COMUNICAÇÃO]\n- UMA PERGUNTA POR VEZ: Nunca, sob nenhuma circunstância, envie uma lista de perguntas. Faça estritamente uma pergunta e aguarde a resposta.\n- ACESSIBILIDADE E CLAREZA: Toda pergunta deve ser extremamente fácil de entender. Quando estiver investigando o pilar do \"Processo\" e \"Dor Principal\" sempre forneça um exemplo prático ou um cenário para ilustrar o que você está perguntando.\n- EVITE AO MÁXIMO UTILIZAR TERMOS MUITO TÉCNICOS\n- INVESTIGAÇÃO LIVRE: Você tem tópicos principais a seguir, mas SOMENTE SE NECESSÁRIO você para fazer perguntas secundárias e se aprofundar. ATENÇÃO PARA NÃO SER REDUNDANTE!\n- ESTRUTURAÇÃO VISUAL OBRIGATÓRIA: Para cada tópico ou fase explicada, você deve obrigatoriamente pular DUAS LINHAS antes de começar o próximo.\n- USO DE RÉGUAS: Utilize o separador markdown --- entre grandes blocos de conteúdo para criar uma divisão visual clara. Deixe uma linha vazia para o texto não ficar colado à divisória antes e após utilizar esse o separador markdown ---.\n- HIERARQUIA DE TEXTO: Utilize sub-títulos (##) para as seções principais. Os tópicos numerados devem ter o título em negrito e o texto de apoio logo abaixo, com um recuo ou bullet point.\n- ESPAÇAMENTO DE LISTAS: Ao listar itens ou trazer exemplos, coloque um espaçamento considerável de uma linha vazia entre um item e outro para que o texto \"respire\".\n\n[FLUXO DE ATENDIMENTO - SIGA ESTA ORDEM - ANTES DE ENTRAR VEJA O DADOS DO CLIENTE ACIMA]\nFASE 1: DIAGNÓSTICO PROFUNDO E VALIDAÇÃO ITERATIVA\nSeu objetivo é mapear os 3 pilares abaixo (um por vez):\n1. Identidade: Nome, setor de atuação e o que exatamente a empresa vende.\n2. Processo: Como é o ciclo de vendas atual (prospecção, negociação, fechamento).\n3. Dor Principal: Qual o maior obstáculo que impede o time de vender mais hoje.\n-> REGRA CRÍTICA DE VALIDAÇÃO: \nAo terminar de investigar TODOS os pilares e sentir que compreendeu 100% daquela empresa, PARE as perguntas e envie um RESUMO BEM ESCRITO do que você entendeu. \nPeça para o usuário validar: \"Foi isso mesmo que entendi? Podemos avançar ou deixei algo passar?\"\n- Se o usuário validar, avance para a FASE 2: APRESENTAÇÃO DE METODOLOGIA.\n- Se o usuário corrigir ou disser \"Não\": Faça mais perguntas sobre o mesmo pilar até o entendimento ser perfeito.\nFASE 2: APRESENTAÇÃO DE METODOLOGIA\nAssim que todos os 3 pilares forem mapeados e validados, NÃO gere o material final ainda.\n- Analise o cenário e apresente a metodologia de venda que será utilizada, no caso você SEMPRE optará por utlizar SPIN SELLING.\n- Explique essa metodologia por completo de forma muito didática EVITANDO TERMOS TÉCNICOS.\n- Ao final da explicação, pergunte: \"Essa abordagem e essas metodologias fazem sentido para a realidade do seu negócio?\" (Aguarde a aprovação do usuário).\n- Ao obter a aprovação do usuário: Avance para FASE 3: A ENTREGA(O E-BOOK FINAL)\nFASE 3: A ENTREGA (ACIONAMENTO DA FERRAMENTA)\nQuando o usuário validar as metodologias da Fase 2, o diagnóstico estará 100% concluído ou quando o usuário solicitar o ebook. Após isso, vá IMEDIATAMENTE PARA A FASE 3\n[LEI ABSOLUTA DA FASE 3]: A partir deste momento, você DEVE OBRIGATORIAMENTE acionar a ferramenta de gerar o PDF, você NÃO DEVE AVISAR AO USUÁRIO QUE VAI ACIONAR A FERRAMENTA, APÓS ELE VALIDAR ACIONE E SÓ RESPONDA COM OS CAPÍTULOS COMPLETOS GERADOS PELA FERRAMENTA.\n[REGRAS DE USO DA FERRAMENTA]:\n- Você deve criar EXATAMENTE 4 capítulos bem definidos para resolver o problema do cliente. (Nem mais, nem menos).\n- Para chamar a ferramenta, envie APENAS o parâmetro chamado `estrutura_capitulos`.\n- O parâmetro `estrutura_capitulos` DEVE SER um Array JSON válido com as chaves 'titulo' 'instrucoes' e 'email': '{{ $('HTTP Request').item.json.email }}'.\n[REGRAS APÓS RECEBER O RETORNO DA FERRAMENTA]\n- Ao gerar o treinamento, a ferramenta vai te devolver todos os capítulos no output, você deve imprimir tudo isso no chat para o usuário validar.\n- Quando o usuário enviar uma resposta positiva e satisfeita com o treinamento, acione a ferramenta responsável por eenviar o treinamento pelo email do usuário.\n[PROIBIÇÕES ABSOLUTAS]:\n- NUNCA envie o código JSON como mensagem de texto no chat.\n- NUNCA adicione parâmetros soltos como 'dor', 'setor' ou 'nome' na chamada da ferramenta. Use ÚNICA e EXCLUSIVAMENTE o parâmetro `estrutura_capitulos`.\n- Você NUNCA, sob nenhuma circunstância, deve acionar a ferramenta enviando um JSON vazio {} ou parâmetros em branco. A sua PRIMEIRA e ÚNICA chamada já deve conter o array JSON completo com os 4 capítulos dentro de estrutura_capitulos. Pense na estrutura antes de apertar o botão.\n[AÇÃO INICIAL]\nSe os DADOS DO CLIENTE estiver vazio, apresente-se brevemente como Apolo, Mentor Estratégico, e inicie a Fase 1.",
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1328,
+        128
+      ],
+      "id": "3b4ea473-d4d6-4127-baeb-9644e8dbdc99",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Recebe pergunta').item.json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -1312,
+        432
+      ],
+      "id": "a3d88a41-0073-485b-8bda-3da5c964f38f",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -880,
+        112
+      ],
+      "id": "af5148c7-fc2d-4697-a67c-388709722278",
+      "name": "Envia resposta"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "agente-avance-v2",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2768,
+        320
+      ],
+      "id": "086e9aff-8a1d-4558-a565-01a551c561f6",
+      "name": "Recebe pergunta",
+      "webhookId": "06881bfd-dfcd-4438-85f2-d467cb6fc4e8"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Recebe pergunta').item.json.body.chatInput }}",
+        "options": {
+          "systemMessage": "=Seu objetivo é analisar a última interação e extrair APENAS informações NOVAS ou atualizadas sobre a empresa do cliente.\n[REGRAS ABSOLUTAS]\n- Retorne APENAS um JSON válido com os dados novos. Não inclua informações que o usuário ou a IA não mencionou nesta rodada. Retire os dados do cliente e da IA.\n- CASO NÃO ENCONTRE NADA RELEVANTE, RESPONDA COM: \"{}\"\n- CASO ENCONTRE UM DADO RELEVANTE PREENCHA O CAMPO RESPECTIVO DO JSON ABAIXO COM O NOVO DADO, UTILIZE O CAMPO NECESSÁRIO NO MODELO ABAIXO, CASO NÃO FOR UTILIZAR ALGUM CAMPO NÃO ENVIE ELE.\n{\n\t\"nome\":\n\t\"setor\":\n\t\"produto/servico\":\n\t\"prospeccao\":\n\t\"negociacao\":\n\t\"fechamento\":\n\t\"dor\":\n}\n- NÃO CRIE NOVOS CAMPOS NO JSON RESPOSTA\n- NÃO ALUCINE\n- NÃO ADICIONE NADA ANTES DO JSON, NAO É NECESSÁRIO ESCREVER \"JSON\" e nem \"json\"\n- NÃO LEVE EM CONSIDERAÇÃO OS EXEMPLOS QUE A IA UTILIZA PARA EXPLICAR AO CLIENTE, ENTÃO SE ATENTE A PALAVRA \"exemplo:\" E IGNORE TUDO QUE VENHA ABAIO"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -496,
+        64
+      ],
+      "id": "bf20bfc0-81f9-40a7-8144-3bb55f2be71f",
+      "name": "AI Agent",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO perfil_cliente (user_email, dados, atualizado_em)\nVALUES (\n  '{{ $('HTTP Request').item.json.email }}', \n  '{{ JSON.stringify($json.dados_finais).replace(/'/g, \"''\") }}'::jsonb, -- Usa o dado do nó Code\n  NOW()\n)\nON CONFLICT (user_email) \nDO UPDATE SET \n  dados = EXCLUDED.dados, \n  atualizado_em = NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        352,
+        0
+      ],
+      "id": "a492a61f-ac77-4536-abcc-4b078bdfed0c",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "fK9joQY1M9ytWKwy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let fichaAntiga = {};\ntry {\n  // @ts-ignore\n  fichaAntiga = $('Traz dados salvos do usuário').item.json.dados || {};\n} catch(e) {\n  fichaAntiga = {};\n}\n\nlet fichaNova = {};\ntry {\n  // Adicionado o $json.text, pois alguns nós do n8n retornam o output aí\n  let outputIA = $json.output || $json.text || $json.message?.content; \n  \n  if (typeof outputIA === 'object' && outputIA !== null) {\n      fichaNova = outputIA;\n  } else if (typeof outputIA === 'string') {\n      // A MÁGICA 1: Limpa os \"```json\" malditos antes de tentar converter\n      let textoLimpo = outputIA.replace(/```json/g, '').replace(/```/g, '').trim();\n      fichaNova = JSON.parse(textoLimpo);\n  }\n} catch(e) {\n  const mensagemErro = e instanceof Error ? e.message : String(e);\n  console.log(\"Erro ao converter JSON da IA:\", mensagemErro);\n  fichaNova = {};\n}\n\n// A MÁGICA 2: Remove chaves vazias ou nulas que a IA mandou\n// Isso impede de sobrescrever dados bons antigos com 'null'\nlet fichaNovaLimpa = {};\nfor (const [chave, valor] of Object.entries(fichaNova)) {\n    if (valor !== null && valor !== \"\" && valor !== \"null\") {\n        fichaNovaLimpa[chave] = valor;\n    }\n}\n\n// Junta as duas, priorizando a fichaNovaLimpa (que agora só tem dados reais)\nconst fichaFundida = { ...fichaAntiga, ...fichaNovaLimpa };\n\n// Verifica se a IA *realmente* mandou alguma informação útil\nconst temDadoNovo = Object.keys(fichaNovaLimpa).length > 0;\n\nreturn { \n  json: { \n    dados_finais: fichaFundida,\n    salvar_no_banco: temDadoNovo,\n    _debug_output_original: $json.output || $json.text // Adicionado para você ver o que a IA respondeu de fato\n  } \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        16
+      ],
+      "id": "6af22c65-fc79-4ef8-8ff4-dc4dd9c38648",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "faafb892-a780-487a-922d-cb5036aa466d",
+              "leftValue": "={{ $json.salvar_no_banco }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        112,
+        128
+      ],
+      "id": "ac156736-4ba6-4984-89bb-06d010f82971",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "description": "=Use esta ferramenta ÚNICA E EXCLUSIVAMENTE quando o diagnóstico estiver 100% concluído, todas as 4 perguntas foram respondidas e o usuário já validou as metodologias sugeridas. Esta ferramenta serve para gerar e enviar o E-book final para o cliente.\n[REGRAS DE USO]:\n- OBRIGATÓRIO. Antes de criar os capítulos, escreva aqui um parágrafo resumindo quem é o cliente, o que ele vende e qual é a sua dor principal. usando a estrutura abaixo:\n{\n\"resumo_diagnostico\":\n}\n- OBRIGATÓRIO. Sempre enviar o título de 4 capítulos e as instruções de cada um como descrito no prompt do sistema\n- OBRIGATÓRIO. Envie sempre o email do usuário para a ferramentausando a estrutura abaixo:\n{\n\"email\": \"{{ $('Recebe pergunta').item.json.body.email }}\"\n}\n- NUNCA, EM HIPOTESE NENHUM, JAMAIS, ENVIE UM JSON VAZIO",
+        "workflowId": {
+          "__rl": true,
+          "value": "9QVgjPRs4OgIDGKX",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/9QVgjPRs4OgIDGKX",
+          "cachedResultName": "CriarPDF"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "resumo_diagnostico": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('resumo_diagnostico', `OBRIGATÓRIO. Antes de criar os capítulos, escreva aqui um parágrafo resumindo quem é o cliente, o que ele vende e qual é a sua dor principal.`, 'string') }}",
+            "estrutura_parametros": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('estrutura_parametros', `Sempre enviar o título de 4 capítulos e as instruções de cada um como descrito no prompt do sistema`, 'string') }}",
+            "email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email', `Envie aqui o email do usuário`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "resumo_diagnostico",
+              "displayName": "resumo_diagnostico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "estrutura_parametros",
+              "displayName": "estrutura_parametros",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1008,
+        400
+      ],
+      "id": "a5463a2d-5acf-4c62-9541-0ebe2c70223d",
+      "name": "Call 'CriarPDF'"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        336
+      ],
+      "id": "113f9358-1e14-4cfd-b6ba-d888f20a173f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "toDBxa5YOAc6tS2d",
+          "name": "Usuario"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        320
+      ],
+      "id": "6e18c209-cdcf-45de-a951-40deb25e51f5",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kRbeCWAQ1ZNqM0r5",
+          "name": "Usuario"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "391b6892-8127-4f4e-b63d-d2c33a258661",
+              "leftValue": "={{ $json.chave_api }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2112,
+        352
+      ],
+      "id": "b7be2a8d-e0d1-437e-9083-72d38bff2f2d",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT dados\nFROM perfil_cliente\nWHERE user_email = $1;",
+        "options": {
+          "queryReplacement": "={{ $('HTTP Request').item.json.email }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1504,
+        80
+      ],
+      "id": "68e88b36-a729-409b-acee-e7bfe97f3819",
+      "name": "Traz dados salvos do usuário",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fK9joQY1M9ytWKwy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT chave_api\nFROM profiles \nWHERE email = '{{ $json.email }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2336,
+        208
+      ],
+      "id": "0d07cd4f-23bf-4ef2-ad1c-ff20268f4f47",
+      "name": "Traz chave de API",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fK9joQY1M9ytWKwy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use esta ferramenta ÚNICA E EXCLUSIVAMENTE quando o usuário tiver validado o treinamento que você enviou. Esta ferramenta só pode ser ativada após imprimir o treinamento para o usuário serve para enviar o E-book final para o cliente via Email.",
+        "workflowId": {
+          "__rl": true,
+          "value": "xon83mPnDUrLQ5GQ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/xon83mPnDUrLQ5GQ",
+          "cachedResultName": "Enviar por Email"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email', `mande o email do usuário aqui`, 'string') }}",
+            "ebook": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('ebook', `envie o ebook COMPLETO que o usuário validou`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "ebook",
+              "displayName": "ebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -1152,
+        496
+      ],
+      "id": "55261877-9d4f-4a42-8dd6-9f23a4cbc8d2",
+      "name": "Enviar email"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\n// A chave mestra agora será idêntica à do outro fluxo\nconst MASTER_KEY = $input.first().json.master_key_transito || \"\";\n\nreturn $input.all().map(item => {\n    try {\n        const encryptedData = $('Traz chave de API').first().json.chave_api;\n\n        if (!encryptedData || !encryptedData.includes(':')) {\n            throw new Error(\"Formato de chave inválido ou dado não encontrado no banco.\");\n        }\n\n        // Separa o IV do texto criptografado de forma mais direta\n        const [ivHex, encryptedHex] = encryptedData.split(':');\n\n        // Cria o decifrador (o IV precisa ser transformado de volta em Buffer)\n        const decipher = crypto.createDecipheriv('aes-256-cbc', MASTER_KEY, Buffer.from(ivHex, 'hex'));\n        \n        // Decifra convertendo direto de 'hex' para 'utf8' (texto limpo original)\n        let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');\n        decrypted += decipher.final('utf8');\n\n        // Chave pronta para uso!\n        item.json.api_key_final = decrypted;\n        \n    } catch (e) {\n        item.json.error_desc = \"Erro técnico na descriptografia: \" + e.message;\n    }\n\n    return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        128
+      ],
+      "id": "6d2a1b7c-e6eb-4fe7-a02d-1cbd9370210e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "29aaf1e1-43fd-418b-a8b2-5f6ecd6658fc",
+              "name": "=master_key_transito",
+              "value": "={{ $env[\"N8N_ENCRYPTION_KEY\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "8e2f8e58-ddd1-448a-81a8-08bc99db27be",
+              "name": "Possui chave",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1888,
+        144
+      ],
+      "id": "c4247b67-e1e6-4d36-a496-dd22d986f4ab",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://mgfmdkjfhqriyvnrkgmx.supabase.co/auth/v1/user",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_MNNmP8Q9k7LEwqol4Fsz0A_DHUN9jpl"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $json.headers.authorization }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2560,
+        320
+      ],
+      "id": "2061a0f5-eff3-484a-95dc-05cc9a13d015",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "Recebe pergunta": [
+      {
+        "json": {
+          "headers": {
+            "connection": "Upgrade",
+            "host": "n8n.clientevip.net.br",
+            "x-real-ip": "168.195.160.227",
+            "x-forwarded-for": "168.195.160.227",
+            "x-forwarded-proto": "https",
+            "content-length": "75",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "authorization": "Bearer eyJhbGciOiJFUzI1NiIsImtpZCI6IjkxMDU5MDU5LTI1YTEtNDU4Yy05NzU2LTIxNmVkMzFiNDAyYSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL21nZm1ka2pmaHFyaXl2bnJrZ214LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4ZTFjMzcyYy1lOTQzLTQwN2MtYTBjMC1jZjg1NWY3NWE1ZTQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc0Mzc0MjMzLCJpYXQiOjE3NzQzNzA2MzMsImVtYWlsIjoiYnJlbm9vaDdAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJjcGYiOiIwNjMzOTAzNjcxNiIsImVtYWlsIjoiYnJlbm9vaDdAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJCcmVubyBMdWl6IFNpbHZhIGRvIENhcm1vIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiI4ZTFjMzcyYy1lOTQzLTQwN2MtYTBjMC1jZjg1NWY3NWE1ZTQiLCJ3aGF0c2FwcCI6IjIyOTk2MTk5MTE5In0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NzQzNzA2MzN9XSwic2Vzc2lvbl9pZCI6ImIzZjY3OWUwLWU5MmMtNDQ0OC1hNDAzLTJmZjViOGVmZmQ0MyIsImlzX2Fub255bW91cyI6ZmFsc2V9.bDve2vzcBdbP-QBeQA7FYe3wQdwcrIXc5luxksBnEBqeukslnMhKdvJ8eZC2T0XcLYFKzqTlLSexBae0P_ZTVw",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+            "sec-ch-ua": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Brave\";v=\"146\"",
+            "content-type": "application/json",
+            "sec-ch-ua-mobile": "?0",
+            "accept": "*/*",
+            "sec-gpc": "1",
+            "accept-language": "pt-BR,pt;q=0.7",
+            "origin": "https://hub-avance-n2qptxo5o-arlisson-4929s-projects.vercel.app",
+            "sec-fetch-site": "cross-site",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "https://hub-avance-n2qptxo5o-arlisson-4929s-projects.vercel.app/",
+            "accept-encoding": "gzip, deflate, br, zstd"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "chatInput": "podemos avançar",
+            "sessionId": "sess_1774371407184_oe0gguigd"
+          },
+          "webhookUrl": "https://n8n.clientevip.net.br/webhook/agente-avance-v2",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Envia resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia resposta": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recebe pergunta": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'CriarPDF'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Traz dados salvos do usuário": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traz chave de API": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar email": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Traz dados salvos do usuário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Traz chave de API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "f0a1d9db-89f7-4eab-8799-8aa92b540116",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bcb6f337f0eca1d543878926b069f0862e185e0122a69880d4f93be2b3308e1"
+  },
+  "id": "DlCgS12dgV7E4FIN",
+  "tags": []
+}
