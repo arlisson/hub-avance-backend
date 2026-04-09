@@ -27,11 +27,20 @@ function buildCrmPayload(data) {
     city: String(data.cidade || "").trim() || undefined,
     state: String(data.estado || "").trim() || undefined,
     postalCode: onlyDigits(data.cep) || undefined,
+    source: "Hub Avance",
+    customFields: [],
     country: "BR",
   };
 
   if (lastName) {
     payload.lastName = lastName;
+  }
+  const cpfCnpj = onlyDigits(data.cpf_cnpj);
+  if (cpfCnpj) {
+    payload.customFields.push({
+      id: "sgW6l7Y85QrKLMgqtw3r",
+      field_value: cpfCnpj,
+    });
   }
 
   return payload;

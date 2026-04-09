@@ -517,6 +517,7 @@ export async function register(req, res) {
       await sendContactToCrm({
         name,
         email: emailNorm,
+        cpf_cnpj: cpfCnpjNorm,
         whatsapp: whatsapp || null,
         cep: cep || null,
         cidade: cidade || null,
