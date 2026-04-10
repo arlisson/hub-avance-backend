@@ -311,12 +311,23 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
         }
 
+<<<<<<< HEAD
         async function doLogout() {
           try {
             await apiFetch("/api/logout", { method: "POST" });
           } catch {
             // ignora falha do backend no logout
           } finally {
+=======
+        const menuLogout = document.getElementById("menu-logout");
+        if (menuLogout) {
+          menuLogout.addEventListener("click", async () => {
+            try {
+              await apiFetch("/api/logout", { method: "POST" });
+            } catch {
+              // ignora falha do backend no logout
+            }
+>>>>>>> 2c9b3a243600614cfcc392916bd8be178bda1673
             clearAuthToken();
             clearAgentChatSessionStorage();
           }
