@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           menuLogout._logoutBound = true;
           menuLogout.addEventListener("click", async () => {
             await doLogout();
-            window.location.href = normalizeLoginUrl(LOGIN_URL);
+            window.location.href = LOGIN_URL;
           });
         }
 
