@@ -488,7 +488,7 @@ export async function register(req, res) {
         operator || null,
         active_lines ?? null,
         0,
-        1,
+        0,
         appUsageJson,
         regiaoJson,
         cep || null
