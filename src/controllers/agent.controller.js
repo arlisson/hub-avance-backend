@@ -277,7 +277,7 @@ export function getAgentJobResult(req, res) {
     return res.status(404).json({ ok: false, error: "Job não encontrado." });
   }
 
-  if (job.userId !== userId) {
+  if (String(job.userId) !== String(userId)) {
     return res.status(403).json({ ok: false, error: "Acesso negado." });
   }
 
