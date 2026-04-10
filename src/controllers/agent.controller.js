@@ -216,7 +216,6 @@ const agentJobs = new Map();
 function createJob() {
   const jobId = randomBytes(16).toString("hex");
   agentJobs.set(jobId, { status: "pending" });
-  // Remove após 10 minutos para não vazar memória
   setTimeout(() => agentJobs.delete(jobId), 10 * 60 * 1000);
   return jobId;
 }
