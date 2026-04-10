@@ -97,6 +97,7 @@ async function apiFetch(url, options = {}) {
 
     if (response.status === 401) {
       clearAuthToken();
+      window.location.href = LOGIN_URL;
     }
 
     throw err;
@@ -277,9 +278,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const profile = profileResponse?.user || profileResponse || {};
 
-        const hasAccess =
-          profile?.role === "admin" ||
-          profile?.role === "Administrador";
+        const roleNorm = String(profile?.role || "").toLowerCase();
+        const hasAccess = roleNorm === "admin" || roleNorm === "administrador";
           
 
         if (!hasAccess) {
