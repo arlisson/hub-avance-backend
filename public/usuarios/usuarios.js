@@ -311,11 +311,23 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
         }
 
-        const menuLogout = document.getElementById("menu-logout");
-        if (menuLogout) {
-          menuLogout.addEventListener("click", async () => {
+        async function doLogout() {
+          try {
+            await apiFetch("/api/logout", { method: "POST" });
+          } catch {
+            // ignora falha do backend no logout
+          } finally {
             clearAuthToken();
-            window.location.href = LOGIN_URL;
+            clearAgentChatSessionStorage();
+          }
+        }
+
+        const menuLogout = document.getElementById("menu-logout");
+        if (menuLogout && !menuLogout._logoutBound) {
+          menuLogout._logoutBound = true;
+          menuLogout.addEventListener("click", async () => {
+            await doLogout();
+            window.location.href = normalizeLoginUrl(LOGIN_URL);
           });
         }
 
