@@ -278,6 +278,7 @@ export function getAgentJobResult(req, res) {
   }
 
   if (String(job.userId) !== String(userId)) {
+    console.warn(`[getAgentJobResult] userId mismatch: job.userId=${JSON.stringify(job.userId)} req.userId=${JSON.stringify(userId)}`);
     return res.status(403).json({ ok: false, error: "Acesso negado." });
   }
 
