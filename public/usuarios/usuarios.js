@@ -314,6 +314,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const menuLogout = document.getElementById("menu-logout");
         if (menuLogout) {
           menuLogout.addEventListener("click", async () => {
+            try {
+              await apiFetch("/api/logout", { method: "POST" });
+            } catch {
+              // ignora falha do backend no logout
+            }
             clearAuthToken();
             window.location.href = LOGIN_URL;
           });
