@@ -311,16 +311,23 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
         }
 
-        const menuLogout = document.getElementById("menu-logout");
-        if (menuLogout) {
+
+      async function doLogout() {
+        try {
+          await apiFetch("/api/logout", { method: "POST" });
+        } catch {
+          // ignora falha do backend no logout
+        } finally {
+          clearAuthToken();
+        }
+      }
+
+      const menuLogout = document.getElementById("menu-logout");
+        if (menuLogout && !menuLogout._logoutBound) {
+          menuLogout._logoutBound = true;
           menuLogout.addEventListener("click", async () => {
-            try {
-              await apiFetch("/api/logout", { method: "POST" });
-            } catch {
-              // ignora falha do backend no logout
-            }
-            clearAuthToken();
-            window.location.href = LOGIN_URL;
+            await doLogout();
+            window.location.href = normalizeLoginUrl(LOGIN_URL);
           });
         }
 
