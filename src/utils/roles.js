@@ -3,6 +3,7 @@ export function isAdminRole(role) {
   return r === "admin" || r === "administrador";
 }
 
+
 export function canManage(role, protocol) {
   return isAdminRole(role) || Number(protocol) === 1;
 }

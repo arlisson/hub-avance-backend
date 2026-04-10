@@ -358,7 +358,7 @@ body.dark-mode .theme-toggle-top {
   background-color: rgba(87, 197, 234, 0.08);
 }
 .dropdown-item.danger {
-  color: #ef4444;
+  color: #ff4444;
 }
 .dropdown-item.danger:hover {
   background-color: rgba(239, 68, 68, 0.1);

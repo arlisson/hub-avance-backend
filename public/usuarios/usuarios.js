@@ -98,6 +98,7 @@ async function apiFetch(url, options = {}) {
 
     if (response.status === 401) {
       clearAuthToken();
+      window.location.href = LOGIN_URL;
     }
 
     throw err;
@@ -278,9 +279,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const profile = profileResponse?.user || profileResponse || {};
 
-        const hasAccess =
-          profile?.role === "admin" ||
-          profile?.role === "Administrador";
+        const roleNorm = String(profile?.role || "").toLowerCase();
+        const hasAccess = roleNorm === "admin" || roleNorm === "administrador";
           
 
         if (!hasAccess) {
@@ -312,10 +312,22 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
         }
 
-        const menuLogout = document.getElementById("menu-logout");
-        if (menuLogout) {
+
+      async function doLogout() {
+        try {
+          await apiFetch("/api/logout", { method: "POST" });
+        } catch {
+          // ignora falha do backend no logout
+        } finally {
+          clearAuthToken();
+        }
+      }
+
+      const menuLogout = document.getElementById("menu-logout");
+        if (menuLogout && !menuLogout._logoutBound) {
+          menuLogout._logoutBound = true;
           menuLogout.addEventListener("click", async () => {
-            clearAuthToken();
+            await doLogout();
             window.location.href = LOGIN_URL;
           });
         }

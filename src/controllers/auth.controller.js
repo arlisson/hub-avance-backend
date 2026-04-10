@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { sendContactToCrm } from "../utils/crm.js";
 
 async function registrarLicencaNoSheets(email) {
   const url = process.env.GS_WEBAPP_URL;
@@ -487,7 +488,7 @@ export async function register(req, res) {
         operator || null,
         active_lines ?? null,
         0,
-        1,
+        0,
         appUsageJson,
         regiaoJson,
         cep || null
@@ -508,6 +509,25 @@ export async function register(req, res) {
     await registrarLicencaNoSheets(emailNorm);
     await conn.commit();
     committed = true;
+
+    let crmOk = true;
+    let crmError = null;
+
+    try {
+      await sendContactToCrm({
+        name,
+        email: emailNorm,
+        cpf_cnpj: cpfCnpjNorm,
+        whatsapp: whatsapp || null,
+        cep: cep || null,
+        cidade: cidade || null,
+        estado: estado || null
+      });
+    } catch (error) {
+      crmOk = false;
+      crmError = String(error?.message || error);
+      console.error("Erro ao enviar contato para o CRM:", crmError);
+    }
 
     try {
       await enviarEmailVerificacao(emailNorm, token, name);

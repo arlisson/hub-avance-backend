@@ -363,7 +363,7 @@ body.light-mode .dropdown-item:hover {
 }
 
 body.light-mode .dropdown-item.danger {
-  color: #c62828;
+  color: #e53935;
 }
 
 body.light-mode .dropdown-item.danger:hover {
@@ -379,7 +379,7 @@ body:not(.light-mode) .dropdown-item:hover {
 }
 
 body:not(.light-mode) .dropdown-item.danger {
-  color: #ffb4b4;
+  color: #ff4444;
 }
 
 /* =========================================

@@ -51,7 +51,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     currentUser = meResp.user;
 
-    if (!currentUser.protocol) {
+    const role = String(currentUser.role || "").toLowerCase();
+    const canAccess = role === "admin" || role === "administrador" || currentUser.cliente_avance === true;
+
+    if (!canAccess) {
       window.location.href = HUB_URL;
       return;
     }
@@ -234,47 +237,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading(chatMessages);
 
     try {
-      const historyForApi = chatState.messages
-        .slice(-12)
-        .map((msg) => ({
-          role: msg.role === "bot" ? "model" : "user",
-          text: msg.text,
-        }));
-
-      const resp = await apiFetch(API_AGENT_CHAT_URL, {
+      const startResp = await apiFetch(API_AGENT_CHAT_URL, {
         method: "POST",
-        body: {
-          chatInput: text,
-          sessionId: chatState.sessionId,
-          history: historyForApi,
-        },
+        body: { chatInput: text, sessionId: chatState.sessionId },
       });
 
-      removeLoading();
+      if (!startResp?.ok) {
+        throw new Error(startResp?.error || "Erro ao iniciar agente.");
+      }
 
-      appendMessage(
-        chatMessages,
-        chatState,
-        storageKey,
-        "bot",
-        resp?.output || "Desculpe, não entendi."
-      );
+      const jobId = startResp.jobId;
+      const deadline = Date.now() + 3 * 60 * 1000; // 3 minutos
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 3000));
+
+        let poll = null;
+        try {
+          const pollResp = await fetch(`/api/agent/result/${jobId}`, {
+            credentials: "include",
+            headers: { Accept: "application/json" },
+          });
+          poll = await pollResp.json().catch(() => null);
+        } catch {
+          continue; // erro de rede temporário, tenta de novo
+        }
+
+        if (!poll || poll?.status === "pending") continue;
+
+        removeLoading();
+
+        if (!poll?.ok) {
+          appendMessage(chatMessages, chatState, storageKey, "bot", poll?.error || "Erro do agente.");
+        } else {
+          appendMessage(chatMessages, chatState, storageKey, "bot", poll?.output || "Desculpe, não entendi.");
+        }
+        return;
+      }
+
+      removeLoading();
+      appendMessage(chatMessages, chatState, storageKey, "bot", "O agente demorou demais para responder. Tente novamente.");
     } catch (err) {
       removeLoading();
-
       if (err?.status === 401) {
         clearAuthToken();
         window.location.href = LOGIN_URL;
         return;
       }
-
-      appendMessage(
-        chatMessages,
-        chatState,
-        storageKey,
-        "bot",
-        extractApiError(err) || "Erro de conexão."
-      );
+      appendMessage(chatMessages, chatState, storageKey, "bot", err?.message || "Erro de conexão.");
     }
   }
 

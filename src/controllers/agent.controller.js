@@ -1,34 +1,59 @@
 import { pool } from "../config/db.js";
 import { isAdminRole } from "../utils/roles.js";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+
+const ALGO = "aes-256-gcm";
+
+function getEncryptionKey() {
+  const key = process.env.API_KEY_SECRET;
+  if (!key || key.length < 32) {
+    throw new Error("API_KEY_SECRET não configurado ou muito curto (mínimo 32 caracteres).");
+  }
+  return Buffer.from(key.slice(0, 32), "utf8");
+}
+
+function encryptApiKey(plain) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv(ALGO, getEncryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`;
+}
+
+function decryptApiKey(stored) {
+  const parts = stored.split(":");
+  if (parts.length !== 3) return stored; // fallback: chave em texto puro (legado)
+  const [ivHex, tagHex, encHex] = parts;
+  const decipher = createDecipheriv(ALGO, getEncryptionKey(), Buffer.from(ivHex, "hex"));
+  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  return decipher.update(Buffer.from(encHex, "hex"), undefined, "utf8") + decipher.final("utf8");
+}
+
 
 function getUserId(req) {
   return req.user?.id || null;
 }
 
-export function requireClienteAvance(req, res, next) {
+export async function requireClienteAvance(req, res, next) {
   const role = String(req.user?.role || "").toLowerCase();
 
-  if (!isAdminRole(role)) {
-    return res.status(403).json({ ok: false, error: "Acesso negado." });
+  if (isAdminRole(role)) return next();
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT cliente_avance FROM profiles WHERE id = ? LIMIT 1",
+      [req.user?.id]
+    );
+    if (rows[0]?.cliente_avance) return next();
+  } catch {
+    // falha silenciosa, nega acesso
   }
 
-  return next();
+  return res.status(403).json({ ok: false, error: "Acesso negado." });
 }
 
 function getUserEmail(req) {
   return req.user?.email || "";
-}
-
-function normalizeHistory(history) {
-  if (!Array.isArray(history)) return [];
-
-  return history
-    .filter((item) => item && typeof item.text === "string" && item.text.trim())
-    .slice(-12)
-    .map((item) => ({
-      role: item.role === "model" ? "model" : "user",
-      text: item.text.trim(),
-    }));
 }
 
 async function validateGeminiApiKey(apiKey) {
@@ -50,6 +75,34 @@ async function validateGeminiApiKey(apiKey) {
   }
 }
 
+function triggerN8nAgent({ chatInput, sessionId, email, apiKey, jobId }) {
+  const webhookUrl = process.env.N8N_AGENT_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    agentJobs.set(jobId, { status: "error", error: "Agente não configurado no servidor." });
+    return;
+  }
+
+  // Fire and forget: responde imediatamente, n8n chama /api/agent/callback/:jobId quando terminar
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chatInput, sessionId, email, geminiApiKey: apiKey, callbackJobId: jobId }),
+  })
+    .then(async (resp) => {
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        console.error(`[triggerN8nAgent] n8n retornou ${resp.status}:`, text.slice(0, 300));
+        agentJobs.set(jobId, { status: "error", error: "Falha ao acionar o agente." });
+      }
+      // Se n8n respondeu ok, o resultado virá pelo callback — não faz nada aqui
+    })
+    .catch((err) => {
+      console.error("[triggerN8nAgent] Erro ao acionar n8n:", err);
+      agentJobs.set(jobId, { status: "error", error: "Não foi possível conectar ao agente." });
+    });
+}
+
 async function getStoredApiKeyByUserId(userId) {
   const [rows] = await pool.query(
     "SELECT chave_api FROM profiles WHERE id = ? LIMIT 1",
@@ -60,71 +113,6 @@ async function getStoredApiKeyByUserId(userId) {
   return rows[0]?.chave_api || null;
 }
 
-async function callGemini({ apiKey, history, chatInput }) {
-  const systemInstruction = `
-Você é o Apolo, mentor estratégico de vendas da AVANCE.
-Responda em português do Brasil.
-Seja objetivo, claro e útil.
-Quando fizer sentido, use tópicos curtos e sugestões práticas.
-`.trim();
-
-  const contents = [
-    {
-      role: "user",
-      parts: [{ text: systemInstruction }],
-    },
-    {
-      role: "model",
-      parts: [{ text: "Entendido. Vou agir como Apolo, mentor estratégico de vendas da AVANCE." }],
-    },
-  ];
-
-  for (const item of history) {
-    contents.push({
-      role: item.role === "model" ? "model" : "user",
-      parts: [{ text: item.text }],
-    });
-  }
-
-  contents.push({
-    role: "user",
-    parts: [{ text: chatInput }],
-  });
-
-  const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 1024,
-        },
-      }),
-    }
-  );
-
-  const data = await resp.json().catch(() => null);
-
-  if (!resp.ok) {
-    const message = data?.error?.message || "Falha ao consultar o Gemini.";
-    const err = new Error(message);
-    err.status = resp.status || 502;
-    throw err;
-  }
-
-  const output =
-    data?.candidates?.[0]?.content?.parts
-      ?.map((part) => part?.text || "")
-      .join("")
-      .trim() || "";
-
-  return output || "Não consegui gerar uma resposta agora.";
-}
 
 export async function getAgentStatus(req, res) {
   try {
@@ -177,7 +165,7 @@ export async function saveAgentApiKey(req, res) {
 
     await pool.query(
       "UPDATE profiles SET chave_api = ? WHERE id = ? LIMIT 1",
-      [apiKey, userId]
+      [encryptApiKey(apiKey), userId]
     );
 
     return res.json({
@@ -222,51 +210,81 @@ export async function deleteAgentApiKey(req, res) {
   }
 }
 
+// Jobs em memória: jobId -> { status, output, error }
+const agentJobs = new Map();
+
+function createJob() {
+  const jobId = randomBytes(16).toString("hex");
+  agentJobs.set(jobId, { status: "pending" });
+  setTimeout(() => agentJobs.delete(jobId), 10 * 60 * 1000);
+  return jobId;
+}
+
 export async function sendAgentMessage(req, res) {
-  try {
-    const userId = getUserId(req);
-    const email = getUserEmail(req);
-    const chatInput = String(req.body?.chatInput || "").trim();
-    const history = normalizeHistory(req.body?.history);
+  const userId = getUserId(req);
+  const email = getUserEmail(req);
+  const chatInput = String(req.body?.chatInput || "").trim();
+  const sessionId = String(req.body?.sessionId || "").trim();
 
-    if (!userId || !email) {
-      return res.status(401).json({
-        ok: false,
-        error: "Não autorizado.",
-      });
-    }
+  if (!userId || !email) {
+    return res.status(401).json({ ok: false, error: "Não autorizado." });
+  }
 
-    if (!chatInput) {
-      return res.status(400).json({
-        ok: false,
-        error: "Digite uma mensagem.",
-      });
-    }
+  if (!chatInput) {
+    return res.status(400).json({ ok: false, error: "Digite uma mensagem." });
+  }
 
-    const apiKey = await getStoredApiKeyByUserId(userId);
-
-    if (!apiKey) {
-      return res.status(400).json({
-        ok: false,
-        error: "O agente está offline. Cadastre uma chave Gemini.",
-      });
-    }
-
-    const output = await callGemini({
-      apiKey,
-      history,
-      chatInput,
-    });
-
-    return res.json({
-      ok: true,
-      output,
-    });
-  } catch (error) {
-    console.error("Erro em sendAgentMessage:", error);
-    return res.status(error?.status || 500).json({
+  const storedKey = await getStoredApiKeyByUserId(userId);
+  if (!storedKey) {
+    return res.status(400).json({
       ok: false,
-      error: error?.message || "Não foi possível processar a mensagem.",
+      error: "O agente está offline. Cadastre uma chave Gemini.",
     });
   }
+
+  const jobId = createJob();
+
+  // Dispara n8n sem aguardar — n8n chama /api/agent/callback/:jobId quando terminar
+  triggerN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(storedKey), jobId });
+
+  return res.json({ ok: true, jobId });
+}
+
+export function receiveAgentCallback(req, res) {
+  const jobId = String(req.params.jobId || "");
+  const secret = String(req.headers["x-callback-secret"] || "");
+
+  if (!process.env.N8N_CALLBACK_SECRET || secret !== process.env.N8N_CALLBACK_SECRET) {
+    return res.status(403).json({ ok: false, error: "Não autorizado." });
+  }
+
+  if (!agentJobs.has(jobId)) {
+    return res.status(404).json({ ok: false, error: "Job não encontrado ou expirado." });
+  }
+
+  const output = String(req.body?.output || "");
+  agentJobs.set(jobId, { status: "done", output });
+
+  return res.json({ ok: true });
+}
+
+export function getAgentJobResult(req, res) {
+  const jobId = String(req.params.jobId || "");
+  const job = agentJobs.get(jobId);
+
+  if (!job) {
+    return res.status(404).json({ ok: false, error: "Job não encontrado." });
+  }
+
+  if (job.status === "pending") {
+    return res.json({ ok: true, status: "pending" });
+  }
+
+  agentJobs.delete(jobId);
+
+  if (job.status === "error") {
+    return res.json({ ok: false, error: job.error });
+  }
+
+  return res.json({ ok: true, status: "done", output: job.output });
 }
