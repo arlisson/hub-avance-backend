@@ -349,7 +349,10 @@ async function refreshAgentStatus(chatMessages) {
     const isOnline = !!resp?.hasApiKey;
     window.atualizarStatusAgente(isOnline);
 
-    if (!isOnline && chatMessages && !document.getElementById("agent-offline-tip")) {
+    if (isOnline) {
+      const offlineTip = document.getElementById("agent-offline-tip");
+      if (offlineTip) offlineTip.remove();
+    } else if (chatMessages && !document.getElementById("agent-offline-tip")) {
       appendSystemMessage(
         chatMessages,
         "O agente está offline. Cadastre uma chave Gemini na barra lateral para habilitar o Apolo.",
