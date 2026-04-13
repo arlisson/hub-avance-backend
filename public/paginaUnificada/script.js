@@ -23,6 +23,7 @@ const WHATSAPP_NUMBER = "5521995012737";
 let LOGIN_URL = "/login/login.html";
 let CURRENT_USER_ID = "";
 let _currentUserProfile = null; // { name, cpf, whatsapp, operator, active_lines, cidade, estado }
+let _canAccessAgent = false;
 
 // ============================================================
 // CATÁLOGO DE APPS (Hub)
@@ -973,19 +974,20 @@ function openAppModal(appId) {
       const el = document.createElement("button");
       el.type = "button";
 
-      if (a.locked) {
+      if (a.locked && !_canAccessAgent) {
         el.className = "hub-btn hub-btn-locked";
         el.disabled = true;
-        el.title = "Em breve";
+        el.title = "Exclusivo para clientes Avance";
         el.innerHTML = `
           <i class="ph ph-lock"></i>
           <span>${escapeHtml(a.label || "Abrir")}</span>
-          <span class="hub-btn-locked-badge">Em breve</span>
+          <span class="hub-btn-locked-badge">Exclusivo para clientes</span>
         `;
       } else {
         el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");
+        const resolvedIcon = a.locked ? "ph-arrow-square-out" : (a.icon || "ph-arrow-square-out");
         el.innerHTML = `
-          <i class="ph ${escapeHtml(a.icon || "ph-arrow-square-out")}"></i>
+          <i class="ph ${escapeHtml(resolvedIcon)}"></i>
           <span>${escapeHtml(a.label || "Abrir")}</span>
         `;
 
@@ -1014,7 +1016,7 @@ function openAppModal(appId) {
       actionsEl.appendChild(el);
     });
 
-    if (app.clienteCta) {
+    if (app.clienteCta && !_canAccessAgent) {
       const ctaBtn = document.createElement("button");
       ctaBtn.type = "button";
       ctaBtn.className = "hub-btn hub-btn-cta";
@@ -1805,6 +1807,9 @@ function applyAuthenticatedState(user, profile) {
   const email = user?.email || "";
   const canAccessProtocol =
     !!user?.protocol || !!profile?.protocol;
+  const role = String(user?.role || "").toLowerCase();
+  const isAdmin = role === "admin" || role === "superadmin" || role === "master";
+  _canAccessAgent = isAdmin || !!profile?.cliente_avance;
 
   CURRENT_USER_ID = user?.id || "";
 
