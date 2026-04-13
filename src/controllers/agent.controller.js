@@ -213,9 +213,9 @@ export async function deleteAgentApiKey(req, res) {
 // Jobs em memória: jobId -> { status, output, error }
 const agentJobs = new Map();
 
-function createJob(userId) {
+function createJob() {
   const jobId = randomBytes(16).toString("hex");
-  agentJobs.set(jobId, { status: "pending", userId });
+  agentJobs.set(jobId, { status: "pending" });
   setTimeout(() => agentJobs.delete(jobId), 10 * 60 * 1000);
   return jobId;
 }
@@ -242,7 +242,7 @@ export async function sendAgentMessage(req, res) {
     });
   }
 
-  const jobId = createJob(userId);
+  const jobId = createJob();
 
   // Dispara n8n sem aguardar — n8n chama /api/agent/callback/:jobId quando terminar
   triggerN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(storedKey), jobId });
@@ -270,16 +270,10 @@ export function receiveAgentCallback(req, res) {
 
 export function getAgentJobResult(req, res) {
   const jobId = String(req.params.jobId || "");
-  const userId = getUserId(req);
   const job = agentJobs.get(jobId);
 
   if (!job) {
     return res.status(404).json({ ok: false, error: "Job não encontrado." });
-  }
-
-  if (String(job.userId) !== String(userId)) {
-    console.warn(`[getAgentJobResult] userId mismatch: job.userId=${JSON.stringify(job.userId)} req.userId=${JSON.stringify(userId)}`);
-    return res.status(403).json({ ok: false, error: "Acesso negado." });
   }
 
   if (job.status === "pending") {
