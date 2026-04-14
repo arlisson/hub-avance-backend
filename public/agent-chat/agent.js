@@ -229,9 +229,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function setInputLocked(locked) {
     sendBtn.disabled = locked;
+    sendBtn.innerHTML = locked
+      ? '<span class="send-spinner"></span>'
+      : '<i class="ph ph-paper-plane-tilt"></i>';
     userInput.disabled = locked;
     userInput.placeholder = locked
-      ? "Aguarde a resposta do Apolo..."
+      ? "O Apolo está pensando na resposta..."
       : "Digite sua mensagem para o Apolo...";
   }
 
