@@ -8,7 +8,7 @@
 
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="./agent.css?v=5" />
+  <link rel="stylesheet" href="./agent.css?v=6" />
 </head>
 
 <body>
@@ -24,6 +24,11 @@
     <button class="new-chat-btn">
       <i class="ph ph-plus"></i>
       Resetar conversa
+    </button>
+
+    <button class="context-btn" id="btnAbrirModalContexto">
+      <i class="ph ph-clipboard-text"></i>
+      Contexto da Empresa
     </button>
 
     <nav class="chat-history">
@@ -131,8 +136,159 @@
   </div>
 
 
+  <!-- MODAL: CONTEXTO DA EMPRESA -->
+  <div id="modalContexto" class="modal-overlay">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <h3>Contexto da Empresa</h3>
+        <button id="btnFecharModalContexto" class="btn-fechar" aria-label="Fechar">&times;</button>
+      </div>
+      <p class="modal-description">
+        Preencha as informações abaixo para que o Apolo entenda melhor o seu negócio e ofereça respostas mais precisas e personalizadas para o seu time.
+      </p>
+
+      <form id="formContexto">
+
+        <!-- SEÇÃO 1: SOBRE A EMPRESA -->
+        <div class="form-section">
+          <h4 class="form-section-title"><i class="ph ph-buildings"></i> Sobre a Sua Empresa</h4>
+
+          <div class="form-group">
+            <label class="form-label" for="ctx-empresa">Nome da empresa <span class="obrigatorio">*</span></label>
+            <input class="form-input" type="text" id="ctx-empresa" placeholder="Ex: Sorriso Odontologia, Tech Solutions Ltda., Boutique Moda Feminina" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ctx-segmento">Segmento de atuação</label>
+            <input class="form-input" type="text" id="ctx-segmento" placeholder="Ex: Saúde, Educação, Tecnologia, Varejo, Imóveis, Serviços Financeiros...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ctx-produto">O que sua empresa vende? <span class="obrigatorio">*</span></label>
+            <input class="form-input" type="text" id="ctx-produto" placeholder="Ex: Planos odontológicos, Software de gestão, Cursos online, Roupas femininas, Seguros de vida..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Modelo de venda <span class="obrigatorio">*</span></label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="ctx-modelo-venda" value="b2b">
+                <span class="radio-custom"></span>
+                <div class="radio-text">
+                  <strong>B2B — Empresa para Empresa</strong>
+                  <small>Meus clientes são outras empresas. Negoció com CNPJs (ex: fornecedor de software, consultoria empresarial).</small>
+                </div>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="ctx-modelo-venda" value="b2c">
+                <span class="radio-custom"></span>
+                <div class="radio-text">
+                  <strong>B2C — Empresa para Consumidor Final</strong>
+                  <small>Meus clientes são pessoas físicas. Vendo diretamente para quem vai usar o produto ou serviço.</small>
+                </div>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="ctx-modelo-venda" value="ambos">
+                <span class="radio-custom"></span>
+                <div class="radio-text">
+                  <strong>Ambos — B2B e B2C</strong>
+                  <small>Atendo tanto empresas quanto consumidores finais, dependendo do produto ou canal de venda.</small>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 2: TIME E PÚBLICO -->
+        <div class="form-section">
+          <h4 class="form-section-title"><i class="ph ph-users"></i> Sobre o Seu Time e Público</h4>
+
+          <div class="form-group">
+            <label class="form-label" for="ctx-publico">Quem é o seu público-alvo? <span class="obrigatorio">*</span></label>
+            <textarea class="form-textarea" id="ctx-publico" rows="3" placeholder="Ex: Empresários de pequenos negócios entre 30–50 anos que buscam crescimento, mães entre 25–40 anos interessadas em saúde infantil, jovens universitários em busca do primeiro emprego..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Como funciona o seu processo de vendas? <small class="form-label-hint">(pode marcar mais de um)</small></label>
+            <div class="check-group">
+              <label class="check-item">
+                <input type="checkbox" name="ctx-processo" value="comercial-interno">
+                <span class="check-custom"></span>
+                <div class="check-text">
+                  <strong>Time comercial interno</strong>
+                  <small>Vendedores que trabalham dentro da empresa e prospectam clientes por telefone, e-mail ou redes sociais, sem sair a campo.</small>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="ctx-processo" value="consultores-externos">
+                <span class="check-custom"></span>
+                <div class="check-text">
+                  <strong>Consultores externos / Field Sales</strong>
+                  <small>Profissionais que saem a campo para visitar clientes presencialmente e fechar negócios fora do escritório.</small>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="ctx-processo" value="atendimento-loja">
+                <span class="check-custom"></span>
+                <div class="check-text">
+                  <strong>Atendimento ao cliente / Loja física</strong>
+                  <small>Atendem o público que chega até você: loja, balcão de atendimento, recepção, showroom ou ponto de venda.</small>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="ctx-processo" value="inside-sales">
+                <span class="check-custom"></span>
+                <div class="check-text">
+                  <strong>Inside Sales</strong>
+                  <small>Vendas estruturadas por videochamada ou telefone com funil bem definido — abordagem, qualificação, proposta e fechamento.</small>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="ctx-processo" value="ecommerce">
+                <span class="check-custom"></span>
+                <div class="check-text">
+                  <strong>E-commerce / Canais digitais</strong>
+                  <small>Vendas pela loja online própria, marketplace (Shopee, Mercado Livre, Amazon) ou pelas redes sociais (Instagram, WhatsApp).</small>
+                </div>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" name="ctx-processo" value="representantes">
+                <span class="check-custom"></span>
+                <div class="check-text">
+                  <strong>Representantes ou revendedores</strong>
+                  <small>Parceiros autônomos, distribuidores ou franqueados que revendem seus produtos no mercado em seu nome.</small>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 3: O PROBLEMA -->
+        <div class="form-section">
+          <h4 class="form-section-title"><i class="ph ph-target"></i> O Problema que Você Quer Resolver</h4>
+
+          <div class="form-group">
+            <label class="form-label" for="ctx-problema">Descreva o principal desafio do seu time <span class="obrigatorio">*</span></label>
+            <p class="form-hint">Exemplos do que você pode descrever:</p>
+            <ul class="form-hint-list">
+              <li>Contratei um vendedor novo sem nenhuma experiência em vendas — preciso de um treinamento completo do zero.</li>
+              <li>Meus consultores mais experientes têm dificuldade para fechar vendas, lidar com objeções de preço ou fazer uma boa abordagem inicial.</li>
+              <li>Tenho uma loja física e contratei um atendente sem experiência com o público — preciso treiná-lo para atender bem e vender mais.</li>
+              <li>Tenho um vendedor que não consegue conduzir o cliente com segurança até o fechamento e perde muitas oportunidades.</li>
+            </ul>
+            <textarea class="form-textarea form-textarea-large" id="ctx-problema" rows="5" placeholder="Descreva com suas próprias palavras o desafio que você enfrenta hoje no seu time de vendas ou atendimento..." required></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-salvar">Salvar Contexto</button>
+      </form>
+
+      <div id="mensagemContexto" class="mensagem-feedback"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="./agent.js?v=8"></script>
+  <script src="./agent.js?v=9"></script>
 
 </body>
 

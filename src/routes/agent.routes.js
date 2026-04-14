@@ -8,6 +8,8 @@ import {
   getAgentJobResult,
   receiveAgentCallback,
   requireClienteAvance,
+  getAgentContext,
+  saveAgentContext,
 } from "../controllers/agent.controller.js";
 
 const router = Router();
@@ -25,5 +27,8 @@ router.delete("/agent/api-key", authenticateToken, requireClienteAvance, deleteA
 router.post("/agent", authenticateToken, requireClienteAvance, sendAgentMessage);
 router.get("/agent/result/:jobId", authenticateToken, requireClienteAvance, getAgentJobResult);
 router.post("/agent/callback/:jobId", receiveAgentCallback);
+
+router.get("/agent/context", authenticateToken, requireClienteAvance, getAgentContext);
+router.post("/agent/context", authenticateToken, requireClienteAvance, saveAgentContext);
 
 export default router;

@@ -227,6 +227,103 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // === MODAL: CONTEXTO DA EMPRESA ===
+  const modalContexto = document.getElementById("modalContexto");
+  const btnAbrirContexto = document.getElementById("btnAbrirModalContexto");
+  const btnFecharContexto = document.getElementById("btnFecharModalContexto");
+  const formContexto = document.getElementById("formContexto");
+  const mensagemContexto = document.getElementById("mensagemContexto");
+  const CONTEXTO_KEY = "apolo_contexto_empresa";
+
+  function preencherFormContexto(saved) {
+    if (!saved) return;
+    const ctx = (id) => document.getElementById(id);
+    if (saved.empresa)  ctx("ctx-empresa").value  = saved.empresa;
+    if (saved.segmento) ctx("ctx-segmento").value = saved.segmento;
+    if (saved.produto)  ctx("ctx-produto").value  = saved.produto;
+    if (saved.modeloVenda) {
+      const radio = document.querySelector(`input[name="ctx-modelo-venda"][value="${saved.modeloVenda}"]`);
+      if (radio) radio.checked = true;
+    }
+    if (saved.publico) ctx("ctx-publico").value = saved.publico;
+    if (Array.isArray(saved.processo)) {
+      document.querySelectorAll("input[name='ctx-processo']").forEach((cb) => {
+        cb.checked = saved.processo.includes(cb.value);
+      });
+    }
+    if (saved.problema) ctx("ctx-problema").value = saved.problema;
+  }
+
+  const abrirModalContexto = async () => {
+    if (mensagemContexto) {
+      mensagemContexto.textContent = "";
+      mensagemContexto.className = "mensagem-feedback";
+    }
+    modalContexto?.classList.add("active");
+
+    // Tenta carregar do banco; usa cache localStorage como fallback imediato
+    const cached = JSON.parse(localStorage.getItem(CONTEXTO_KEY) || "{}");
+    preencherFormContexto(cached);
+
+    try {
+      const resp = await apiFetch("/api/agent/context", { method: "GET" });
+      if (resp?.ok && resp.contexto) {
+        localStorage.setItem(CONTEXTO_KEY, JSON.stringify(resp.contexto));
+        preencherFormContexto(resp.contexto);
+      }
+    } catch {
+      // falha silenciosa — mantém o que já estava preenchido pelo cache
+    }
+  };
+
+  const fecharModalContexto = () => modalContexto?.classList.remove("active");
+
+  if (btnAbrirContexto) btnAbrirContexto.addEventListener("click", abrirModalContexto);
+  if (btnFecharContexto) btnFecharContexto.addEventListener("click", fecharModalContexto);
+  if (modalContexto) {
+    modalContexto.addEventListener("click", (e) => {
+      if (e.target === modalContexto) fecharModalContexto();
+    });
+  }
+
+  if (formContexto) {
+    formContexto.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btnSalvar = formContexto.querySelector(".btn-salvar");
+      if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.textContent = "Salvando..."; }
+
+      const data = {
+        empresa:    document.getElementById("ctx-empresa").value.trim(),
+        segmento:   document.getElementById("ctx-segmento").value.trim(),
+        produto:    document.getElementById("ctx-produto").value.trim(),
+        modeloVenda: document.querySelector("input[name='ctx-modelo-venda']:checked")?.value || "",
+        publico:    document.getElementById("ctx-publico").value.trim(),
+        processo:   [...document.querySelectorAll("input[name='ctx-processo']:checked")].map((cb) => cb.value),
+        problema:   document.getElementById("ctx-problema").value.trim(),
+      };
+
+      try {
+        const resp = await apiFetch("/api/agent/context", { method: "POST", body: data });
+        if (!resp?.ok) throw new Error(resp?.error || "Erro ao salvar.");
+
+        localStorage.setItem(CONTEXTO_KEY, JSON.stringify(data));
+
+        if (mensagemContexto) {
+          mensagemContexto.textContent = "Contexto salvo com sucesso!";
+          mensagemContexto.className = "mensagem-feedback mensagem-sucesso";
+        }
+        setTimeout(fecharModalContexto, 1200);
+      } catch (err) {
+        if (mensagemContexto) {
+          mensagemContexto.textContent = extractApiError(err) || "Não foi possível salvar. Tente novamente.";
+          mensagemContexto.className = "mensagem-feedback mensagem-erro";
+        }
+      } finally {
+        if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = "Salvar Contexto"; }
+      }
+    });
+  }
+
   function setInputLocked(locked) {
     sendBtn.disabled = locked;
     sendBtn.innerHTML = locked

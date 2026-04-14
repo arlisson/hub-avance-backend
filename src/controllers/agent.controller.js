@@ -288,3 +288,79 @@ export function getAgentJobResult(req, res) {
 
   return res.json({ ok: true, status: "done", output: job.output });
 }
+
+// ─── CONTEXTO DA EMPRESA ────────────────────────────────────────────────────
+
+export async function getAgentContext(req, res) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ ok: false, error: "Não autorizado." });
+
+    const userEmail = getUserEmail(req);
+    const [rows] = await pool.query(
+      "SELECT dados FROM perfil_cliente WHERE user_email = ? LIMIT 1",
+      [userEmail]
+    );
+
+    const raw = rows[0]?.dados || null;
+    const contexto = raw ? JSON.parse(raw) : null;
+
+    return res.json({ ok: true, contexto });
+  } catch (err) {
+    console.error("Erro em getAgentContext:", err);
+    return res.status(500).json({ ok: false, error: "Não foi possível carregar o contexto." });
+  }
+}
+
+export async function saveAgentContext(req, res) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ ok: false, error: "Não autorizado." });
+
+    const empresa = String(req.body?.empresa || "").trim().slice(0, 200);
+    const problema = String(req.body?.problema || "").trim().slice(0, 5000);
+
+    if (!empresa) return res.status(400).json({ ok: false, error: "O nome da empresa é obrigatório." });
+    if (!problema) return res.status(400).json({ ok: false, error: "O campo de problema é obrigatório." });
+
+    const contexto = {
+      empresa,
+      segmento:    String(req.body?.segmento    || "").trim().slice(0, 200),
+      produto:     String(req.body?.produto     || "").trim().slice(0, 500),
+      modeloVenda: String(req.body?.modeloVenda || "").trim().slice(0, 20),
+      publico:     String(req.body?.publico     || "").trim().slice(0, 1000),
+      processo: Array.isArray(req.body?.processo)
+        ? req.body.processo.map((v) => String(v).trim().slice(0, 50)).slice(0, 10)
+        : [],
+      problema,
+    };
+
+    const userEmail = getUserEmail(req);
+    await pool.query(
+      `INSERT INTO perfil_cliente (user_email, dados)
+       VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE dados = VALUES(dados)`,
+      [userEmail, JSON.stringify(contexto)]
+    );
+
+    return res.json({ ok: true, message: "Contexto salvo com sucesso." });
+  } catch (err) {
+    console.error("Erro em saveAgentContext:", err);
+    return res.status(500).json({ ok: false, error: "Não foi possível salvar o contexto." });
+  }
+}
+
+// Migração automática: cria a tabela perfil_cliente se ainda não existir
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS perfil_cliente (
+        user_email  VARCHAR(255) NOT NULL,
+        dados       TEXT         NOT NULL,
+        PRIMARY KEY (user_email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  } catch (err) {
+    console.error("[agent.controller] Erro ao criar tabela perfil_cliente:", err.message);
+  }
+})();
