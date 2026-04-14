@@ -605,16 +605,8 @@ body.light-mode .input-wrapper-api:focus-within {
 }
 
 .btn-salvar:hover {
-  background-color: var(--text-primary);
+  filter: brightness(0.88);
   transform: translateY(-2px);
-}
-
-body.light-mode .btn-salvar {
-  color: #ffffff;
-}
-
-body.light-mode .btn-salvar:hover {
-  background-color: #16324F;
 }
 
 .mensagem-feedback {
