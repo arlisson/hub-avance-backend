@@ -33,6 +33,7 @@
 :root {
   /* Cores de Fundo e Superfície */
   --bg-main: #fafeff;
+  --star-idle: #8d9aa8;
   --bg-card: #ffffff;
   --bg-sidebar: #131739;
 
@@ -56,6 +57,7 @@
 /* Modo Escuro */
 body.dark-mode {
   --bg-main: #0b0e23;
+  --star-idle: #c8c8c8;
   --bg-card: #131739;
   --text-primary: #fafeff;
   --text-secondary: #ade5f2;
@@ -1797,13 +1799,13 @@ body.modal-open .hero-badge {
   cursor: pointer;
   font-size: 24px;
   line-height: 1;
-  color: #c8c8c8;
+  color: var(--star-idle);
   transition: transform 0.1s ease, color 0.15s ease;
 }
 
 /* Hover CSS puro: ilumina a estrela e todas as irmãs seguintes (visualmente anteriores) */
 .star-rating:hover .star-btn {
-  color: #c8c8c8;
+  color: var(--star-idle);
 }
 
 .star-btn:hover,
