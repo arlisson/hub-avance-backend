@@ -459,12 +459,14 @@ body.light-mode .send-btn {
   height: 100vh;
   background-color: rgba(15, 44, 88, 0.7);
   backdrop-filter: blur(6px);
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
 body.light-mode .modal-overlay {
@@ -472,8 +474,9 @@ body.light-mode .modal-overlay {
 }
 
 .modal-overlay.active {
-  display: flex;
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .modal-box {
@@ -484,11 +487,13 @@ body.light-mode .modal-overlay {
   width: 90%;
   max-width: 480px;
   box-shadow: var(--shadow-strong);
-  transform: translateY(20px);
+  transform: translateY(16px);
   transition:
-    transform 0.3s ease,
+    transform 0.25s ease,
+    opacity 0.25s ease,
     background-color 0.25s ease,
     border-color 0.25s ease;
+  will-change: transform, opacity;
 }
 
 .modal-overlay.active .modal-box {
@@ -1254,7 +1259,7 @@ body:not(.dark-mode) .logo-claro {
   max-width: 680px;
   max-height: 88vh;
   overflow-y: auto;
-  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
 }
 
 .form-section {
