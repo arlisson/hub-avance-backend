@@ -974,7 +974,8 @@ function openAppModal(appId) {
       const el = document.createElement("button");
       el.type = "button";
 
-      if (a.locked && !_canAccessAgent) {
+      if (a.locked && !_canAccessAgent && !!CURRENT_USER_ID) {
+        // Usuário logado mas sem acesso ao Apolo → mostra cadeado
         el.className = "hub-btn hub-btn-locked";
         el.disabled = true;
         el.title = "Exclusivo para clientes Avance";
@@ -992,6 +993,11 @@ function openAppModal(appId) {
         `;
 
         el.addEventListener("click", async () => {
+          // Visitante não autenticado → redireciona para login
+          if (!CURRENT_USER_ID) {
+            window.location.href = normalizeLoginUrl(LOGIN_URL);
+            return;
+          }
           try {
             if (a.app) {
               await registrarUsoEIrParaDestino(
@@ -2016,32 +2022,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadPublicAgentConfig();
 
+  // Exibe a página imediatamente no estado de visitante
+  applyVisitorState();
+
+  // Tenta autenticar em background — sem redirecionar se não estiver logado
   try {
-   
     const sessionData = await getCurrentSession();
 
-    if (!sessionData?.ok || !sessionData?.user) {
-      window.location.href = normalizeLoginUrl(LOGIN_URL);
-      return;
+    if (sessionData?.ok && sessionData?.user) {
+      const profileData = await getCurrentProfile().catch((err) => {
+        console.warn("Falha ao carregar perfil:", err);
+        return { ok: false, user: null };
+      });
+
+      applyAuthenticatedState(sessionData.user, profileData?.user || {});
     }
-
-    const profileData = await getCurrentProfile().catch((err) => {
-      console.warn("Falha ao carregar perfil:", err);
-      return { ok: false, user: null };
-    });
-
-    applyAuthenticatedState(
-      sessionData.user,
-      profileData?.user || {}
-    );
-
-    await carregarAvaliacoes();
+    // Se não estiver logado (sem sessão), fica no estado de visitante
   } catch (e) {
-    console.error("Erro ao inicializar página:", e);
-    clearAuthToken();
-    clearAgentChatSessionStorage();
-    window.location.href = normalizeLoginUrl(LOGIN_URL);
+    // Erro de rede ou 401 — permanece como visitante, sem redirecionar
+    console.warn("Sessão não encontrada, exibindo como visitante.");
   }
+
+  await carregarAvaliacoes();
 });
 
 const backToTopBtn = document.getElementById("back-to-top");
