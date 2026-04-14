@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   let currentUser = null;
+  let isProcessing = false;
 
   try {
     const meResp = await apiFetch(API_ME_URL, {
@@ -226,9 +227,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  function setInputLocked(locked) {
+    sendBtn.disabled = locked;
+    userInput.disabled = locked;
+    userInput.placeholder = locked
+      ? "Aguarde a resposta do Apolo..."
+      : "Digite sua mensagem para o Apolo...";
+  }
+
   async function sendMessage() {
+    if (isProcessing) return;
     const text = userInput.value.trim();
     if (!text) return;
+
+    isProcessing = true;
+    setInputLocked(true);
 
     appendMessage(chatMessages, chatState, storageKey, "user", text);
     userInput.value = "";
@@ -285,6 +298,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
       appendMessage(chatMessages, chatState, storageKey, "bot", err?.message || "Erro de conexão.");
+    } finally {
+      isProcessing = false;
+      const isOnline = document.getElementById("status-dot")?.classList.contains("online");
+      if (isOnline) setInputLocked(false);
     }
   }
 
