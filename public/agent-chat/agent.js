@@ -292,13 +292,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       const btnSalvar = formContexto.querySelector(".btn-salvar");
       if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.textContent = "Salvando..."; }
 
+      const modeloVenda = document.querySelector("input[name='ctx-modelo-venda']:checked")?.value || "";
+      if (!modeloVenda) {
+        if (mensagemContexto) {
+          mensagemContexto.textContent = "Selecione o modelo de venda da sua empresa.";
+          mensagemContexto.className = "mensagem-feedback mensagem-erro";
+        }
+        if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = "Salvar Contexto"; }
+        return;
+      }
+
+      const processoChecked = [...document.querySelectorAll("input[name='ctx-processo']:checked")];
+      if (processoChecked.length === 0) {
+        if (mensagemContexto) {
+          mensagemContexto.textContent = "Selecione pelo menos um processo de vendas.";
+          mensagemContexto.className = "mensagem-feedback mensagem-erro";
+        }
+        if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = "Salvar Contexto"; }
+        return;
+      }
+
       const data = {
         empresa:    document.getElementById("ctx-empresa").value.trim(),
         segmento:   document.getElementById("ctx-segmento").value.trim(),
         produto:    document.getElementById("ctx-produto").value.trim(),
-        modeloVenda: document.querySelector("input[name='ctx-modelo-venda']:checked")?.value || "",
+        modeloVenda,
         publico:    document.getElementById("ctx-publico").value.trim(),
-        processo:   [...document.querySelectorAll("input[name='ctx-processo']:checked")].map((cb) => cb.value),
+        processo:   processoChecked.map((cb) => cb.value),
         problema:   document.getElementById("ctx-problema").value.trim(),
       };
 
