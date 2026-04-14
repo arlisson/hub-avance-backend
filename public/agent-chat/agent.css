@@ -368,7 +368,7 @@ body.light-mode .chat-item .icon {
   border-radius: 24px;
   display: flex;
   padding: 8px 16px;
-  align-items: flex-end;
+  align-items: center;
   transition: all 0.3s ease;
 }
 
@@ -402,11 +402,15 @@ body.light-mode .input-container:focus-within {
 .send-btn {
   background-color: var(--accent-cyan);
   color: var(--bg-sidebar);
-  border-radius: 16px;
-  padding: 8px 20px;
-  font-weight: 600;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
   transition: 0.2s;
-  margin-bottom: 2px; /* Dá um respiro pro botão */
 }
 
 .send-btn:hover {
@@ -918,7 +922,9 @@ body.light-mode .message-bot .message-bubble pre {
   }
 
   .send-btn {
-    padding: 8px 16px;
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
   }
 
   .modal-box {

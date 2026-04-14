@@ -15,11 +15,17 @@
   </head>
 
   <body>
+    <script>
+      (function () {
+        if (localStorage.getItem("theme") !== "light")
+          document.body.classList.add("dark-mode");
+      })();
+    </script>
     <div class="reset-container">
       <div class="reset-card">
         <div class="reset-header">
           <div class="reset-logo-container">
-            <img src="../img/avanceVip.png" alt="Logo" />
+            <img src="../img/LogoEscuroSemFundo.png" alt="Logo" />
           </div>
 
           <h1>Alterar senha</h1>
