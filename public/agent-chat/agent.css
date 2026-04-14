@@ -457,8 +457,7 @@ body.light-mode .send-btn {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(15, 44, 88, 0.7);
-  backdrop-filter: blur(6px);
+  background-color: rgba(10, 20, 50, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -466,11 +465,11 @@ body.light-mode .send-btn {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 body.light-mode .modal-overlay {
-  background-color: rgba(22, 50, 79, 0.32);
+  background-color: rgba(22, 50, 79, 0.45);
 }
 
 .modal-overlay.active {
@@ -487,16 +486,17 @@ body.light-mode .modal-overlay {
   width: 90%;
   max-width: 480px;
   box-shadow: var(--shadow-strong);
-  transform: translateY(16px);
+  opacity: 0;
+  transform: translateY(14px);
   transition:
-    transform 0.25s ease,
-    opacity 0.25s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
     background-color 0.25s ease,
     border-color 0.25s ease;
-  will-change: transform, opacity;
 }
 
 .modal-overlay.active .modal-box {
+  opacity: 1;
   transform: translateY(0);
 }
 
