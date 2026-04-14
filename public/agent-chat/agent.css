@@ -1230,7 +1230,7 @@ body:not(.dark-mode) .logo-claro {
   gap: 8px;
   transition: all 0.2s ease;
   margin-bottom: 16px;
-  text-align: left;
+  justify-content: center;
 }
 
 .context-btn i {
