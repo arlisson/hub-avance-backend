@@ -1003,8 +1003,10 @@ function openAppModal(appId) {
         el.title = "Exclusivo para clientes Avance";
         el.innerHTML = `
           <i class="ph ph-lock"></i>
-          <span>${escapeHtml(a.label || "Abrir")}</span>
-          <span class="hub-btn-locked-badge">Exclusivo para clientes</span>
+          <div class="hub-btn-locked-text">
+            <span>${escapeHtml(a.label || "Abrir")}</span>
+            <span class="hub-btn-locked-badge">Exclusivo para clientes</span>
+          </div>
         `;
       } else {
         el.className = "hub-btn" + (a.primary ? " hub-btn-primary" : "");

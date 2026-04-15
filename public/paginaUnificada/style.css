@@ -1007,6 +1007,13 @@ body.dark-mode .hub-card-skeleton {
   opacity: 0.45;
 }
 
+.hub-btn-locked-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
 .hub-btn-locked-badge {
   font-size: 10px;
   font-weight: 700;
