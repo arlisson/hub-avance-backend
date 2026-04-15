@@ -607,6 +607,7 @@ body.light-mode .input-wrapper-api:focus-within {
 .btn-salvar:hover {
   filter: brightness(0.88);
   transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(87, 197, 234, 0.45);
 }
 
 .mensagem-feedback {
