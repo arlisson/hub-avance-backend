@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="./style.css?v=36" />
+    <link rel="stylesheet" href="./style.css?v=37" />
   </head>
 
   <body>
@@ -672,7 +672,7 @@
       <i class="ph ph-whatsapp-logo"></i>
     </a>
 
-    <script src="./script.js?v=38" defer></script>
+    <script src="./script.js?v=39" defer></script>
     <button
       id="back-to-top"
       class="back-to-top"
@@ -681,5 +681,16 @@
     >
       <i class="ph ph-arrow-up"></i>
     </button>
+
+    <!-- TOAST: login necessário -->
+    <div id="toast-login" class="toast-login" role="alert" aria-live="polite">
+      <div class="toast-login-icon"><i class="ph ph-lock"></i></div>
+      <div class="toast-login-body">
+        <span class="toast-login-title">Acesso restrito</span>
+        <span class="toast-login-msg">Faça login para usar esta ferramenta.</span>
+      </div>
+      <a id="toast-login-btn" class="toast-login-cta" href="#">Entrar</a>
+      <button class="toast-login-close" id="toast-login-close" aria-label="Fechar"><i class="ph ph-x"></i></button>
+    </div>
   </body>
 </html>

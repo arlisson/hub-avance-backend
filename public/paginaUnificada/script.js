@@ -386,6 +386,28 @@ function normalizeLoginUrl(url) {
   return "/" + url.replace(/^\.?\//, "");
 }
 
+let _toastTimer = null;
+function showLoginToast() {
+  const toast = document.getElementById("toast-login");
+  const btn   = document.getElementById("toast-login-btn");
+  const close = document.getElementById("toast-login-close");
+  if (!toast) { window.location.href = normalizeLoginUrl(LOGIN_URL); return; }
+
+  if (btn) btn.href = normalizeLoginUrl(LOGIN_URL);
+
+  toast.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => toast.classList.remove("show"), 5000);
+
+  if (close && !close._bound) {
+    close._bound = true;
+    close.addEventListener("click", () => {
+      toast.classList.remove("show");
+      clearTimeout(_toastTimer);
+    });
+  }
+}
+
 function clearAgentChatSessionStorage() {
   try {
     Object.keys(sessionStorage)
@@ -993,9 +1015,9 @@ function openAppModal(appId) {
         `;
 
         el.addEventListener("click", async () => {
-          // Visitante não autenticado → redireciona para login
+          // Visitante não autenticado → mostra toast e redireciona
           if (!CURRENT_USER_ID) {
-            window.location.href = normalizeLoginUrl(LOGIN_URL);
+            showLoginToast();
             return;
           }
           try {
