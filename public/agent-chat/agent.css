@@ -142,8 +142,8 @@ input:focus-visible {
 
 .new-chat-btn {
   color: #fff;
-  background-color: rgba(220, 53, 69, 0.15);
-  border: 1px solid rgba(220, 53, 69, 0.5);
+  background-color: rgba(220, 53, 69, 0.30);
+  border: 1px solid rgba(220, 53, 69, 0.75);
   border-radius: 8px;
   padding: 14px;
   font-size: 15px;
