@@ -56,26 +56,6 @@ const APPS = [
     ],
   },
   {
-    id: "protocol",
-    badge: "Gerador de Protocolo Agendor",
-    image: "../img/Protocolo.png",
-    title: "Gerador de Protocolo Agendor",
-    shortDesc: "Gera, registra e envia protocolos integrado ao Agendor.",
-    longDesc: "Crie protocolos de atendimento em segundos, com registro automático direto no Agendor. Cada protocolo gerado fica vinculado ao cliente, eliminando o trabalho manual de registro e reduzindo erros no acompanhamento das negociações.",
-    youtubeId: "",
-    enabled: true,
-    requiresPermission: true,
-    actions: [
-      {
-        label: "Acessar",
-        icon: "ph-arrow-square-out",
-        href: "../protocolo/protocolo.html",
-        primary: true,
-        targetBlank: false,
-      },
-    ],
-  },
-  {
     id: "static-protocol",
     badge: "Gerador de Protocolo",
     image: "../img/Protocolo.png",
