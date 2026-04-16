@@ -333,6 +333,7 @@ export async function saveAgentContext(req, res) {
         ? req.body.processo.map((v) => String(v).trim().slice(0, 50)).slice(0, 10)
         : [],
       problema,
+      dor: "",
     };
 
     const userEmail = getUserEmail(req);
