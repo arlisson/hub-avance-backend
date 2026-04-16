@@ -361,6 +361,10 @@ export async function saveAgentContext(req, res) {
         PRIMARY KEY (user_email)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    await pool.query(`
+      ALTER TABLE perfil_cliente
+      ADD COLUMN IF NOT EXISTS ebook_temp MEDIUMTEXT NULL DEFAULT NULL
+    `);
   } catch (err) {
     console.error("[agent.controller] Erro ao criar tabela perfil_cliente:", err.message);
   }
