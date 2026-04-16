@@ -337,6 +337,19 @@ export async function saveAgentContext(req, res) {
     };
 
     const userEmail = getUserEmail(req);
+
+    const [existing] = await pool.query(
+      "SELECT dados FROM perfil_cliente WHERE user_email = ? LIMIT 1",
+      [userEmail]
+    );
+    const existingDados = existing[0]?.dados
+      ? JSON.parse(existing[0].dados)
+      : {};
+
+    // Preserva campos preenchidos pelo agente ao salvar o formulário
+    contexto.dor             = existingDados.dor             || "";
+    contexto.historico_dores = existingDados.historico_dores || [];
+
     await pool.query(
       `INSERT INTO perfil_cliente (user_email, dados)
        VALUES (?, ?)
