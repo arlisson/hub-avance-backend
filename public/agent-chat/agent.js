@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnFecharContexto = document.getElementById("btnFecharModalContexto");
   const formContexto = document.getElementById("formContexto");
   const mensagemContexto = document.getElementById("mensagemContexto");
-  const CONTEXTO_KEY = "apolo_contexto_empresa";
+  const CONTEXTO_KEY = `apolo_contexto_empresa:${emailUser}`;
 
   function preencherFormContexto(saved) {
     if (!saved) return;
