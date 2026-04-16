@@ -280,12 +280,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (btnAbrirContexto) btnAbrirContexto.addEventListener("click", abrirModalContexto);
   if (btnFecharContexto) btnFecharContexto.addEventListener("click", fecharModalContexto);
-  if (modalContexto) {
-    modalContexto.addEventListener("click", (e) => {
-      if (e.target === modalContexto) fecharModalContexto();
-    });
-  }
-
   if (formContexto) {
     formContexto.addEventListener("submit", async (e) => {
       e.preventDefault();
