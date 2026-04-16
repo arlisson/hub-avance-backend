@@ -1268,6 +1268,18 @@ body.light-mode .context-btn:hover {
   overscroll-behavior: contain;
 }
 
+.modal-box-large .modal-header {
+  position: sticky;
+  top: -32px;
+  margin: -32px -32px 0;
+  padding: 24px 32px;
+  background-color: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 16px 16px 0 0;
+  z-index: 10;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
 .form-section {
   margin-bottom: 32px;
 }
