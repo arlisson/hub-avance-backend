@@ -340,10 +340,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function setInputLocked(locked) {
-    sendBtn.disabled = locked;
-    sendBtn.innerHTML = locked
-      ? '<span class="send-spinner"></span>'
-      : '<i class="ph ph-paper-plane-tilt"></i>';
+    sendBtn.style.display = locked ? "none" : "flex";
     userInput.disabled = locked;
     userInput.placeholder = locked
       ? "O Apolo está pensando na resposta..."

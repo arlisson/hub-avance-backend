@@ -425,20 +425,6 @@ body.light-mode .input-container:focus-within {
   opacity: 0.85;
 }
 
-.send-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: block;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 body.light-mode .send-btn {
   color: #ffffff;
 }
