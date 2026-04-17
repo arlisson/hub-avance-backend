@@ -33,6 +33,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.get("/paginaUnificada/index.html", (req, res) => {
+  res.redirect(301, "/");
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api", authRoutes);
@@ -49,10 +53,6 @@ app.use("/api", adminLeadsRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });
-});
-
-app.get("/paginaUnificada/index.html", (req, res) => {
-  res.redirect(301, "/");
 });
 
 app.get("/", (req, res) => {
