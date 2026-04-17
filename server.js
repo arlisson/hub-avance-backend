@@ -51,6 +51,10 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });
 });
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "paginaUnificada", "index.html"));
+});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log(`Servidor rodando na porta ${process.env.PORT || 3000}`);
 });
