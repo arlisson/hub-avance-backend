@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const chatMessages = document.getElementById("chat-messages");
   const userInput = document.querySelector(".input-container textarea");
   const sendBtn = document.querySelector(".send-btn");
+  const cancelBtn = document.querySelector(".cancel-btn");
   const themeToggle = document.getElementById("theme-toggle");
   const newChatBtn = document.querySelector(".new-chat-btn");
   const userEmailEl = document.getElementById("user-email");
@@ -347,6 +348,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     userInput.placeholder = locked
       ? "O Apolo está pensando na resposta..."
       : "Digite sua mensagem para o Apolo...";
+    if (cancelBtn) cancelBtn.style.display = locked ? "flex" : "none";
+  }
+
+  let cancelCurrentJob = null;
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      if (cancelCurrentJob) cancelCurrentJob();
+    });
   }
 
   async function sendMessage() {
@@ -363,6 +373,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     showLoading(chatMessages);
 
+    let cancelled = false;
+    let activeJobId = null;
+
+    cancelCurrentJob = () => {
+      cancelled = true;
+      if (activeJobId) {
+        fetch(`/api/agent/job/${activeJobId}`, { method: "DELETE", credentials: "include" }).catch(() => {});
+      }
+    };
+
     try {
       const startResp = await apiFetch(API_AGENT_CHAT_URL, {
         method: "POST",
@@ -373,15 +393,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error(startResp?.error || "Erro ao iniciar agente.");
       }
 
-      const jobId = startResp.jobId;
+      activeJobId = startResp.jobId;
       const deadline = Date.now() + 3 * 60 * 1000; // 3 minutos
 
       while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 3000));
 
+        if (cancelled) {
+          removeLoading();
+          appendMessage(chatMessages, chatState, storageKey, "bot", "Resposta cancelada.");
+          return;
+        }
+
         let poll = null;
         try {
-          const pollResp = await fetch(`/api/agent/result/${jobId}`, {
+          const pollResp = await fetch(`/api/agent/result/${activeJobId}`, {
             credentials: "include",
             headers: { Accept: "application/json" },
           });
@@ -413,6 +439,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       appendMessage(chatMessages, chatState, storageKey, "bot", err?.message || "Erro de conexão.");
     } finally {
+      cancelCurrentJob = null;
       isProcessing = false;
       const isOnline = document.getElementById("status-dot")?.classList.contains("online");
       if (isOnline) setInputLocked(false);

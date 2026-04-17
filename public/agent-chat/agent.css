@@ -443,6 +443,27 @@ body.light-mode .send-btn {
   color: #ffffff;
 }
 
+.cancel-btn {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+  transition: 0.2s;
+  border: 1.5px solid var(--text-secondary);
+}
+
+.cancel-btn:hover {
+  color: #e05555;
+  border-color: #e05555;
+  transform: scale(1.05);
+}
+
 .footer-text {
   font-size: 12px;
   color: var(--text-secondary);

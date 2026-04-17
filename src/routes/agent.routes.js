@@ -6,6 +6,7 @@ import {
   deleteAgentApiKey,
   sendAgentMessage,
   getAgentJobResult,
+  cancelAgentJob,
   receiveAgentCallback,
   requireClienteAvance,
   getAgentContext,
@@ -26,6 +27,7 @@ router.post("/agent/api-key", authenticateToken, requireClienteAvance, saveAgent
 router.delete("/agent/api-key", authenticateToken, requireClienteAvance, deleteAgentApiKey);
 router.post("/agent", authenticateToken, requireClienteAvance, sendAgentMessage);
 router.get("/agent/result/:jobId", authenticateToken, requireClienteAvance, getAgentJobResult);
+router.delete("/agent/job/:jobId", authenticateToken, requireClienteAvance, cancelAgentJob);
 router.post("/agent/callback/:jobId", receiveAgentCallback);
 
 router.get("/agent/context", authenticateToken, requireClienteAvance, getAgentContext);

@@ -283,6 +283,12 @@ export async function receiveAgentCallback(req, res) {
   return res.json({ ok: true });
 }
 
+export async function cancelAgentJob(req, res) {
+  const jobId = String(req.params.jobId || "");
+  await pool.query("DELETE FROM agent_jobs WHERE job_id = ?", [jobId]).catch(() => {});
+  return res.json({ ok: true });
+}
+
 export async function getAgentJobResult(req, res) {
   const jobId = String(req.params.jobId || "");
 
