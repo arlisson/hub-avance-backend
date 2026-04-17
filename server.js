@@ -51,6 +51,10 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Servidor funcionando" });
 });
 
+app.get("/paginaUnificada/index.html", (req, res) => {
+  res.redirect(301, "/");
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "paginaUnificada", "index.html"));
 });
