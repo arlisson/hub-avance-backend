@@ -231,7 +231,7 @@ function criarLinhaFiltro() {
   grpColuna.innerHTML = '<label class="filter-label">Coluna</label>';
   const sel = document.createElement("select");
   sel.className = "input-dark-lite filtro-coluna";
-  sel.innerHTML = '<option value="">-- Todas as colunas --</option>';
+  sel.innerHTML = '<option value="">Todas as colunas</option>';
   for (const col of colunasDisponiveis) {
     const opt = document.createElement("option");
     opt.value = col;
@@ -354,7 +354,7 @@ function renderTabela(rows, total) {
 }
 
 // ── EXPORTAR ──────────────────────────────────────────────
-function exportar() {
+async function exportar() {
   const filtros = [];
   document.querySelectorAll(".filter-row").forEach((row) => {
     const coluna = row.querySelector(".filtro-coluna")?.value || "";
@@ -364,11 +364,29 @@ function exportar() {
 
   const params = new URLSearchParams();
   if (filtros.length) params.set("filtros", JSON.stringify(filtros));
-  params.set("sid", sessionId);
 
-  const a = document.createElement("a");
-  a.href = `/api/planilhas/exportar?${params}`;
-  a.click();
+  try {
+    const res = await fetch(`/api/planilhas/exportar?${params}`, {
+      headers: cofreHeaders(),
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Erro ao exportar." }));
+      alert(data.error || "Erro ao exportar.");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "resultado_cofre.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("Erro ao exportar: " + err.message);
+  }
 }
 
 // ── HELPERS ───────────────────────────────────────────────
