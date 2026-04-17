@@ -12,7 +12,7 @@ function cofreHeaders() {
   return { "x-session-id": sessionId };
 }
 
-// ── API FETCH (mesmo padrão das demais ferramentas) ──────
+// ── API FETCH ────────────────────────────────────────────
 async function apiFetch(url, { method = "GET", body } = {}) {
   const headers = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -37,15 +37,18 @@ async function apiFetch(url, { method = "GET", body } = {}) {
   return data;
 }
 
+// ── COLUNAS (estado global) ──────────────────────────────
+let colunasDisponiveis = [];
+
 // ── INIT ─────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  const themeToggle  = document.getElementById("theme-toggle");
-  const settingsBtn  = document.getElementById("settings-btn");
-  const settingsMenu = document.getElementById("settings-menu");
-  const menuBackHub  = document.getElementById("menu-back-hub");
-  const menuLogout   = document.getElementById("menu-logout");
+  const themeToggle   = document.getElementById("theme-toggle");
+  const settingsBtn   = document.getElementById("settings-btn");
+  const settingsMenu  = document.getElementById("settings-menu");
+  const menuBackHub   = document.getElementById("menu-back-hub");
+  const menuLogout    = document.getElementById("menu-logout");
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
-  const userEmailEl  = document.getElementById("user-email");
+  const userEmailEl   = document.getElementById("user-email");
 
   initTheme(themeToggle);
   initSettingsMenu(settingsBtn, settingsMenu);
@@ -65,10 +68,35 @@ document.addEventListener("DOMContentLoaded", async () => {
       userEmailEl.textContent = me.user.email || "";
       userEmailEl.title = me.user.email || "";
     }
-  } catch (err) {
+  } catch {
     window.location.href = LOGIN_URL;
     return;
   }
+
+  // Upload
+  const uploadArea   = document.getElementById("upload-area");
+  const fileInput    = document.getElementById("file-input");
+
+  uploadArea?.addEventListener("click", () => fileInput.click());
+  uploadArea?.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    uploadArea.classList.add("drag-over");
+  });
+  uploadArea?.addEventListener("dragleave", () => uploadArea.classList.remove("drag-over"));
+  uploadArea?.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove("drag-over");
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput?.addEventListener("change", () => handleFiles(fileInput.files));
+
+  // Filtros
+  document.getElementById("btn-add-filtro")?.addEventListener("click", adicionarFiltro);
+  document.getElementById("btn-buscar")?.addEventListener("click", buscar);
+  document.getElementById("btn-export")?.addEventListener("click", exportar);
+
+  // Linha inicial de filtro
+  adicionarFiltro();
 
   // Carrega estado inicial
   await carregarLista();
@@ -85,25 +113,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ── UPLOAD ───────────────────────────────────────────────
-const uploadArea   = document.getElementById("upload-area");
-const fileInput    = document.getElementById("file-input");
-const uploadStatus = document.getElementById("upload-status");
-
-uploadArea?.addEventListener("click", () => fileInput.click());
-
-uploadArea?.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  uploadArea.classList.add("drag-over");
-});
-uploadArea?.addEventListener("dragleave", () => uploadArea.classList.remove("drag-over"));
-uploadArea?.addEventListener("drop", (e) => {
-  e.preventDefault();
-  uploadArea.classList.remove("drag-over");
-  handleFiles(e.dataTransfer.files);
-});
-fileInput?.addEventListener("change", () => handleFiles(fileInput.files));
-
 async function handleFiles(files) {
+  const fileInput = document.getElementById("file-input");
   for (const file of files) {
     setStatus("Enviando " + file.name + "…", "");
     const fd = new FormData();
@@ -128,6 +139,7 @@ async function handleFiles(files) {
 }
 
 function setStatus(msg, tipo) {
+  const uploadStatus = document.getElementById("upload-status");
   if (!uploadStatus) return;
   uploadStatus.textContent = msg;
   uploadStatus.className = "upload-status" + (tipo ? " " + tipo : "");
@@ -182,8 +194,6 @@ async function deletarPlanilha(id) {
 }
 
 // ── COLUNAS ──────────────────────────────────────────────
-let colunasDisponiveis = [];
-
 async function carregarColunas() {
   try {
     const res = await fetch("/api/planilhas/colunas", {
@@ -261,14 +271,7 @@ function adicionarFiltro() {
   if (lista) lista.appendChild(criarLinhaFiltro());
 }
 
-document.getElementById("btn-add-filtro")?.addEventListener("click", adicionarFiltro);
-
-// Linha inicial ao carregar
-adicionarFiltro();
-
 // ── BUSCA ─────────────────────────────────────────────────
-document.getElementById("btn-buscar")?.addEventListener("click", buscar);
-
 async function buscar() {
   const tableWrapper = document.getElementById("table-wrapper");
   const resultsBar   = document.getElementById("results-bar");
@@ -351,7 +354,7 @@ function renderTabela(rows, total) {
 }
 
 // ── EXPORTAR ──────────────────────────────────────────────
-document.getElementById("btn-export")?.addEventListener("click", () => {
+function exportar() {
   const filtros = [];
   document.querySelectorAll(".filter-row").forEach((row) => {
     const coluna = row.querySelector(".filtro-coluna")?.value || "";
@@ -366,7 +369,7 @@ document.getElementById("btn-export")?.addEventListener("click", () => {
   const a = document.createElement("a");
   a.href = `/api/planilhas/exportar?${params}`;
   a.click();
-});
+}
 
 // ── HELPERS ───────────────────────────────────────────────
 function escHtml(str) {
