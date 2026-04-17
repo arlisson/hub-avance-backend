@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cofre de Planilhas</title>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="./cofre.css?v=1" />
+</head>
+<body>
+
+  <header class="topbar">
+    <a href="/paginaUnificada/index.html" class="topbar-back">
+      <i class="ph ph-arrow-left"></i>
+      Voltar ao Hub
+    </a>
+    <div class="topbar-title">
+      <i class="ph ph-vault"></i>
+      Cofre de Planilhas
+    </div>
+    <span class="topbar-hint">Dados temporários — apagados ao fechar esta aba</span>
+  </header>
+
+  <main class="layout">
+
+    <!-- COLUNA ESQUERDA: upload + lista -->
+    <aside class="panel panel-left">
+      <h2 class="panel-title"><i class="ph ph-upload-simple"></i> Upload</h2>
+
+      <label class="upload-area" id="upload-area">
+        <input type="file" id="file-input" accept=".xlsx,.xls" multiple hidden />
+        <i class="ph ph-file-xls upload-icon"></i>
+        <span class="upload-label">Clique ou arraste arquivos .xlsx</span>
+        <span class="upload-sub">Até 10 MB por arquivo</span>
+      </label>
+
+      <div id="upload-status" class="upload-status"></div>
+
+      <h2 class="panel-title mt"><i class="ph ph-stack"></i> Planilhas carregadas</h2>
+
+      <ul class="file-list" id="file-list">
+        <li class="file-list-empty">Nenhuma planilha carregada.</li>
+      </ul>
+    </aside>
+
+    <!-- COLUNA DIREITA: filtro + resultados -->
+    <section class="panel panel-right">
+      <h2 class="panel-title"><i class="ph ph-funnel"></i> Filtrar dados</h2>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">Coluna</label>
+          <select id="sel-coluna" class="filter-input">
+            <option value="">-- Todas as colunas --</option>
+          </select>
+        </div>
+        <div class="filter-group filter-group-valor">
+          <label class="filter-label">Contém</label>
+          <input type="text" id="inp-valor" class="filter-input" placeholder="Digite o valor..." />
+        </div>
+        <button class="btn-buscar" id="btn-buscar">
+          <i class="ph ph-magnifying-glass"></i>
+          Buscar
+        </button>
+      </div>
+
+      <div class="results-header" id="results-header" hidden>
+        <span id="results-count"></span>
+        <button class="btn-export" id="btn-export">
+          <i class="ph ph-download-simple"></i>
+          Exportar .xlsx
+        </button>
+      </div>
+
+      <div class="table-wrapper" id="table-wrapper">
+        <p class="table-placeholder">Faça upload de planilhas e clique em Buscar.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="./cofre.js?v=1"></script>
+</body>
+</html>
