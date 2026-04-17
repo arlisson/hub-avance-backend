@@ -326,7 +326,7 @@ function renderTabela(rows, total) {
   const trHead = document.createElement("tr");
   for (const col of colunas) {
     const th = document.createElement("th");
-    th.textContent = col;
+    th.textContent = col.startsWith("_") ? col.slice(1) : col;
     trHead.appendChild(th);
   }
   thead.appendChild(trHead);

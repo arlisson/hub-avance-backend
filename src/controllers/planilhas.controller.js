@@ -9,7 +9,7 @@ import { randomBytes } from "crypto";
       CREATE TABLE IF NOT EXISTS planilhas_sessao (
         id         INT AUTO_INCREMENT PRIMARY KEY,
         session_id VARCHAR(64) NOT NULL,
-        nomearquivo VARCHAR(255) NOT NULL,
+        nome_arquivo VARCHAR(255) NOT NULL,
         dados      MEDIUMTEXT NOT NULL,
         criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_session (session_id)
@@ -34,7 +34,7 @@ export async function uploadPlanilha(req, res) {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
-    if (!req.file) return res.status(400).json({ ok: false, error: "Nenhum arquivo enviado." });
+    if (!req.file) return res.status(400).json({ ok: false, error: "Nenhum _arquivo enviado." });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
@@ -43,7 +43,7 @@ export async function uploadPlanilha(req, res) {
     if (!dados.length) return res.status(400).json({ ok: false, error: "Planilha vazia ou sem dados." });
 
     await pool.query(
-      "INSERT INTO planilhas_sessao (session_id, nomearquivo, dados) VALUES (?, ?, ?)",
+      "INSERT INTO planilhas_sessao (session_id, nome_arquivo, dados) VALUES (?, ?, ?)",
       [sessionId, req.file.originalname, JSON.stringify(dados)]
     );
 
@@ -60,7 +60,7 @@ export async function listarPlanilhas(req, res) {
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
     const [rows] = await pool.query(
-      "SELECT id, nomearquivo, criado_em FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
+      "SELECT id, nome_arquivo, criado_em FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
       [sessionId]
     );
 
@@ -140,7 +140,7 @@ export async function buscarDados(req, res) {
     const filtros = parseFiltros(req.query.filtros);
 
     const [rows] = await pool.query(
-      "SELECT nomearquivo, dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
       [sessionId]
     );
 
@@ -149,7 +149,7 @@ export async function buscarDados(req, res) {
       const dados = JSON.parse(row.dados);
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
-          resultados.push({ arquivo: row.nomearquivo, ...linha });
+          resultados.push({ _arquivo: row.nome_arquivo, ...linha });
         }
       }
     }
@@ -169,7 +169,7 @@ export async function exportarResultados(req, res) {
     const filtros = parseFiltros(req.query.filtros);
 
     const [rows] = await pool.query(
-      "SELECT nomearquivo, dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
       [sessionId]
     );
 
@@ -178,7 +178,7 @@ export async function exportarResultados(req, res) {
       const dados = JSON.parse(row.dados);
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
-          resultados.push({ arquivo: row.nomearquivo, ...linha });
+          resultados.push({ _arquivo: row.nome_arquivo, ...linha });
         }
       }
     }
