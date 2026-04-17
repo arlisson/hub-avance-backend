@@ -96,17 +96,13 @@
         <section class="cofre-panel cofre-panel-right">
           <h2 class="section-title"><i class="ph ph-funnel"></i> Filtrar dados</h2>
 
-          <div class="filter-row">
-            <div class="filter-group">
-              <label class="filter-label">Coluna</label>
-              <select id="sel-coluna" class="input-dark-lite">
-                <option value="">-- Todas --</option>
-              </select>
-            </div>
-            <div class="filter-group filter-group-grow">
-              <label class="filter-label">Contém</label>
-              <input type="text" id="inp-valor" class="input-dark-lite" placeholder="Digite o valor..." />
-            </div>
+          <div id="filtros-lista"></div>
+
+          <div class="filter-actions-row">
+            <button class="btn-add-filtro" id="btn-add-filtro" type="button">
+              <i class="ph ph-plus"></i>
+              Adicionar filtro
+            </button>
             <button class="btn-primary filter-btn" id="btn-buscar" type="button">
               <i class="ph ph-magnifying-glass"></i>
               Buscar

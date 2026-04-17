@@ -176,14 +176,15 @@ async function deletarPlanilha(id) {
     headers: cofreHeaders(),
     credentials: "include",
   }).catch(() => {});
+  setStatus("", "");
   await carregarLista();
   await carregarColunas();
 }
 
 // ── COLUNAS ──────────────────────────────────────────────
+let colunasDisponiveis = [];
+
 async function carregarColunas() {
-  const selColuna = document.getElementById("sel-coluna");
-  if (!selColuna) return;
   try {
     const res = await fetch("/api/planilhas/colunas", {
       headers: cofreHeaders(),
@@ -191,38 +192,100 @@ async function carregarColunas() {
     });
     const data = await res.json();
     if (!data.ok) return;
-
-    const atual = selColuna.value;
-    selColuna.innerHTML = '<option value="">-- Todas as colunas --</option>';
-    for (const col of data.colunas) {
-      const opt = document.createElement("option");
-      opt.value = col;
-      opt.textContent = col;
-      selColuna.appendChild(opt);
-    }
-    if (atual) selColuna.value = atual;
+    colunasDisponiveis = data.colunas;
+    atualizarTodosSelects();
   } catch {}
 }
 
+function atualizarTodosSelects() {
+  document.querySelectorAll(".filtro-coluna").forEach((sel) => {
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">-- Todas as colunas --</option>';
+    for (const col of colunasDisponiveis) {
+      const opt = document.createElement("option");
+      opt.value = col;
+      opt.textContent = col;
+      sel.appendChild(opt);
+    }
+    if (atual) sel.value = atual;
+  });
+}
+
+// ── FILTROS DINÂMICOS ────────────────────────────────────
+function criarLinhaFiltro() {
+  const row = document.createElement("div");
+  row.className = "filter-row";
+
+  const grpColuna = document.createElement("div");
+  grpColuna.className = "filter-group";
+  grpColuna.innerHTML = '<label class="filter-label">Coluna</label>';
+  const sel = document.createElement("select");
+  sel.className = "input-dark-lite filtro-coluna";
+  sel.innerHTML = '<option value="">-- Todas as colunas --</option>';
+  for (const col of colunasDisponiveis) {
+    const opt = document.createElement("option");
+    opt.value = col;
+    opt.textContent = col;
+    sel.appendChild(opt);
+  }
+  grpColuna.appendChild(sel);
+
+  const grpValor = document.createElement("div");
+  grpValor.className = "filter-group filter-group-grow";
+  grpValor.innerHTML = '<label class="filter-label">Contém</label>';
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.className = "input-dark-lite filtro-valor";
+  inp.placeholder = "Digite o valor...";
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") buscar(); });
+  grpValor.appendChild(inp);
+
+  const btnRem = document.createElement("button");
+  btnRem.type = "button";
+  btnRem.className = "btn-remove-filtro";
+  btnRem.title = "Remover filtro";
+  btnRem.innerHTML = '<i class="ph ph-x"></i>';
+  btnRem.addEventListener("click", () => {
+    row.remove();
+    if (!document.querySelectorAll(".filter-row").length) adicionarFiltro();
+  });
+
+  row.appendChild(grpColuna);
+  row.appendChild(grpValor);
+  row.appendChild(btnRem);
+  return row;
+}
+
+function adicionarFiltro() {
+  const lista = document.getElementById("filtros-lista");
+  if (lista) lista.appendChild(criarLinhaFiltro());
+}
+
+document.getElementById("btn-add-filtro")?.addEventListener("click", adicionarFiltro);
+
+// Linha inicial ao carregar
+adicionarFiltro();
+
 // ── BUSCA ─────────────────────────────────────────────────
 document.getElementById("btn-buscar")?.addEventListener("click", buscar);
-document.getElementById("inp-valor")?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") buscar();
-});
 
 async function buscar() {
-  const coluna = document.getElementById("sel-coluna")?.value || "";
-  const valor  = document.getElementById("inp-valor")?.value.trim() || "";
   const tableWrapper = document.getElementById("table-wrapper");
   const resultsBar   = document.getElementById("results-bar");
 
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
 
+  const filtros = [];
+  document.querySelectorAll(".filter-row").forEach((row) => {
+    const coluna = row.querySelector(".filtro-coluna")?.value || "";
+    const valor  = row.querySelector(".filtro-valor")?.value.trim() || "";
+    if (coluna || valor) filtros.push({ coluna, valor });
+  });
+
   try {
     const params = new URLSearchParams();
-    if (coluna) params.set("coluna", coluna);
-    if (valor)  params.set("valor",  valor);
+    if (filtros.length) params.set("filtros", JSON.stringify(filtros));
 
     const res = await fetch(`/api/planilhas/buscar?${params}`, {
       headers: cofreHeaders(),
@@ -289,11 +352,15 @@ function renderTabela(rows, total) {
 
 // ── EXPORTAR ──────────────────────────────────────────────
 document.getElementById("btn-export")?.addEventListener("click", () => {
-  const coluna = document.getElementById("sel-coluna")?.value || "";
-  const valor  = document.getElementById("inp-valor")?.value.trim() || "";
+  const filtros = [];
+  document.querySelectorAll(".filter-row").forEach((row) => {
+    const coluna = row.querySelector(".filtro-coluna")?.value || "";
+    const valor  = row.querySelector(".filtro-valor")?.value.trim() || "";
+    if (coluna || valor) filtros.push({ coluna, valor });
+  });
+
   const params = new URLSearchParams();
-  if (coluna) params.set("coluna", coluna);
-  if (valor)  params.set("valor", valor);
+  if (filtros.length) params.set("filtros", JSON.stringify(filtros));
   params.set("sid", sessionId);
 
   const a = document.createElement("a");

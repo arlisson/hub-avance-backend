@@ -103,13 +103,41 @@ export async function limparSessao(req, res) {
   }
 }
 
+function parseFiltros(raw) {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((f) => ({ coluna: String(f.coluna || "").trim(), valor: String(f.valor || "").trim() }))
+      .filter((f) => f.coluna || f.valor);
+  } catch {
+    return [];
+  }
+}
+
+function linhaPassaFiltros(linha, filtros) {
+  for (const { coluna, valor } of filtros) {
+    if (!coluna) {
+      // sem coluna: busca em todos os campos
+      const achado = Object.values(linha).some((v) =>
+        String(v ?? "").toLowerCase().includes(valor.toLowerCase())
+      );
+      if (!achado) return false;
+    } else {
+      const cellValue = String(linha[coluna] ?? "").toLowerCase();
+      if (!cellValue.includes(valor.toLowerCase())) return false;
+    }
+  }
+  return true;
+}
+
 export async function buscarDados(req, res) {
   try {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
-    const coluna = String(req.query.coluna || "").trim();
-    const valor  = String(req.query.valor  || "").trim();
+    const filtros = parseFiltros(req.query.filtros);
 
     const [rows] = await pool.query(
       "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
@@ -117,17 +145,10 @@ export async function buscarDados(req, res) {
     );
 
     const resultados = [];
-
     for (const row of rows) {
       const dados = JSON.parse(row.dados);
       for (const linha of dados) {
-        if (!coluna) {
-          // sem filtro: retorna tudo
-          resultados.push({ _arquivo: row.nome_arquivo, ...linha });
-          continue;
-        }
-        const cellValue = String(linha[coluna] ?? "").toLowerCase();
-        if (cellValue.includes(valor.toLowerCase())) {
+        if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
           resultados.push({ _arquivo: row.nome_arquivo, ...linha });
         }
       }
@@ -145,8 +166,7 @@ export async function exportarResultados(req, res) {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
-    const coluna = String(req.query.coluna || "").trim();
-    const valor  = String(req.query.valor  || "").trim();
+    const filtros = parseFiltros(req.query.filtros);
 
     const [rows] = await pool.query(
       "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
@@ -154,16 +174,10 @@ export async function exportarResultados(req, res) {
     );
 
     const resultados = [];
-
     for (const row of rows) {
       const dados = JSON.parse(row.dados);
       for (const linha of dados) {
-        if (!coluna) {
-          resultados.push({ _arquivo: row.nome_arquivo, ...linha });
-          continue;
-        }
-        const cellValue = String(linha[coluna] ?? "").toLowerCase();
-        if (cellValue.includes(valor.toLowerCase())) {
+        if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
           resultados.push({ _arquivo: row.nome_arquivo, ...linha });
         }
       }
