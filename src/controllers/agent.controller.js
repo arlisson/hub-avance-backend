@@ -210,13 +210,27 @@ export async function deleteAgentApiKey(req, res) {
   }
 }
 
-// Jobs em memória: jobId -> { status, output, error }
-const agentJobs = new Map();
+async function ensureJobsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS agent_jobs (
+      job_id VARCHAR(32) PRIMARY KEY,
+      status ENUM('pending','done','error') NOT NULL DEFAULT 'pending',
+      output MEDIUMTEXT,
+      error TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+ensureJobsTable().catch(console.error);
 
-function createJob() {
+// Limpa jobs com mais de 30 minutos a cada 10 minutos
+setInterval(async () => {
+  await pool.query("DELETE FROM agent_jobs WHERE created_at < NOW() - INTERVAL 30 MINUTE").catch(() => {});
+}, 10 * 60 * 1000);
+
+async function createJob() {
   const jobId = randomBytes(16).toString("hex");
-  agentJobs.set(jobId, { status: "pending" });
-  setTimeout(() => agentJobs.delete(jobId), 10 * 60 * 1000);
+  await pool.query("INSERT INTO agent_jobs (job_id, status) VALUES (?, 'pending')", [jobId]);
   return jobId;
 }
 
@@ -242,7 +256,7 @@ export async function sendAgentMessage(req, res) {
     });
   }
 
-  const jobId = createJob();
+  const jobId = await createJob();
 
   // Dispara n8n sem aguardar — n8n chama /api/agent/callback/:jobId quando terminar
   triggerN8nAgent({ chatInput, sessionId, email, apiKey: decryptApiKey(storedKey), jobId });
@@ -250,7 +264,7 @@ export async function sendAgentMessage(req, res) {
   return res.json({ ok: true, jobId });
 }
 
-export function receiveAgentCallback(req, res) {
+export async function receiveAgentCallback(req, res) {
   const jobId = String(req.params.jobId || "");
   const secret = String(req.headers["x-callback-secret"] || "");
 
@@ -258,29 +272,32 @@ export function receiveAgentCallback(req, res) {
     return res.status(403).json({ ok: false, error: "Não autorizado." });
   }
 
-  if (!agentJobs.has(jobId)) {
+  const [rows] = await pool.query("SELECT job_id FROM agent_jobs WHERE job_id = ?", [jobId]);
+  if (!rows.length) {
     return res.status(404).json({ ok: false, error: "Job não encontrado ou expirado." });
   }
 
   const output = String(req.body?.output || "");
-  agentJobs.set(jobId, { status: "done", output });
+  await pool.query("UPDATE agent_jobs SET status = 'done', output = ? WHERE job_id = ?", [output, jobId]);
 
   return res.json({ ok: true });
 }
 
-export function getAgentJobResult(req, res) {
+export async function getAgentJobResult(req, res) {
   const jobId = String(req.params.jobId || "");
-  const job = agentJobs.get(jobId);
 
-  if (!job) {
+  const [rows] = await pool.query("SELECT status, output, error FROM agent_jobs WHERE job_id = ?", [jobId]);
+  if (!rows.length) {
     return res.status(404).json({ ok: false, error: "Job não encontrado." });
   }
+
+  const job = rows[0];
 
   if (job.status === "pending") {
     return res.json({ ok: true, status: "pending" });
   }
 
-  agentJobs.delete(jobId);
+  await pool.query("DELETE FROM agent_jobs WHERE job_id = ?", [jobId]);
 
   if (job.status === "error") {
     return res.json({ ok: false, error: job.error });
