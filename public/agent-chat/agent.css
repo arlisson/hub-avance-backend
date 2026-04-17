@@ -430,8 +430,8 @@ body.light-mode .send-btn {
 }
 
 .cancel-btn {
-  background-color: var(--accent-cyan);
-  color: var(--bg-sidebar);
+  background-color: var(--bg-sidebar);
+  color: var(--accent-cyan);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -445,7 +445,7 @@ body.light-mode .send-btn {
 }
 
 .cancel-btn:hover {
-  background-color: #e05555;
+  color: #e05555;
   transform: scale(1.05);
 }
 
