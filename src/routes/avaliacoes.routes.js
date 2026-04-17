@@ -4,7 +4,7 @@ import { authenticateToken } from "../middlewares/auth.js";
 
 const router = Router();
 
-router.get("/avaliacoes", authenticateToken, listAvaliacoes);
+router.get("/avaliacoes", listAvaliacoes);
 router.post("/avaliacoes/nova", authenticateToken, criarAvaliacaoSite);
 
 export default router;

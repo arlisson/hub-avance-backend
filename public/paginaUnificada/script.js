@@ -1863,6 +1863,9 @@ function applyAuthenticatedState(user, profile) {
     });
   }
 
+  const footerRatingSection = document.getElementById("footer-rating-section");
+  if (footerRatingSection) footerRatingSection.hidden = false;
+
   initAppModal();
   renderHubCards({ canAccessProtocol });
 }
@@ -1882,6 +1885,9 @@ function applyVisitorState() {
     loginBtnVisitor.style.display = "";
     loginBtnVisitor.href = normalizeLoginUrl(LOGIN_URL);
   }
+
+  const footerRatingSection = document.getElementById("footer-rating-section");
+  if (footerRatingSection) footerRatingSection.hidden = true;
 
   renderHubCards({ canAccessProtocol: false });
   initAppModal();
