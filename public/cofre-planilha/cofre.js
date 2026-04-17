@@ -209,7 +209,7 @@ async function carregarColunas() {
 function atualizarTodosSelects() {
   document.querySelectorAll(".filtro-coluna").forEach((sel) => {
     const atual = sel.value;
-    sel.innerHTML = '<option value="">-- Todas as colunas --</option>';
+    sel.innerHTML = '<option value="">Todas as colunas</option>';
     for (const col of colunasDisponiveis) {
       const opt = document.createElement("option");
       opt.value = col;

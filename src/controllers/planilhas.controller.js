@@ -9,7 +9,7 @@ import { randomBytes } from "crypto";
       CREATE TABLE IF NOT EXISTS planilhas_sessao (
         id         INT AUTO_INCREMENT PRIMARY KEY,
         session_id VARCHAR(64) NOT NULL,
-        nome_arquivo VARCHAR(255) NOT NULL,
+        nomearquivo VARCHAR(255) NOT NULL,
         dados      MEDIUMTEXT NOT NULL,
         criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_session (session_id)
@@ -43,7 +43,7 @@ export async function uploadPlanilha(req, res) {
     if (!dados.length) return res.status(400).json({ ok: false, error: "Planilha vazia ou sem dados." });
 
     await pool.query(
-      "INSERT INTO planilhas_sessao (session_id, nome_arquivo, dados) VALUES (?, ?, ?)",
+      "INSERT INTO planilhas_sessao (session_id, nomearquivo, dados) VALUES (?, ?, ?)",
       [sessionId, req.file.originalname, JSON.stringify(dados)]
     );
 
@@ -60,7 +60,7 @@ export async function listarPlanilhas(req, res) {
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
     const [rows] = await pool.query(
-      "SELECT id, nome_arquivo, criado_em FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
+      "SELECT id, nomearquivo, criado_em FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
       [sessionId]
     );
 
@@ -140,7 +140,7 @@ export async function buscarDados(req, res) {
     const filtros = parseFiltros(req.query.filtros);
 
     const [rows] = await pool.query(
-      "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT nomearquivo, dados FROM planilhas_sessao WHERE session_id = ?",
       [sessionId]
     );
 
@@ -149,7 +149,7 @@ export async function buscarDados(req, res) {
       const dados = JSON.parse(row.dados);
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
-          resultados.push({ _arquivo: row.nome_arquivo, ...linha });
+          resultados.push({ arquivo: row.nomearquivo, ...linha });
         }
       }
     }
@@ -169,7 +169,7 @@ export async function exportarResultados(req, res) {
     const filtros = parseFiltros(req.query.filtros);
 
     const [rows] = await pool.query(
-      "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT nomearquivo, dados FROM planilhas_sessao WHERE session_id = ?",
       [sessionId]
     );
 
@@ -178,7 +178,7 @@ export async function exportarResultados(req, res) {
       const dados = JSON.parse(row.dados);
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
-          resultados.push({ _arquivo: row.nome_arquivo, ...linha });
+          resultados.push({ arquivo: row.nomearquivo, ...linha });
         }
       }
     }
