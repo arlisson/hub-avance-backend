@@ -174,6 +174,7 @@ body:not(.light-mode) .dropdown-item.danger { color:#ff4444; }
 .upload-status { font-size:13px; min-height:16px; color:var(--text-secondary); flex-shrink:0; }
 .upload-status.ok { color:var(--success); }
 .upload-status.err { color:var(--danger); }
+.upload-status.warn { color:#f59e0b; }
 
 /* ── 8. LISTA DE ARQUIVOS ── */
 .file-list { list-style:none; display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; }
@@ -409,7 +410,46 @@ body.light-mode .table-wrapper { background: white; }
 .col-reorder-item { background:var(--bg-hover); border:1px solid var(--border-color); border-radius:10px; padding:12px 16px; transition:all .2s; }
 .col-reorder-item:hover { border-color: var(--accent-cyan); background: rgba(87,197,234, 0.05); }
 
-/* ── 16. MOBILE ── */
+/* ── 16. PAGINAÇÃO ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 0 4px;
+  flex-shrink: 0;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-width: 130px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.btn-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-page:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(87, 197, 234, 0.05);
+}
+.btn-page:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── 17. MOBILE ── */
 @media (max-width:768px) {
   .sidebar { position:fixed; left:-280px; top:0; bottom:0; z-index:100; transition:left .3s; }
   body.sidebar-open .sidebar { left:0; }

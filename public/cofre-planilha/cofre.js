@@ -1,39 +1,46 @@
 const LOGIN_URL    = "/login/login.html";
 const HUB_URL      = "/paginaUnificada/index.html";
 const MAX_SIZE     = 200 * 1024 * 1024; // 200 MB
+const WARN_SIZE    =  15 * 1024 * 1024; // 15 MB — avisa que pode ser lento
+const WARN_ROWS    = 50_000;            // 50k linhas — avisa sobre filtros lentos
+const PAGE_SIZE    = 200;               // linhas por página na tabela de resultados
 
 // ── ESTADO LOCAL ──────────────────────────────────────────
-let planilhas     = []; // [{ id, nome, dados, colunas }]
-let nextId        = 1;
-let ultimasColunas = [];
+let planilhas       = []; // [{ id, nome, colunas }] — dados ficam só no IndexedDB
+let nextId          = 1;
+let ultimasColunas  = [];
+let totalResultados = [];
+let paginaAtual     = 1;
 
 // ── BANCO DE DADOS LOCAL (IndexedDB) ──────────────────────
-const DB_NAME = "CofrePlanilhasDB";
-const DB_VERSION = 1;
-const STORE_NAME = "planilhas";
+const DB_NAME    = "CofrePlanilhasDB";
+const DB_VERSION = 2;
+const STORE_META  = "planilhas_meta";
+const STORE_DADOS = "planilhas_dados";
 
 function abrirDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    // Configura o timeout para evitar que o site fique travado se o DB não responder
     const timeout = setTimeout(() => reject("Timeout ao abrir banco de dados"), 5000);
 
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+      // Remove store legado do v1 (dados eram armazenados juntos com metadados)
+      if (db.objectStoreNames.contains("planilhas")) {
+        db.deleteObjectStore("planilhas");
+      }
+      if (!db.objectStoreNames.contains(STORE_META)) {
+        db.createObjectStore(STORE_META, { keyPath: "id", autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(STORE_DADOS)) {
+        db.createObjectStore(STORE_DADOS, { keyPath: "id" });
       }
     };
 
     request.onsuccess = (e) => {
       clearTimeout(timeout);
       const db = e.target.result;
-      // Garante que o banco seja fechado se a página for recarregada ou fechada
-      db.onversionchange = () => {
-        db.close();
-        window.location.reload();
-      };
+      db.onversionchange = () => { db.close(); window.location.reload(); };
       resolve(db);
     };
 
@@ -42,26 +49,27 @@ function abrirDB() {
       console.error("Erro IndexedDB:", e.target.error);
       reject("Erro ao abrir IndexedDB");
     };
-    
+
     request.onblocked = () => {
       console.warn("Abertura do banco bloqueada por outra aba/conexão.");
     };
   });
 }
 
-async function salvarPlanilhaLocal(planilha) {
+async function salvarPlanilhaLocal({ nome, colunas, dados }) {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const { id, ...dadosSemId } = planilha;
-      const request = store.add(dadosSemId);
-      request.onsuccess = (e) => {
-        planilha.id = e.target.result;
-        resolve(e.target.result);
+      const tx        = db.transaction([STORE_META, STORE_DADOS], "readwrite");
+      const metaStore  = tx.objectStore(STORE_META);
+      const dadosStore = tx.objectStore(STORE_DADOS);
+      const req = metaStore.add({ nome, colunas });
+      req.onsuccess = (e) => {
+        const id = e.target.result;
+        dadosStore.add({ id, dados });
+        resolve(id);
       };
-      request.onerror = () => reject("Erro ao salvar planilha");
+      req.onerror = () => reject("Erro ao salvar planilha");
     });
   } catch (err) { console.error(err); }
 }
@@ -70,11 +78,10 @@ async function carregarPlanilhasLocais() {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], "readonly");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject("Erro ao carregar planilhas");
+      const tx    = db.transaction([STORE_META], "readonly");
+      const req   = tx.objectStore(STORE_META).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject("Erro ao carregar planilhas");
     });
   } catch (err) { console.error(err); return []; }
 }
@@ -83,11 +90,11 @@ async function removerPlanilhaLocal(id) {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(Number(id));
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject("Erro ao remover planilha");
+      const tx = db.transaction([STORE_META, STORE_DADOS], "readwrite");
+      tx.objectStore(STORE_META).delete(Number(id));
+      tx.objectStore(STORE_DADOS).delete(Number(id));
+      tx.oncomplete = () => resolve();
+      tx.onerror    = () => reject("Erro ao remover planilha");
     });
   } catch (err) { console.error(err); }
 }
@@ -96,13 +103,25 @@ async function limparBancoLocal() {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.clear();
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject();
+      const tx = db.transaction([STORE_META, STORE_DADOS], "readwrite");
+      tx.objectStore(STORE_META).clear();
+      tx.objectStore(STORE_DADOS).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror    = () => reject();
     });
   } catch (err) { console.error(err); }
+}
+
+async function carregarDadosPlanilha(id) {
+  try {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+      const tx  = db.transaction([STORE_DADOS], "readonly");
+      const req = tx.objectStore(STORE_DADOS).get(Number(id));
+      req.onsuccess = () => resolve(req.result?.dados ?? []);
+      req.onerror   = () => reject("Erro ao carregar dados");
+    });
+  } catch (err) { console.error(err); return []; }
 }
 
 // ── INIT ──────────────────────────────────────────────────
@@ -167,23 +186,35 @@ async function handleFiles(files) {
   const fileInput = document.getElementById("file-input");
   for (const file of files) {
     if (file.size > MAX_SIZE) { setStatus(`${file.name} excede 200 MB`, "err"); continue; }
-    
-    toggleLoading(true, `Processando ${file.name}...`);
+
+    const isLargeFile = file.size > WARN_SIZE;
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    const loadingMsg = isLargeFile
+      ? `Processando arquivo grande (${sizeMB} MB) — pode demorar alguns segundos...`
+      : `Processando ${file.name}...`;
+
+    toggleLoading(true, loadingMsg);
     setStatus(`Processando ${file.name}…`, "");
-    
+
     try {
       const dados = await parsearArquivo(file);
       if (!dados.length) throw new Error("Planilha vazia ou sem dados.");
       const colunas = Object.keys(dados[0]);
-      
-      const novaPlanilha = { nome: file.name, dados, colunas };
-      
+
       toggleLoading(true, `Salvando ${file.name} localmente...`);
-      await salvarPlanilhaLocal(novaPlanilha); 
-      planilhas.push(novaPlanilha);
-      
-      setStatus(`${file.name} — ${dados.length} linhas carregadas`, "ok");
-      
+      const id = await salvarPlanilhaLocal({ nome: file.name, colunas, dados });
+      planilhas.push({ id, nome: file.name, colunas });
+
+      const isLargeRows = dados.length > WARN_ROWS;
+      if (isLargeRows) {
+        setStatus(
+          `${file.name} — ${dados.length.toLocaleString("pt-BR")} linhas carregadas. Filtros podem ser mais lentos em dispositivos antigos.`,
+          "warn"
+        );
+      } else {
+        setStatus(`${file.name} — ${dados.length.toLocaleString("pt-BR")} linhas carregadas`, "ok");
+      }
+
       const statusEl = document.querySelector(".assistant-details .status");
       if (statusEl) statusEl.textContent = "Dados salvos localmente no seu navegador";
     } catch (err) {
@@ -224,14 +255,18 @@ async function limparTudo() {
   await limparBancoLocal();
   planilhas = [];
   nextId = 1;
+  totalResultados = [];
+  paginaAtual = 1;
   renderLista();
   renderFiltrosPanel();
-  
+
   const tableWrapper = document.getElementById("table-wrapper");
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Faça upload de planilhas e clique em Buscar.</p>';
   const resultsBar = document.getElementById("results-bar");
   if (resultsBar) resultsBar.hidden = true;
-  
+  const pagination = document.getElementById("pagination");
+  if (pagination) pagination.hidden = true;
+
   toggleLoading(false);
   setStatus("Cofre limpo com sucesso.", "ok");
 }
@@ -441,40 +476,37 @@ function coletarFiltros() {
 }
 
 // ── BUSCA ─────────────────────────────────────────────────
-function buscar() {
-  const globalTerm = document.getElementById("global-search")?.value.trim().toLowerCase();
+async function buscar() {
+  const globalTerm   = document.getElementById("global-search")?.value.trim().toLowerCase();
   const tableWrapper = document.getElementById("table-wrapper");
   const resultsBar   = document.getElementById("results-bar");
-  
-  toggleLoading(true, "Filtrando dados...");
-  
+
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
+  toggleLoading(true, "Filtrando dados...");
+  await new Promise(r => setTimeout(r, 0)); // yield para o spinner aparecer antes do processamento
 
   const filtros    = coletarFiltros();
   const resultados = [];
 
-  // Usar um pequeno delay para o spinner aparecer
-  setTimeout(() => {
-    for (const p of planilhas) {
-      const fp = filtros[String(p.id)] || [];
-      for (const linha of p.dados) {
-        // Filtro Global
-        if (globalTerm) {
-          const valoresLinha = Object.values(linha).join(" ").toLowerCase();
-          if (!valoresLinha.includes(globalTerm)) continue;
-        }
-
-        // Filtros Específicos
-        if (!fp.length || linhaPassaFiltros(linha, fp)) {
-          resultados.push({ _arquivo: p.nome, ...linha });
-        }
+  for (const p of planilhas) {
+    const dados = await carregarDadosPlanilha(p.id);
+    const fp    = filtros[String(p.id)] || [];
+    for (const linha of dados) {
+      if (globalTerm) {
+        const valoresLinha = Object.values(linha).join(" ").toLowerCase();
+        if (!valoresLinha.includes(globalTerm)) continue;
+      }
+      if (!fp.length || linhaPassaFiltros(linha, fp)) {
+        resultados.push({ _arquivo: p.nome, ...linha });
       }
     }
+  }
 
-    renderTabela(resultados);
-    toggleLoading(false);
-  }, 50);
+  totalResultados = resultados;
+  paginaAtual = 1;
+  renderPagina();
+  toggleLoading(false);
 }
 
 function linhaPassaFiltros(linha, filtros) {
@@ -500,6 +532,8 @@ function renderTabela(rows) {
   if (!rows.length) {
     if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Nenhum resultado encontrado.</p>';
     if (resultsBar) resultsBar.hidden = true;
+    const pag = document.getElementById("pagination");
+    if (pag) pag.hidden = true;
     return;
   }
 
@@ -512,8 +546,14 @@ function renderTabela(rows) {
   }
   ultimasColunas = [...colMap.values()];
 
-  const total = rows.length;
-  if (resultsCount) resultsCount.textContent = `${total} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
+  const total  = totalResultados.length;
+  const inicio = (paginaAtual - 1) * PAGE_SIZE + 1;
+  const fim    = Math.min(paginaAtual * PAGE_SIZE, total);
+  if (resultsCount) {
+    resultsCount.textContent = total > PAGE_SIZE
+      ? `Exibindo ${inicio.toLocaleString("pt-BR")}–${fim.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} resultados`
+      : `${total.toLocaleString("pt-BR")} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
+  }
   if (resultsBar) resultsBar.hidden = false;
 
   const table  = document.createElement("table");
@@ -541,6 +581,57 @@ function renderTabela(rows) {
   table.appendChild(tbody);
 
   if (tableWrapper) { tableWrapper.innerHTML = ""; tableWrapper.appendChild(table); }
+}
+
+// ── PAGINAÇÃO ─────────────────────────────────────────────
+function renderPagina() {
+  const colMap = new Map();
+  for (const row of totalResultados) {
+    for (const k of Object.keys(row)) {
+      const norm = k.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      if (!colMap.has(norm)) colMap.set(norm, k);
+    }
+  }
+  ultimasColunas = [...colMap.values()];
+
+  const totalPaginas = Math.ceil(totalResultados.length / PAGE_SIZE);
+  const inicio = (paginaAtual - 1) * PAGE_SIZE;
+  const fim    = Math.min(inicio + PAGE_SIZE, totalResultados.length);
+  renderTabela(totalResultados.slice(inicio, fim));
+  renderControlesPaginacao(totalPaginas);
+}
+
+function renderControlesPaginacao(totalPaginas) {
+  const el = document.getElementById("pagination");
+  if (!el) return;
+
+  if (totalPaginas <= 1) { el.hidden = true; return; }
+
+  el.hidden = false;
+  el.innerHTML = `
+    <button class="btn-page" id="pg-prev" ${paginaAtual === 1 ? "disabled" : ""}>
+      <i class="ph ph-caret-left"></i> Anterior
+    </button>
+    <span class="pagination-info">Página ${paginaAtual} de ${totalPaginas}</span>
+    <button class="btn-page" id="pg-next" ${paginaAtual === totalPaginas ? "disabled" : ""}>
+      Próxima <i class="ph ph-caret-right"></i>
+    </button>
+  `;
+
+  document.getElementById("pg-prev")?.addEventListener("click", () => {
+    if (paginaAtual > 1) {
+      paginaAtual--;
+      renderPagina();
+      document.getElementById("table-wrapper")?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+  document.getElementById("pg-next")?.addEventListener("click", () => {
+    if (paginaAtual < totalPaginas) {
+      paginaAtual++;
+      renderPagina();
+      document.getElementById("table-wrapper")?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
 }
 
 // ── EXPORTAR COM REORDENAÇÃO ──────────────────────────────
@@ -580,20 +671,25 @@ function abrirModalExport() {
 
 function fecharModalExport() { document.getElementById("export-modal")?.remove(); }
 
-function confirmarExport() {
-  const lista          = document.getElementById("col-reorder-list");
-  const colunasOrdenadas = [...lista.querySelectorAll(".col-reorder-item")].map((li) => li.dataset.col);
+async function confirmarExport() {
+  const lista = document.getElementById("col-reorder-list");
+  const colunasOrdenadas = [...lista.querySelectorAll(".col-reorder-item")].map(li => li.dataset.col);
   fecharModalExport();
+
+  toggleLoading(true, "Gerando exportação...");
+  await new Promise(r => setTimeout(r, 0));
 
   const filtros    = coletarFiltros();
   const resultados = [];
   for (const p of planilhas) {
-    const fp = filtros[String(p.id)] || [];
-    for (const linha of p.dados) {
+    const dados = await carregarDadosPlanilha(p.id);
+    const fp    = filtros[String(p.id)] || [];
+    for (const linha of dados) {
       if (!fp.length || linhaPassaFiltros(linha, fp))
         resultados.push({ _arquivo: p.nome, ...linha });
     }
   }
+  toggleLoading(false);
   if (!resultados.length) { alert("Nenhum resultado para exportar."); return; }
 
   const dadosParaExportar = resultados.map((linha) => {
