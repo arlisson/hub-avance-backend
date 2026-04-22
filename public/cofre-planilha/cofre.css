@@ -270,12 +270,13 @@ body.light-mode .filtro-col-tag { background:rgba(44,169,214,.12); border-color:
 .filtro-col-tag-remove {
   display:flex; align-items:center;
   color:var(--accent-cyan); opacity:.7; font-size:10px;
-  transition:opacity .15s;
+  transition:opacity .15s; outline:none;
 }
 .filtro-col-tag-remove:hover { opacity:1; }
+.filtro-col-tag-remove:focus-visible { outline:none; }
 
 .filtro-col-tag-input {
-  background:none; border:none; outline:none;
+  background:none; border:none; outline:none !important;
   font-size:12px; color:var(--text-primary);
   min-width:80px; flex:1;
 }
