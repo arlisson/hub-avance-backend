@@ -334,9 +334,14 @@ function renderTabela(rows, total) {
     return;
   }
 
-  const colSet = new Set();
-  for (const row of rows) Object.keys(row).forEach((k) => colSet.add(k));
-  ultimasColunas = [...colSet];
+  const colMap = new Map();
+  for (const row of rows) {
+    for (const k of Object.keys(row)) {
+      const norm = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (!colMap.has(norm)) colMap.set(norm, k);
+    }
+  }
+  ultimasColunas = [...colMap.values()];
 
   if (resultsCount)
     resultsCount.textContent = `${total} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
