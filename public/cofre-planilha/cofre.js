@@ -696,9 +696,34 @@ async function confirmarExport() {
     return; 
   }
 
-  // Aviso caso a planilha seja excessivamente grande e vá travar o navegador
-  if (resultados.length > 50000) {
-    console.warn(`Exportando ${resultados.length} linhas em .xlsx. Isso pode consumir muita memória e travar a aba.`);
+  // Se o número de linhas for muito grande, força a exportação para CSV
+  // XLSX gera um XML gigante na RAM, o que trava a aba inteira do navegador em datasets massivos.
+  const limiteExcel = 50000;
+  if (resultados.length > limiteExcel) {
+    try {
+      const cabecalho = colunasOrdenadas.map(c => `"${c.replace(/"/g, '""')}"`).join(";");
+      const linhasCSV = resultados.map(linha => {
+        return colunasOrdenadas.map(c => {
+          const val = linha[c] ?? "";
+          return `"${String(val).replace(/"/g, '""')}"`;
+        }).join(";");
+      });
+      
+      // Adiciona o BOM (\uFEFF) para garantir que o Excel entenda o UTF-8 (Acentos)
+      const csvContent = "\uFEFF" + [cabecalho, ...linhasCSV].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = "resultado_cofre.csv"; a.click();
+      URL.revokeObjectURL(url);
+      setTimeout(() => alert(`O resultado era muito grande (${resultados.length.toLocaleString("pt-BR")} linhas). O arquivo foi exportado no formato .CSV para evitar travamento do navegador.`), 300);
+    } catch (error) {
+      alert("Ocorreu um erro ao gerar o CSV.");
+      console.error("Erro na exportação CSV:", error);
+    } finally {
+      toggleLoading(false);
+    }
+    return;
   }
 
   try {
