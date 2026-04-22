@@ -199,6 +199,7 @@ function criarItemColuna(planilhaId, coluna) {
   tagInput.type = "text";
   tagInput.className = "filtro-col-tag-input";
   tagInput.placeholder = "Valor + Enter";
+  tagInput.style.outline = "none";
 
   tagInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === ",") {
