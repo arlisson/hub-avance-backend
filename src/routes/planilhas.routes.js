@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import os from "os";
 import {
   uploadPlanilha,
   listarPlanilhas,
@@ -11,7 +12,13 @@ import {
 } from "../controllers/planilhas.controller.js";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: os.tmpdir(),
+    filename: (_req, file, cb) => cb(null, `cofre-${Date.now()}-${file.originalname}`),
+  }),
+  limits: { fileSize: 100 * 1024 * 1024 },
+});
 
 router.post("/planilhas/upload", upload.single("file"), uploadPlanilha);
 router.get("/planilhas/buscar", buscarDados);

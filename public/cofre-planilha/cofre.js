@@ -409,7 +409,6 @@ function abrirModalExport() {
   `;
 
   document.body.appendChild(overlay);
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) fecharModalExport(); });
   document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
   document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
 

@@ -1,18 +1,38 @@
 import { pool } from "../config/db.js";
 import * as XLSX from "xlsx";
+import { unlink } from "fs/promises";
+import { promisify } from "util";
+import { gzip, gunzip } from "zlib";
+
+const gzipAsync  = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
+
+async function comprimirDados(dados) {
+  return gzipAsync(JSON.stringify(dados));
+}
+
+async function descomprimirDados(raw) {
+  // Compatibilidade: suporta dados antigos em texto puro (MEDIUMTEXT sem gzip)
+  if (Buffer.isBuffer(raw) && raw[0] === 0x1f && raw[1] === 0x8b) {
+    return JSON.parse((await gunzipAsync(raw)).toString("utf8"));
+  }
+  return JSON.parse(typeof raw === "string" ? raw : raw.toString("utf8"));
+}
 
 (async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS planilhas_sessao (
-        id         INT AUTO_INCREMENT PRIMARY KEY,
-        session_id VARCHAR(64) NOT NULL,
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        session_id   VARCHAR(64) NOT NULL,
         nome_arquivo VARCHAR(255) NOT NULL,
-        dados      MEDIUMTEXT NOT NULL,
-        criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        dados        LONGBLOB NOT NULL,
+        criado_em    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_session (session_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    // Migra coluna caso a tabela já exista com tipo antigo
+    await pool.query("ALTER TABLE planilhas_sessao MODIFY COLUMN dados LONGBLOB NOT NULL").catch(() => {});
   } catch (err) {
     console.error("[planilhas] Erro ao criar tabela:", err.message);
   }
@@ -27,26 +47,31 @@ function getSessionId(req) {
 }
 
 export async function uploadPlanilha(req, res) {
+  const filePath = req.file?.path;
   try {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
-    if (!req.file) return res.status(400).json({ ok: false, error: "Nenhum arquivo enviado." });
+    if (!req.file)  return res.status(400).json({ ok: false, error: "Nenhum arquivo enviado." });
 
-    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const workbook = XLSX.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
 
     if (!dados.length) return res.status(400).json({ ok: false, error: "Planilha vazia ou sem dados." });
 
+    const compressed = await comprimirDados(dados);
+
     await pool.query(
       "INSERT INTO planilhas_sessao (session_id, nome_arquivo, dados) VALUES (?, ?, ?)",
-      [sessionId, req.file.originalname, JSON.stringify(dados)]
+      [sessionId, req.file.originalname, compressed]
     );
 
     return res.json({ ok: true, nome: req.file.originalname, linhas: dados.length });
   } catch (err) {
     console.error("[uploadPlanilha]", err);
     return res.status(500).json({ ok: false, error: "Erro ao processar planilha." });
+  } finally {
+    if (filePath) await unlink(filePath).catch(() => {});
   }
 }
 
@@ -137,7 +162,7 @@ export async function buscarDados(req, res) {
 
     const resultados = [];
     for (const row of rows) {
-      const dados = JSON.parse(row.dados);
+      const dados = await descomprimirDados(row.dados);
       const filtros = filtrosPorPlanilha[String(row.id)] || [];
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
@@ -175,7 +200,7 @@ export async function exportarResultados(req, res) {
 
     const resultados = [];
     for (const row of rows) {
-      const dados = JSON.parse(row.dados);
+      const dados = await descomprimirDados(row.dados);
       const filtros = filtrosPorPlanilha[String(row.id)] || [];
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
@@ -227,14 +252,15 @@ export async function listarColunasPorPlanilha(req, res) {
       [sessionId]
     );
 
-    const planilhas = rows.map((row) => {
-      const dados = JSON.parse(row.dados);
-      return {
+    const planilhas = [];
+    for (const row of rows) {
+      const dados = await descomprimirDados(row.dados);
+      planilhas.push({
         id: row.id,
         nome_arquivo: row.nome_arquivo,
         colunas: dados.length ? Object.keys(dados[0]) : [],
-      };
-    });
+      });
+    }
 
     return res.json({ ok: true, planilhas });
   } catch (err) {
