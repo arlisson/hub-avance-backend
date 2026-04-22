@@ -248,10 +248,36 @@ body:not(.light-mode) .dropdown-item.danger { color:#ff4444; }
 
 .filtro-col-nome { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-.filtro-col-valor {
-  flex:0 0 140px;
-  font-size:12px; padding:5px 10px;
-  border-radius:8px;
+.filtro-col-tags-wrap { flex:1; min-width:0; }
+
+.filtro-col-tags {
+  display:flex; flex-wrap:wrap; align-items:center; gap:4px;
+  background:var(--bg-hover); border:1px solid var(--border-color);
+  border-radius:8px; padding:5px 8px; min-height:32px;
+  cursor:text; transition:border-color .2s;
+}
+.filtro-col-tags:focus-within { border-color:var(--accent-cyan); }
+
+.filtro-col-tag {
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(87,197,234,.15); border:1px solid rgba(87,197,234,.4);
+  border-radius:6px; padding:2px 6px;
+  font-size:11px; font-weight:600; color:var(--accent-cyan);
+  white-space:nowrap;
+}
+body.light-mode .filtro-col-tag { background:rgba(44,169,214,.12); border-color:rgba(44,169,214,.4); }
+
+.filtro-col-tag-remove {
+  display:flex; align-items:center;
+  color:var(--accent-cyan); opacity:.7; font-size:10px;
+  transition:opacity .15s;
+}
+.filtro-col-tag-remove:hover { opacity:1; }
+
+.filtro-col-tag-input {
+  background:none; border:none; outline:none;
+  font-size:12px; color:var(--text-primary);
+  min-width:80px; flex:1;
 }
 
 /* ── 10. BUSCAR ── */

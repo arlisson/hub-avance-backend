@@ -173,7 +173,7 @@ function renderFiltrosPanel() {
 }
 
 function criarItemColuna(planilhaId, coluna) {
-  const item  = document.createElement("div");
+  const item = document.createElement("div");
   item.className = "filtro-col-item";
 
   const label = document.createElement("label");
@@ -188,24 +188,73 @@ function criarItemColuna(planilhaId, coluna) {
 
   label.appendChild(chk); label.appendChild(nome);
 
-  const inp = document.createElement("input");
-  inp.type = "text"; inp.className = "input-dark-lite filtro-col-valor";
-  inp.placeholder = "Filtrar..."; inp.hidden = true;
-  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") buscar(); });
-  chk.addEventListener("change", () => { inp.hidden = !chk.checked; if (!chk.checked) inp.value = ""; else inp.focus(); });
+  const tagsWrap = document.createElement("div");
+  tagsWrap.className = "filtro-col-tags-wrap";
+  tagsWrap.hidden = true;
 
-  item.appendChild(label); item.appendChild(inp);
+  const tagsBox = document.createElement("div");
+  tagsBox.className = "filtro-col-tags";
+
+  const tagInput = document.createElement("input");
+  tagInput.type = "text";
+  tagInput.className = "filtro-col-tag-input";
+  tagInput.placeholder = "Valor + Enter";
+
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const val = tagInput.value.trim().replace(/,$/, "");
+      if (val) { adicionarTag(tagsBox, tagInput, val); tagInput.value = ""; }
+    } else if (e.key === "Backspace" && !tagInput.value) {
+      tagsBox.querySelector(".filtro-col-tag:last-of-type")?.remove();
+    }
+  });
+
+  tagsBox.appendChild(tagInput);
+  tagsWrap.appendChild(tagsBox);
+
+  chk.addEventListener("change", () => {
+    tagsWrap.hidden = !chk.checked;
+    if (!chk.checked) { tagsBox.querySelectorAll(".filtro-col-tag").forEach((t) => t.remove()); tagInput.value = ""; }
+    else tagInput.focus();
+  });
+
+  item.appendChild(label);
+  item.appendChild(tagsWrap);
   return item;
+}
+
+function adicionarTag(tagsBox, tagInput, value) {
+  const tag = document.createElement("span");
+  tag.className = "filtro-col-tag";
+
+  const txt = document.createElement("span");
+  txt.textContent = value;
+
+  const rem = document.createElement("button");
+  rem.type = "button"; rem.className = "filtro-col-tag-remove";
+  rem.innerHTML = '<i class="ph ph-x"></i>';
+  rem.addEventListener("click", () => tag.remove());
+
+  tag.appendChild(txt); tag.appendChild(rem);
+  tagsBox.insertBefore(tag, tagInput);
 }
 
 function coletarFiltros() {
   const filtros = {};
   document.querySelectorAll(".filtro-col-check:checked").forEach((chk) => {
-    const valor = chk.closest(".filtro-col-item")?.querySelector(".filtro-col-valor")?.value.trim() || "";
-    if (!valor) return;
+    const item    = chk.closest(".filtro-col-item");
+    const tagsBox = item?.querySelector(".filtro-col-tags");
+    if (!tagsBox) return;
+
+    const valores = [...tagsBox.querySelectorAll(".filtro-col-tag span:first-child")].map((s) => s.textContent.trim());
+    const digitando = item.querySelector(".filtro-col-tag-input")?.value.trim();
+    if (digitando) valores.push(digitando);
+    if (!valores.length) return;
+
     const pid = String(chk.dataset.planilha);
     if (!filtros[pid]) filtros[pid] = [];
-    filtros[pid].push({ coluna: chk.dataset.coluna, valor });
+    filtros[pid].push({ coluna: chk.dataset.coluna, valores });
   });
   return filtros;
 }
@@ -232,8 +281,9 @@ function buscar() {
 }
 
 function linhaPassaFiltros(linha, filtros) {
-  for (const { coluna, valor } of filtros) {
-    if (!String(linha[coluna] ?? "").toLowerCase().includes(valor.toLowerCase())) return false;
+  for (const { coluna, valores } of filtros) {
+    const cell = String(linha[coluna] ?? "").toLowerCase();
+    if (!valores.some((v) => cell.includes(v.toLowerCase()))) return false;
   }
   return true;
 }
