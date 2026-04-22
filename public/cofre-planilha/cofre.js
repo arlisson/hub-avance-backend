@@ -222,7 +222,7 @@ async function handleFiles(files) {
 
 function parsearArquivo(file) {
   return new Promise((resolve, reject) => {
-    const worker = new Worker('./cofre-worker.js');
+    const worker = new Worker('./cofre-worker.js?v=' + Date.now());
     
     // Timeout longo de 5 minutos para arquivos CSV gigantes
     const timeout = setTimeout(() => {
