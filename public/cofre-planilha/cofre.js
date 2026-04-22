@@ -334,7 +334,9 @@ function renderTabela(rows, total) {
     return;
   }
 
-  ultimasColunas = Object.keys(rows[0]);
+  const colSet = new Set();
+  for (const row of rows) Object.keys(row).forEach((k) => colSet.add(k));
+  ultimasColunas = [...colSet];
 
   if (resultsCount)
     resultsCount.textContent = `${total} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
@@ -392,7 +394,8 @@ function abrirModalExport() {
         ${colunas.map((col) => `
           <li class="col-reorder-item" draggable="true" data-col="${escHtml(col)}">
             <i class="ph ph-dots-six-vertical drag-handle"></i>
-            <span>${escHtml(col.startsWith("_") ? col.slice(1) : col)}</span>
+            <span class="col-reorder-label">${escHtml(col.startsWith("_") ? col.slice(1) : col)}</span>
+            <button type="button" class="col-delete-btn" title="Remover coluna"><i class="ph ph-x"></i></button>
           </li>
         `).join("")}
       </ul>
@@ -409,7 +412,13 @@ function abrirModalExport() {
   overlay.addEventListener("click", (e) => { if (e.target === overlay) fecharModalExport(); });
   document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
   document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
-  iniciarDragAndDrop(document.getElementById("col-reorder-list"));
+
+  const reorderList = document.getElementById("col-reorder-list");
+  reorderList?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".col-delete-btn");
+    if (btn) btn.closest(".col-reorder-item")?.remove();
+  });
+  iniciarDragAndDrop(reorderList);
 }
 
 function fecharModalExport() {
