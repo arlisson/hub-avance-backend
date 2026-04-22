@@ -275,8 +275,10 @@ body.light-mode .filtro-col-tag { background:rgba(44,169,214,.12); border-color:
 .filtro-col-tag-remove:hover { opacity:1; }
 .filtro-col-tag-remove:focus-visible { outline:none; }
 
-.filtro-col-tag-input {
-  background:none; border:none; outline:none !important;
+.filtro-col-tag-input,
+.filtro-col-tag-input:focus,
+.filtro-col-tag-input:focus-visible {
+  background:none; border:none; outline:none !important; box-shadow:none;
   font-size:12px; color:var(--text-primary);
   min-width:80px; flex:1;
 }
