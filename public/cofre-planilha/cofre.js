@@ -1,39 +1,13 @@
-const LOGIN_URL = "/login/login.html";
-const HUB_URL   = "/paginaUnificada/index.html";
+const LOGIN_URL    = "/login/login.html";
+const HUB_URL      = "/paginaUnificada/index.html";
+const MAX_SIZE     = 200 * 1024 * 1024; // 200 MB
 
-let sessionId = localStorage.getItem("cofre_session_id");
-if (!sessionId) {
-  sessionId = crypto.randomUUID();
-  localStorage.setItem("cofre_session_id", sessionId);
-}
-
-function cofreHeaders() {
-  return { "x-session-id": sessionId };
-}
-
-async function apiFetch(url, { method = "GET", body } = {}) {
-  const headers = { Accept: "application/json" };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
-  const resp = await fetch(url, {
-    method, credentials: "include", headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const text = await resp.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; }
-  catch { data = { ok: false, error: text || "Resposta inválida." }; }
-  if (!resp.ok) {
-    const err = new Error(data?.error || "Erro na requisição.");
-    err.status = resp.status;
-    throw err;
-  }
-  return data;
-}
-
-let planilhasInfo = []; // [{id, nome_arquivo, colunas}]
+// ── ESTADO LOCAL ──────────────────────────────────────────
+let planilhas     = []; // [{ id, nome, dados, colunas }]
+let nextId        = 1;
 let ultimasColunas = [];
 
-// ── INIT ─────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   const themeToggle   = document.getElementById("theme-toggle");
   const settingsBtn   = document.getElementById("settings-btn");
@@ -49,17 +23,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   menuBackHub?.addEventListener("click", () => { window.location.href = HUB_URL; });
   menuLogout?.addEventListener("click", async () => {
-    try { await apiFetch("/api/logout", { method: "POST" }); } catch {}
+    try { await fetch("/api/logout", { method: "POST", credentials: "include" }); } catch {}
     window.location.href = LOGIN_URL;
   });
 
   try {
-    const me = await apiFetch("/api/profile");
-    if (!me?.ok || !me?.user) throw new Error("Não autenticado.");
-    if (userEmailEl) {
-      userEmailEl.textContent = me.user.email || "";
-      userEmailEl.title = me.user.email || "";
-    }
+    const res = await fetch("/api/profile", { credentials: "include" });
+    const me  = await res.json();
+    if (!me?.ok || !me?.user) throw new Error();
+    if (userEmailEl) { userEmailEl.textContent = me.user.email || ""; userEmailEl.title = me.user.email || ""; }
   } catch {
     window.location.href = LOGIN_URL;
     return;
@@ -68,57 +40,48 @@ document.addEventListener("DOMContentLoaded", async () => {
   const uploadArea = document.getElementById("upload-area");
   const fileInput  = document.getElementById("file-input");
 
-  uploadArea?.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    uploadArea.classList.add("drag-over");
-  });
+  uploadArea?.addEventListener("dragover",  (e) => { e.preventDefault(); uploadArea.classList.add("drag-over"); });
   uploadArea?.addEventListener("dragleave", () => uploadArea.classList.remove("drag-over"));
-  uploadArea?.addEventListener("drop", (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove("drag-over");
-    handleFiles(e.dataTransfer.files);
-  });
+  uploadArea?.addEventListener("drop", (e) => { e.preventDefault(); uploadArea.classList.remove("drag-over"); handleFiles(e.dataTransfer.files); });
   fileInput?.addEventListener("change", () => handleFiles(fileInput.files));
 
   document.getElementById("btn-buscar")?.addEventListener("click", buscar);
   document.getElementById("btn-export")?.addEventListener("click", abrirModalExport);
-
-  await carregarLista();
-  await carregarInfoPlanilhas();
-
-  window.addEventListener("beforeunload", () => {
-    fetch("/api/planilhas", {
-      method: "DELETE",
-      headers: cofreHeaders(),
-      keepalive: true,
-    }).catch(() => {});
-  });
 });
 
-// ── UPLOAD ───────────────────────────────────────────────
+// ── UPLOAD ────────────────────────────────────────────────
 async function handleFiles(files) {
   const fileInput = document.getElementById("file-input");
   for (const file of files) {
-    setStatus("Enviando " + file.name + "…", "");
-    const fd = new FormData();
-    fd.append("file", file);
+    if (file.size > MAX_SIZE) { setStatus(`${file.name} excede 200 MB`, "err"); continue; }
+    setStatus(`Processando ${file.name}…`, "");
     try {
-      const res = await fetch("/api/planilhas/upload", {
-        method: "POST",
-        headers: cofreHeaders(),
-        credentials: "include",
-        body: fd,
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error);
-      setStatus(`${file.name} — ${data.linhas} linhas carregadas`, "ok");
+      const dados = await parsearArquivo(file);
+      if (!dados.length) throw new Error("Planilha vazia ou sem dados.");
+      const colunas = Object.keys(dados[0]);
+      planilhas.push({ id: nextId++, nome: file.name, dados, colunas });
+      setStatus(`${file.name} — ${dados.length} linhas carregadas`, "ok");
     } catch (err) {
-      setStatus("Erro: " + err.message, "err");
+      setStatus(`Erro: ${err.message}`, "err");
     }
   }
   if (fileInput) fileInput.value = "";
-  await carregarLista();
-  await carregarInfoPlanilhas();
+  renderLista();
+  renderFiltrosPanel();
+}
+
+function parsearArquivo(file) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker('./cofre-worker.js');
+    const reader = new FileReader();
+    reader.onload  = (e) => {
+      worker.postMessage({ buffer: e.target.result }, [e.target.result]);
+      worker.onmessage = ({ data }) => { worker.terminate(); data.ok ? resolve(data.dados) : reject(new Error(data.error)); };
+      worker.onerror   = (err) => { worker.terminate(); reject(new Error(err.message)); };
+    };
+    reader.onerror = () => reject(new Error("Erro ao ler arquivo."));
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 function setStatus(msg, tipo) {
@@ -129,79 +92,50 @@ function setStatus(msg, tipo) {
 }
 
 // ── LISTA DE PLANILHAS ────────────────────────────────────
-async function carregarLista() {
+function renderLista() {
   const fileList = document.getElementById("file-list");
   if (!fileList) return;
-  try {
-    const res = await fetch("/api/planilhas", {
-      headers: cofreHeaders(),
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (!data.ok) return;
+  fileList.innerHTML = "";
 
-    fileList.innerHTML = "";
-    if (!data.planilhas.length) {
-      fileList.innerHTML = '<li class="file-list-empty">Nenhuma planilha carregada.</li>';
-      return;
-    }
+  if (!planilhas.length) {
+    fileList.innerHTML = '<li class="file-list-empty">Nenhuma planilha carregada.</li>';
+    return;
+  }
 
-    data.planilhas.forEach((p, i) => {
-      const li = document.createElement("li");
-      li.className = "file-item";
-      li.innerHTML = `
-        <span class="file-item-num">${i + 1}º</span>
-        <i class="ph ph-file-xls" style="color:var(--accent-cyan);flex-shrink:0"></i>
-        <span class="file-item-name" title="${escHtml(p.nome_arquivo)}">${escHtml(p.nome_arquivo)}</span>
-        <button class="btn-delete-file" data-id="${p.id}" title="Remover">
-          <i class="ph ph-trash"></i>
-        </button>
-      `;
-      fileList.appendChild(li);
-    });
+  planilhas.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.className = "file-item";
+    li.innerHTML = `
+      <span class="file-item-num">${i + 1}º</span>
+      <i class="ph ph-file-xls" style="color:var(--accent-cyan);flex-shrink:0"></i>
+      <span class="file-item-name" title="${escHtml(p.nome)}">${escHtml(p.nome)}</span>
+      <button class="btn-delete-file" data-id="${p.id}" title="Remover"><i class="ph ph-trash"></i></button>
+    `;
+    fileList.appendChild(li);
+  });
 
-    fileList.querySelectorAll(".btn-delete-file").forEach((btn) => {
-      btn.addEventListener("click", () => deletarPlanilha(Number(btn.dataset.id)));
+  fileList.querySelectorAll(".btn-delete-file").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      planilhas = planilhas.filter((p) => p.id !== Number(btn.dataset.id));
+      setStatus("", "");
+      renderLista();
+      renderFiltrosPanel();
     });
-  } catch {}
+  });
 }
 
-async function deletarPlanilha(id) {
-  await fetch(`/api/planilhas/${id}`, {
-    method: "DELETE",
-    headers: cofreHeaders(),
-    credentials: "include",
-  }).catch(() => {});
-  setStatus("", "");
-  await carregarLista();
-  await carregarInfoPlanilhas();
-}
-
-// ── FILTROS POR PLANILHA ─────────────────────────────────
-async function carregarInfoPlanilhas() {
-  try {
-    const res = await fetch("/api/planilhas/colunas-por-planilha", {
-      headers: cofreHeaders(),
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (!data.ok) return;
-    planilhasInfo = data.planilhas;
-    renderFiltrosPanel();
-  } catch {}
-}
-
+// ── FILTROS POR PLANILHA ──────────────────────────────────
 function renderFiltrosPanel() {
   const lista = document.getElementById("filtros-lista");
   if (!lista) return;
   lista.innerHTML = "";
 
-  if (!planilhasInfo.length) {
+  if (!planilhas.length) {
     lista.innerHTML = '<p class="filtro-vazio">Faça upload de planilhas para ver os filtros.</p>';
     return;
   }
 
-  const wrap = document.createElement("div");
+  const wrap    = document.createElement("div");
   wrap.className = "filtro-tabs-wrap";
 
   const tabsRow = document.createElement("div");
@@ -210,32 +144,26 @@ function renderFiltrosPanel() {
   const drawer = document.createElement("div");
   drawer.className = "filtro-drawer";
 
-  planilhasInfo.forEach((p, i) => {
+  planilhas.forEach((p, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtro-tab-btn";
     btn.dataset.planilhaId = p.id;
     btn.textContent = `${i + 1}º`;
-    btn.title = p.nome_arquivo;
+    btn.title = p.nome;
     tabsRow.appendChild(btn);
 
     const panel = document.createElement("div");
     panel.className = "filtro-drawer-panel";
     panel.dataset.planilhaId = p.id;
-
-    for (const col of p.colunas) {
-      panel.appendChild(criarItemColuna(p.id, col));
-    }
+    for (const col of p.colunas) panel.appendChild(criarItemColuna(p.id, col));
     drawer.appendChild(panel);
 
     btn.addEventListener("click", () => {
       const isActive = btn.classList.contains("active");
       tabsRow.querySelectorAll(".filtro-tab-btn").forEach((b) => b.classList.remove("active"));
       drawer.querySelectorAll(".filtro-drawer-panel").forEach((dp) => dp.classList.remove("active"));
-      if (!isActive) {
-        btn.classList.add("active");
-        panel.classList.add("active");
-      }
+      if (!isActive) { btn.classList.add("active"); panel.classList.add("active"); }
     });
   });
 
@@ -245,41 +173,28 @@ function renderFiltrosPanel() {
 }
 
 function criarItemColuna(planilhaId, coluna) {
-  const item = document.createElement("div");
+  const item  = document.createElement("div");
   item.className = "filtro-col-item";
 
   const label = document.createElement("label");
   label.className = "filtro-col-label";
 
   const chk = document.createElement("input");
-  chk.type = "checkbox";
-  chk.className = "filtro-col-check";
-  chk.dataset.planilha = planilhaId;
-  chk.dataset.coluna = coluna;
+  chk.type = "checkbox"; chk.className = "filtro-col-check";
+  chk.dataset.planilha = planilhaId; chk.dataset.coluna = coluna;
 
   const nome = document.createElement("span");
-  nome.className = "filtro-col-nome";
-  nome.textContent = coluna;
-  nome.title = coluna;
+  nome.className = "filtro-col-nome"; nome.textContent = coluna; nome.title = coluna;
 
-  label.appendChild(chk);
-  label.appendChild(nome);
+  label.appendChild(chk); label.appendChild(nome);
 
   const inp = document.createElement("input");
-  inp.type = "text";
-  inp.className = "input-dark-lite filtro-col-valor";
-  inp.placeholder = "Filtrar...";
-  inp.hidden = true;
+  inp.type = "text"; inp.className = "input-dark-lite filtro-col-valor";
+  inp.placeholder = "Filtrar..."; inp.hidden = true;
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") buscar(); });
+  chk.addEventListener("change", () => { inp.hidden = !chk.checked; if (!chk.checked) inp.value = ""; else inp.focus(); });
 
-  chk.addEventListener("change", () => {
-    inp.hidden = !chk.checked;
-    if (!chk.checked) inp.value = "";
-    else inp.focus();
-  });
-
-  item.appendChild(label);
-  item.appendChild(inp);
+  item.appendChild(label); item.appendChild(inp);
   return item;
 }
 
@@ -288,7 +203,7 @@ function coletarFiltros() {
   document.querySelectorAll(".filtro-col-check:checked").forEach((chk) => {
     const valor = chk.closest(".filtro-col-item")?.querySelector(".filtro-col-valor")?.value.trim() || "";
     if (!valor) return;
-    const pid = chk.dataset.planilha;
+    const pid = String(chk.dataset.planilha);
     if (!filtros[pid]) filtros[pid] = [];
     filtros[pid].push({ coluna: chk.dataset.coluna, valor });
   });
@@ -296,34 +211,34 @@ function coletarFiltros() {
 }
 
 // ── BUSCA ─────────────────────────────────────────────────
-async function buscar() {
+function buscar() {
   const tableWrapper = document.getElementById("table-wrapper");
   const resultsBar   = document.getElementById("results-bar");
-
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
 
-  const filtros = coletarFiltros();
+  const filtros    = coletarFiltros();
+  const resultados = [];
 
-  try {
-    const params = new URLSearchParams();
-    if (Object.keys(filtros).length) params.set("filtros", JSON.stringify(filtros));
-
-    const res = await fetch(`/api/planilhas/buscar?${params}`, {
-      headers: cofreHeaders(),
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error);
-
-    renderTabela(data.resultados, data.total);
-  } catch (err) {
-    if (tableWrapper)
-      tableWrapper.innerHTML = `<p class="table-placeholder" style="color:var(--danger)">${escHtml(err.message)}</p>`;
+  for (const p of planilhas) {
+    const fp = filtros[String(p.id)] || [];
+    for (const linha of p.dados) {
+      if (!fp.length || linhaPassaFiltros(linha, fp))
+        resultados.push({ _arquivo: p.nome, ...linha });
+    }
   }
+
+  renderTabela(resultados);
 }
 
-function renderTabela(rows, total) {
+function linhaPassaFiltros(linha, filtros) {
+  for (const { coluna, valor } of filtros) {
+    if (!String(linha[coluna] ?? "").toLowerCase().includes(valor.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function renderTabela(rows) {
   const tableWrapper = document.getElementById("table-wrapper");
   const resultsBar   = document.getElementById("results-bar");
   const resultsCount = document.getElementById("results-count");
@@ -343,52 +258,43 @@ function renderTabela(rows, total) {
   }
   ultimasColunas = [...colMap.values()];
 
-  if (resultsCount)
-    resultsCount.textContent = `${total} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
+  const total = rows.length;
+  if (resultsCount) resultsCount.textContent = `${total} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
   if (resultsBar) resultsBar.hidden = false;
 
-  const table = document.createElement("table");
+  const table  = document.createElement("table");
   table.className = "results-table";
-
-  const thead = document.createElement("thead");
+  const thead  = document.createElement("thead");
   const trHead = document.createElement("tr");
   for (const col of ultimasColunas) {
     const th = document.createElement("th");
     th.textContent = col.startsWith("_") ? col.slice(1) : col;
     trHead.appendChild(th);
   }
-  thead.appendChild(trHead);
-  table.appendChild(thead);
+  thead.appendChild(trHead); table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
   for (const row of rows) {
     const tr = document.createElement("tr");
     for (const col of ultimasColunas) {
-      const td = document.createElement("td");
+      const td  = document.createElement("td");
       const val = row[col] ?? "";
-      td.textContent = val;
-      td.title = String(val);
+      td.textContent = val; td.title = String(val);
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);
 
-  if (tableWrapper) {
-    tableWrapper.innerHTML = "";
-    tableWrapper.appendChild(table);
-  }
+  if (tableWrapper) { tableWrapper.innerHTML = ""; tableWrapper.appendChild(table); }
 }
 
 // ── EXPORTAR COM REORDENAÇÃO ──────────────────────────────
 function abrirModalExport() {
-  const colunas = ultimasColunas.length ? ultimasColunas : [];
-  if (!colunas.length) return;
+  if (!ultimasColunas.length) return;
 
   const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
-  overlay.id = "export-modal";
-
+  overlay.className = "modal-overlay"; overlay.id = "export-modal";
   overlay.innerHTML = `
     <div class="modal">
       <div class="modal-header">
@@ -396,111 +302,78 @@ function abrirModalExport() {
         <p class="modal-sub">Arraste para definir a ordem das colunas na planilha exportada.</p>
       </div>
       <ul class="col-reorder-list" id="col-reorder-list">
-        ${colunas.map((col) => `
+        ${ultimasColunas.map((col) => `
           <li class="col-reorder-item" draggable="true" data-col="${escHtml(col)}">
             <i class="ph ph-dots-six-vertical drag-handle"></i>
             <span class="col-reorder-label">${escHtml(col.startsWith("_") ? col.slice(1) : col)}</span>
             <button type="button" class="col-delete-btn" title="Remover coluna"><i class="ph ph-x"></i></button>
-          </li>
-        `).join("")}
+          </li>`).join("")}
       </ul>
       <div class="modal-actions">
         <button class="btn-modal-cancel" id="export-modal-cancel">Cancelar</button>
-        <button class="btn-primary" id="export-modal-confirm">
-          <i class="ph ph-download-simple"></i> Exportar
-        </button>
+        <button class="btn-primary" id="export-modal-confirm"><i class="ph ph-download-simple"></i> Exportar</button>
       </div>
-    </div>
-  `;
+    </div>`;
 
   document.body.appendChild(overlay);
   document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
   document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
 
   const reorderList = document.getElementById("col-reorder-list");
-  reorderList?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".col-delete-btn");
-    if (btn) btn.closest(".col-reorder-item")?.remove();
-  });
+  reorderList?.addEventListener("click", (e) => { const btn = e.target.closest(".col-delete-btn"); if (btn) btn.closest(".col-reorder-item")?.remove(); });
   iniciarDragAndDrop(reorderList);
 }
 
-function fecharModalExport() {
-  document.getElementById("export-modal")?.remove();
-}
+function fecharModalExport() { document.getElementById("export-modal")?.remove(); }
 
-async function confirmarExport() {
-  const lista = document.getElementById("col-reorder-list");
-  const colunas = [...lista.querySelectorAll(".col-reorder-item")].map((li) => li.dataset.col);
+function confirmarExport() {
+  const lista          = document.getElementById("col-reorder-list");
+  const colunasOrdenadas = [...lista.querySelectorAll(".col-reorder-item")].map((li) => li.dataset.col);
   fecharModalExport();
 
-  const filtros = coletarFiltros();
-  const params = new URLSearchParams();
-  if (Object.keys(filtros).length) params.set("filtros", JSON.stringify(filtros));
-  params.set("colunas", JSON.stringify(colunas));
-
-  try {
-    const res = await fetch(`/api/planilhas/exportar?${params}`, {
-      headers: cofreHeaders(),
-      credentials: "include",
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: "Erro ao exportar." }));
-      alert(data.error || "Erro ao exportar.");
-      return;
+  const filtros    = coletarFiltros();
+  const resultados = [];
+  for (const p of planilhas) {
+    const fp = filtros[String(p.id)] || [];
+    for (const linha of p.dados) {
+      if (!fp.length || linhaPassaFiltros(linha, fp))
+        resultados.push({ _arquivo: p.nome, ...linha });
     }
-
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "resultado_cofre.xlsx";
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    alert("Erro ao exportar: " + err.message);
   }
+  if (!resultados.length) { alert("Nenhum resultado para exportar."); return; }
+
+  const dadosParaExportar = resultados.map((linha) => {
+    const obj = {};
+    for (const col of colunasOrdenadas) { obj[col.startsWith("_") ? col.slice(1) : col] = linha[col] ?? ""; }
+    return obj;
+  });
+
+  const wb  = XLSX.utils.book_new();
+  const ws  = XLSX.utils.json_to_sheet(dadosParaExportar);
+  XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = "resultado_cofre.xlsx"; a.click();
+  URL.revokeObjectURL(url);
 }
 
 function iniciarDragAndDrop(lista) {
   if (!lista) return;
   let dragSrc = null;
-
   lista.querySelectorAll(".col-reorder-item").forEach((item) => {
-    item.addEventListener("dragstart", (e) => {
-      dragSrc = item;
-      item.classList.add("dragging");
-      e.dataTransfer.effectAllowed = "move";
-    });
-    item.addEventListener("dragend", () => {
-      dragSrc = null;
-      lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("dragging", "drag-over"));
-    });
-    item.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      if (item === dragSrc) return;
-      lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over"));
-      item.classList.add("drag-over");
-    });
-    item.addEventListener("drop", (e) => {
-      e.preventDefault();
-      if (!dragSrc || dragSrc === item) return;
-      const rect = item.getBoundingClientRect();
-      const after = e.clientY > rect.top + rect.height / 2;
-      lista.insertBefore(dragSrc, after ? item.nextSibling : item);
-      lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over"));
-    });
+    item.addEventListener("dragstart", (e) => { dragSrc = item; item.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
+    item.addEventListener("dragend",   () => { dragSrc = null; lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("dragging", "drag-over")); });
+    item.addEventListener("dragover",  (e) => { e.preventDefault(); if (item === dragSrc) return; lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over")); item.classList.add("drag-over"); });
+    item.addEventListener("drop",      (e) => { e.preventDefault(); if (!dragSrc || dragSrc === item) return; const after = e.clientY > item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2; lista.insertBefore(dragSrc, after ? item.nextSibling : item); lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over")); });
   });
 }
 
 // ── HELPERS ───────────────────────────────────────────────
 function escHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function initTheme(btn) {
@@ -516,8 +389,7 @@ function initTheme(btn) {
 }
 
 function updateThemeIcon(btn, isDark) {
-  const icon = btn?.querySelector("i");
-  const text = btn?.querySelector("span");
+  const icon = btn?.querySelector("i"); const text = btn?.querySelector("span");
   if (icon) icon.className = isDark ? "ph ph-sun" : "ph ph-moon";
   if (text) text.textContent = isDark ? "Modo claro" : "Modo escuro";
 }
@@ -528,10 +400,7 @@ function initSettingsMenu(btn, menu) {
   const open  = () => { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); };
   btn.setAttribute("aria-expanded", "false");
   btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden ? open() : close(); });
-  document.addEventListener("click", (e) => {
-    const bar = document.getElementById("sidebar-userbar");
-    if (!bar?.contains(e.target)) close();
-  });
+  document.addEventListener("click", (e) => { if (!document.getElementById("sidebar-userbar")?.contains(e.target)) close(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
 }
 
@@ -541,7 +410,6 @@ function initMobileSidebar(menuBtn) {
   document.addEventListener("click", (e) => {
     if (!document.body.classList.contains("sidebar-open")) return;
     const sidebar = document.querySelector(".sidebar");
-    if (!sidebar?.contains(e.target) && !menuBtn.contains(e.target))
-      document.body.classList.remove("sidebar-open");
+    if (!sidebar?.contains(e.target) && !menuBtn.contains(e.target)) document.body.classList.remove("sidebar-open");
   });
 }
