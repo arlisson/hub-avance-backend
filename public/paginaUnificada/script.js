@@ -105,6 +105,32 @@ const APPS = [
       },
     ],
   },
+  {
+    id: "cofre",
+    badge: "Cofre de CSVs",
+    image: "../img/iconeTeste.png",
+    title: "Cofre de CSVs",
+    shortDesc:
+      "Faça upload, filtre e exporte planilhas massivas de forma totalmente local e segura.",
+    longDesc:
+      "O Cofre de CSVs é uma ferramenta focada em performance e privacidade. Carregue arquivos CSV com centenas de milhares de linhas e realize buscas instantâneas. Os dados são salvos com segurança apenas no seu navegador, não trafegam pela internet, e você pode reordenar e exportar tudo em segundos.",
+    youtubeId: "",
+    tutorialLabel: "",
+    tutorialUrl: "",
+    enabled: true,
+    requiresPermission: false,
+    clientOnly: true,
+    actions: [
+      {
+        label: "Acessar",
+        icon: "ph-vault",
+        app: "cofre",
+        metric: "access",
+        primary: true,
+        targetBlank: false,
+      },
+    ],
+  },
 ];
 
 // ============================================================
@@ -845,7 +871,11 @@ function renderHubCards({ canAccessProtocol = false } = {}) {
   if (!grid) return;
   grid.innerHTML = "";
 
-  APPS.filter((app) => !(app.requiresPermission && !canAccessProtocol)).forEach(
+  APPS.filter((app) => {
+    if (app.requiresPermission && !canAccessProtocol) return false;
+    if (app.clientOnly && !_canAccessAgent) return false;
+    return true;
+  }).forEach(
     (app) => {
       const card = document.createElement("article");
       card.className = "hub-card" + (app.enabled ? "" : " hub-card-disabled");
