@@ -1,8 +1,6 @@
 const LOGIN_URL    = "/login/login.html";
 const HUB_URL      = "/paginaUnificada/index.html";
-const MAX_SIZE     = 200 * 1024 * 1024; // 200 MB
-const WARN_SIZE    =  15 * 1024 * 1024; // 15 MB — avisa que pode ser lento
-const WARN_ROWS    = 50_000;            // 50k linhas — avisa sobre filtros lentos
+const WARN_ROWS    = 50_000; // 50k linhas — avisa sobre filtros lentos
 const PAGE_SIZE    = 200;               // linhas por página na tabela de resultados
 
 // ── ESTADO LOCAL ──────────────────────────────────────────
@@ -185,15 +183,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function handleFiles(files) {
   const fileInput = document.getElementById("file-input");
   for (const file of files) {
-    if (file.size > MAX_SIZE) { setStatus(`${file.name} excede 200 MB`, "err"); continue; }
-
-    const isLargeFile = file.size > WARN_SIZE;
-    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    const loadingMsg = isLargeFile
-      ? `Processando arquivo grande (${sizeMB} MB) — pode demorar alguns segundos...`
-      : `Processando ${file.name}...`;
-
-    toggleLoading(true, loadingMsg);
+    toggleLoading(true, `Processando ${file.name}...`);
     setStatus(`Processando ${file.name}…`, "");
 
     try {
