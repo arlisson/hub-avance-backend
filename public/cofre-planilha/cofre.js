@@ -340,10 +340,6 @@ function criarItemColuna(planilhaId, coluna) {
 
   const head = document.createElement("div");
   head.className = "filtro-col-head";
-  head.style.display = "flex";
-  head.style.justifyContent = "space-between";
-  head.style.alignItems = "center";
-  head.style.gap = "8px";
 
   const label = document.createElement("label");
   label.className = "filtro-col-label";
@@ -359,17 +355,11 @@ function criarItemColuna(planilhaId, coluna) {
 
   const select = document.createElement("select");
   select.className = "filtro-col-type";
-  select.style.padding = "2px 4px";
-  select.style.fontSize = "11px";
-  select.style.borderRadius = "4px";
-  select.style.background = "var(--bg-secondary)";
-  select.style.color = "var(--text-primary)";
-  select.style.border = "1px solid var(--border-color)";
   select.innerHTML = `
     <option value="contains">Contém</option>
     <option value="exact">Exato</option>
-    <option value="starts">Começa</option>
-    <option value="ends">Termina</option>
+    <option value="starts">Começa com</option>
+    <option value="ends">Termina com</option>
   `;
   select.hidden = true;
 
