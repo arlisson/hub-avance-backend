@@ -1,7 +1,6 @@
 const LOGIN_URL = "/login/login.html";
 const HUB_URL   = "/paginaUnificada/index.html";
 
-// ── SESSION ID ───────────────────────────────────────────
 let sessionId = localStorage.getItem("cofre_session_id");
 if (!sessionId) {
   sessionId = crypto.randomUUID();
@@ -12,23 +11,17 @@ function cofreHeaders() {
   return { "x-session-id": sessionId };
 }
 
-// ── API FETCH ────────────────────────────────────────────
 async function apiFetch(url, { method = "GET", body } = {}) {
   const headers = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
-
   const resp = await fetch(url, {
-    method,
-    credentials: "include",
-    headers,
+    method, credentials: "include", headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-
   const text = await resp.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; }
   catch { data = { ok: false, error: text || "Resposta inválida." }; }
-
   if (!resp.ok) {
     const err = new Error(data?.error || "Erro na requisição.");
     err.status = resp.status;
@@ -37,8 +30,8 @@ async function apiFetch(url, { method = "GET", body } = {}) {
   return data;
 }
 
-// ── COLUNAS (estado global) ──────────────────────────────
-let colunasDisponiveis = [];
+let planilhasInfo = []; // [{id, nome_arquivo, colunas}]
+let ultimasColunas = [];
 
 // ── INIT ─────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
@@ -60,7 +53,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = LOGIN_URL;
   });
 
-  // Auth guard
   try {
     const me = await apiFetch("/api/profile");
     if (!me?.ok || !me?.user) throw new Error("Não autenticado.");
@@ -73,9 +65,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Upload
-  const uploadArea   = document.getElementById("upload-area");
-  const fileInput    = document.getElementById("file-input");
+  const uploadArea = document.getElementById("upload-area");
+  const fileInput  = document.getElementById("file-input");
 
   uploadArea?.addEventListener("dragover", (e) => {
     e.preventDefault();
@@ -89,19 +80,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   fileInput?.addEventListener("change", () => handleFiles(fileInput.files));
 
-  // Filtros
-  document.getElementById("btn-add-filtro")?.addEventListener("click", adicionarFiltro);
   document.getElementById("btn-buscar")?.addEventListener("click", buscar);
-  document.getElementById("btn-export")?.addEventListener("click", exportar);
+  document.getElementById("btn-export")?.addEventListener("click", abrirModalExport);
 
-  // Linha inicial de filtro
-  adicionarFiltro();
-
-  // Carrega estado inicial
   await carregarLista();
-  await carregarColunas();
+  await carregarInfoPlanilhas();
 
-  // Limpa sessão ao fechar aba
   window.addEventListener("beforeunload", () => {
     fetch("/api/planilhas", {
       method: "DELETE",
@@ -134,14 +118,14 @@ async function handleFiles(files) {
   }
   if (fileInput) fileInput.value = "";
   await carregarLista();
-  await carregarColunas();
+  await carregarInfoPlanilhas();
 }
 
 function setStatus(msg, tipo) {
-  const uploadStatus = document.getElementById("upload-status");
-  if (!uploadStatus) return;
-  uploadStatus.textContent = msg;
-  uploadStatus.className = "upload-status" + (tipo ? " " + tipo : "");
+  const el = document.getElementById("upload-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "upload-status" + (tipo ? " " + tipo : "");
 }
 
 // ── LISTA DE PLANILHAS ────────────────────────────────────
@@ -162,10 +146,11 @@ async function carregarLista() {
       return;
     }
 
-    for (const p of data.planilhas) {
+    data.planilhas.forEach((p, i) => {
       const li = document.createElement("li");
       li.className = "file-item";
       li.innerHTML = `
+        <span class="file-item-num">${i + 1}º</span>
         <i class="ph ph-file-xls" style="color:var(--accent-cyan);flex-shrink:0"></i>
         <span class="file-item-name" title="${escHtml(p.nome_arquivo)}">${escHtml(p.nome_arquivo)}</span>
         <button class="btn-delete-file" data-id="${p.id}" title="Remover">
@@ -173,7 +158,7 @@ async function carregarLista() {
         </button>
       `;
       fileList.appendChild(li);
-    }
+    });
 
     fileList.querySelectorAll(".btn-delete-file").forEach((btn) => {
       btn.addEventListener("click", () => deletarPlanilha(Number(btn.dataset.id)));
@@ -189,85 +174,106 @@ async function deletarPlanilha(id) {
   }).catch(() => {});
   setStatus("", "");
   await carregarLista();
-  await carregarColunas();
+  await carregarInfoPlanilhas();
 }
 
-// ── COLUNAS ──────────────────────────────────────────────
-async function carregarColunas() {
+// ── FILTROS POR PLANILHA ─────────────────────────────────
+async function carregarInfoPlanilhas() {
   try {
-    const res = await fetch("/api/planilhas/colunas", {
+    const res = await fetch("/api/planilhas/colunas-por-planilha", {
       headers: cofreHeaders(),
       credentials: "include",
     });
     const data = await res.json();
     if (!data.ok) return;
-    colunasDisponiveis = data.colunas;
-    atualizarTodosSelects();
+    planilhasInfo = data.planilhas;
+    renderFiltrosPanel();
   } catch {}
 }
 
-function atualizarTodosSelects() {
-  document.querySelectorAll(".filtro-coluna").forEach((sel) => {
-    const atual = sel.value;
-    sel.innerHTML = '<option value="">Todas as colunas</option>';
-    for (const col of colunasDisponiveis) {
-      const opt = document.createElement("option");
-      opt.value = col;
-      opt.textContent = col;
-      sel.appendChild(opt);
+function renderFiltrosPanel() {
+  const lista = document.getElementById("filtros-lista");
+  if (!lista) return;
+  lista.innerHTML = "";
+
+  if (!planilhasInfo.length) {
+    lista.innerHTML = '<p class="filtro-vazio">Faça upload de planilhas para ver os filtros.</p>';
+    return;
+  }
+
+  planilhasInfo.forEach((p, i) => {
+    const secao = document.createElement("div");
+    secao.className = "filtro-planilha";
+
+    const titulo = document.createElement("div");
+    titulo.className = "filtro-planilha-titulo";
+    titulo.innerHTML = `
+      <span class="filtro-planilha-num">${i + 1}º</span>
+      <span class="filtro-planilha-nome" title="${escHtml(p.nome_arquivo)}">${escHtml(p.nome_arquivo)}</span>
+    `;
+
+    const cols = document.createElement("div");
+    cols.className = "filtro-planilha-cols";
+
+    for (const col of p.colunas) {
+      cols.appendChild(criarItemColuna(p.id, col));
     }
-    if (atual) sel.value = atual;
+
+    secao.appendChild(titulo);
+    secao.appendChild(cols);
+    lista.appendChild(secao);
   });
 }
 
-// ── FILTROS DINÂMICOS ────────────────────────────────────
-function criarLinhaFiltro() {
-  const row = document.createElement("div");
-  row.className = "filter-row";
+function criarItemColuna(planilhaId, coluna) {
+  const item = document.createElement("div");
+  item.className = "filtro-col-item";
 
-  const grpColuna = document.createElement("div");
-  grpColuna.className = "filter-group";
-  grpColuna.innerHTML = '<label class="filter-label">Coluna</label>';
-  const sel = document.createElement("select");
-  sel.className = "input-dark-lite filtro-coluna";
-  sel.innerHTML = '<option value="">Todas as colunas</option>';
-  for (const col of colunasDisponiveis) {
-    const opt = document.createElement("option");
-    opt.value = col;
-    opt.textContent = col;
-    sel.appendChild(opt);
-  }
-  grpColuna.appendChild(sel);
+  const label = document.createElement("label");
+  label.className = "filtro-col-label";
 
-  const grpValor = document.createElement("div");
-  grpValor.className = "filter-group filter-group-grow";
-  grpValor.innerHTML = '<label class="filter-label">Contém</label>';
+  const chk = document.createElement("input");
+  chk.type = "checkbox";
+  chk.className = "filtro-col-check";
+  chk.dataset.planilha = planilhaId;
+  chk.dataset.coluna = coluna;
+
+  const nome = document.createElement("span");
+  nome.className = "filtro-col-nome";
+  nome.textContent = coluna;
+  nome.title = coluna;
+
+  label.appendChild(chk);
+  label.appendChild(nome);
+
   const inp = document.createElement("input");
   inp.type = "text";
-  inp.className = "input-dark-lite filtro-valor";
-  inp.placeholder = "Digite o valor...";
+  inp.className = "input-dark-lite filtro-col-valor";
+  inp.placeholder = "Filtrar...";
+  inp.disabled = true;
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") buscar(); });
-  grpValor.appendChild(inp);
 
-  const btnRem = document.createElement("button");
-  btnRem.type = "button";
-  btnRem.className = "btn-remove-filtro";
-  btnRem.title = "Remover filtro";
-  btnRem.innerHTML = '<i class="ph ph-x"></i>';
-  btnRem.addEventListener("click", () => {
-    row.remove();
-    if (!document.querySelectorAll(".filter-row").length) adicionarFiltro();
+  chk.addEventListener("change", () => {
+    inp.disabled = !chk.checked;
+    if (!chk.checked) inp.value = "";
+    else inp.focus();
   });
 
-  row.appendChild(grpColuna);
-  row.appendChild(grpValor);
-  row.appendChild(btnRem);
-  return row;
+  item.appendChild(label);
+  item.appendChild(inp);
+  return item;
 }
 
-function adicionarFiltro() {
-  const lista = document.getElementById("filtros-lista");
-  if (lista) lista.appendChild(criarLinhaFiltro());
+function coletarFiltros() {
+  const filtros = {};
+  document.querySelectorAll(".filtro-col-check:checked").forEach((chk) => {
+    const valor = chk.closest(".filtro-col-item")?.querySelector(".filtro-col-valor")?.value.trim() || "";
+    if (!valor) return;
+    const pid = chk.dataset.planilha;
+    if (!filtros[pid]) filtros[pid] = [];
+    filtros[pid].push({ coluna: chk.dataset.coluna, valor });
+  });
+  return filtros;
 }
 
 // ── BUSCA ─────────────────────────────────────────────────
@@ -278,16 +284,11 @@ async function buscar() {
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
 
-  const filtros = [];
-  document.querySelectorAll(".filter-row").forEach((row) => {
-    const coluna = row.querySelector(".filtro-coluna")?.value || "";
-    const valor  = row.querySelector(".filtro-valor")?.value.trim() || "";
-    if (coluna || valor) filtros.push({ coluna, valor });
-  });
+  const filtros = coletarFiltros();
 
   try {
     const params = new URLSearchParams();
-    if (filtros.length) params.set("filtros", JSON.stringify(filtros));
+    if (Object.keys(filtros).length) params.set("filtros", JSON.stringify(filtros));
 
     const res = await fetch(`/api/planilhas/buscar?${params}`, {
       headers: cofreHeaders(),
@@ -314,17 +315,18 @@ function renderTabela(rows, total) {
     return;
   }
 
+  ultimasColunas = Object.keys(rows[0]);
+
   if (resultsCount)
     resultsCount.textContent = `${total} resultado${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`;
   if (resultsBar) resultsBar.hidden = false;
 
-  const colunas = Object.keys(rows[0]);
   const table = document.createElement("table");
   table.className = "results-table";
 
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  for (const col of colunas) {
+  for (const col of ultimasColunas) {
     const th = document.createElement("th");
     th.textContent = col.startsWith("_") ? col.slice(1) : col;
     trHead.appendChild(th);
@@ -335,7 +337,7 @@ function renderTabela(rows, total) {
   const tbody = document.createElement("tbody");
   for (const row of rows) {
     const tr = document.createElement("tr");
-    for (const col of colunas) {
+    for (const col of ultimasColunas) {
       const td = document.createElement("td");
       const val = row[col] ?? "";
       td.textContent = val;
@@ -352,17 +354,58 @@ function renderTabela(rows, total) {
   }
 }
 
-// ── EXPORTAR ──────────────────────────────────────────────
-async function exportar() {
-  const filtros = [];
-  document.querySelectorAll(".filter-row").forEach((row) => {
-    const coluna = row.querySelector(".filtro-coluna")?.value || "";
-    const valor  = row.querySelector(".filtro-valor")?.value.trim() || "";
-    if (coluna || valor) filtros.push({ coluna, valor });
-  });
+// ── EXPORTAR COM REORDENAÇÃO ──────────────────────────────
+function abrirModalExport() {
+  const colunas = ultimasColunas.length ? ultimasColunas : [];
+  if (!colunas.length) return;
 
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "export-modal";
+
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="ph ph-arrows-out-line-vertical"></i> Ordenar colunas</h2>
+        <p class="modal-sub">Arraste para definir a ordem das colunas na planilha exportada.</p>
+      </div>
+      <ul class="col-reorder-list" id="col-reorder-list">
+        ${colunas.map((col) => `
+          <li class="col-reorder-item" draggable="true" data-col="${escHtml(col)}">
+            <i class="ph ph-dots-six-vertical drag-handle"></i>
+            <span>${escHtml(col.startsWith("_") ? col.slice(1) : col)}</span>
+          </li>
+        `).join("")}
+      </ul>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" id="export-modal-cancel">Cancelar</button>
+        <button class="btn-primary" id="export-modal-confirm">
+          <i class="ph ph-download-simple"></i> Exportar
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) fecharModalExport(); });
+  document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
+  document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
+  iniciarDragAndDrop(document.getElementById("col-reorder-list"));
+}
+
+function fecharModalExport() {
+  document.getElementById("export-modal")?.remove();
+}
+
+async function confirmarExport() {
+  const lista = document.getElementById("col-reorder-list");
+  const colunas = [...lista.querySelectorAll(".col-reorder-item")].map((li) => li.dataset.col);
+  fecharModalExport();
+
+  const filtros = coletarFiltros();
   const params = new URLSearchParams();
-  if (filtros.length) params.set("filtros", JSON.stringify(filtros));
+  if (Object.keys(filtros).length) params.set("filtros", JSON.stringify(filtros));
+  params.set("colunas", JSON.stringify(colunas));
 
   try {
     const res = await fetch(`/api/planilhas/exportar?${params}`, {
@@ -388,6 +431,37 @@ async function exportar() {
   }
 }
 
+function iniciarDragAndDrop(lista) {
+  if (!lista) return;
+  let dragSrc = null;
+
+  lista.querySelectorAll(".col-reorder-item").forEach((item) => {
+    item.addEventListener("dragstart", (e) => {
+      dragSrc = item;
+      item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    item.addEventListener("dragend", () => {
+      dragSrc = null;
+      lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("dragging", "drag-over"));
+    });
+    item.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (item === dragSrc) return;
+      lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over"));
+      item.classList.add("drag-over");
+    });
+    item.addEventListener("drop", (e) => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === item) return;
+      const rect = item.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      lista.insertBefore(dragSrc, after ? item.nextSibling : item);
+      lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over"));
+    });
+  });
+}
+
 // ── HELPERS ───────────────────────────────────────────────
 function escHtml(str) {
   return String(str)
@@ -402,7 +476,6 @@ function initTheme(btn) {
   const isLight = localStorage.getItem("theme") === "light";
   document.body.classList.toggle("light-mode", isLight);
   updateThemeIcon(btn, !isLight);
-
   btn.addEventListener("click", () => {
     const nowLight = document.body.classList.toggle("light-mode");
     localStorage.setItem("theme", nowLight ? "light" : "dark");

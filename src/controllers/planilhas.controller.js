@@ -1,8 +1,6 @@
 import { pool } from "../config/db.js";
 import * as XLSX from "xlsx";
-import { randomBytes } from "crypto";
 
-// Auto-cria tabela de sessão
 (async () => {
   try {
     await pool.query(`
@@ -20,7 +18,6 @@ import { randomBytes } from "crypto";
   }
 })();
 
-// Limpa sessões antigas a cada hora (segurança extra)
 setInterval(async () => {
   await pool.query("DELETE FROM planilhas_sessao WHERE criado_em < NOW() - INTERVAL 2 HOUR").catch(() => {});
 }, 60 * 60 * 1000);
@@ -33,8 +30,7 @@ export async function uploadPlanilha(req, res) {
   try {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
-
-    if (!req.file) return res.status(400).json({ ok: false, error: "Nenhum _arquivo enviado." });
+    if (!req.file) return res.status(400).json({ ok: false, error: "Nenhum arquivo enviado." });
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
@@ -77,10 +73,7 @@ export async function deletarPlanilha(req, res) {
     const id = Number(req.params.id);
     if (!sessionId || !id) return res.status(400).json({ ok: false, error: "Parâmetros inválidos." });
 
-    await pool.query(
-      "DELETE FROM planilhas_sessao WHERE id = ? AND session_id = ?",
-      [id, sessionId]
-    );
+    await pool.query("DELETE FROM planilhas_sessao WHERE id = ? AND session_id = ?", [id, sessionId]);
 
     return res.json({ ok: true });
   } catch (err) {
@@ -103,31 +96,29 @@ export async function limparSessao(req, res) {
   }
 }
 
-function parseFiltros(raw) {
-  if (!raw) return [];
+// filtros = { "planilhaId": [{coluna, valor}] }
+function parseFiltrosPorPlanilha(raw) {
+  if (!raw) return {};
   try {
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) return [];
-    return arr
-      .map((f) => ({ coluna: String(f.coluna || "").trim(), valor: String(f.valor || "").trim() }))
-      .filter((f) => f.coluna || f.valor);
+    const obj = JSON.parse(raw);
+    if (typeof obj !== "object" || Array.isArray(obj) || !obj) return {};
+    const result = {};
+    for (const [id, arr] of Object.entries(obj)) {
+      if (!Array.isArray(arr)) continue;
+      result[id] = arr
+        .map((f) => ({ coluna: String(f.coluna || "").trim(), valor: String(f.valor || "").trim() }))
+        .filter((f) => f.coluna && f.valor);
+    }
+    return result;
   } catch {
-    return [];
+    return {};
   }
 }
 
 function linhaPassaFiltros(linha, filtros) {
   for (const { coluna, valor } of filtros) {
-    if (!coluna) {
-      // sem coluna: busca em todos os campos
-      const achado = Object.values(linha).some((v) =>
-        String(v ?? "").toLowerCase().includes(valor.toLowerCase())
-      );
-      if (!achado) return false;
-    } else {
-      const cellValue = String(linha[coluna] ?? "").toLowerCase();
-      if (!cellValue.includes(valor.toLowerCase())) return false;
-    }
+    const cellValue = String(linha[coluna] ?? "").toLowerCase();
+    if (!cellValue.includes(valor.toLowerCase())) return false;
   }
   return true;
 }
@@ -137,16 +128,17 @@ export async function buscarDados(req, res) {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
-    const filtros = parseFiltros(req.query.filtros);
+    const filtrosPorPlanilha = parseFiltrosPorPlanilha(req.query.filtros);
 
     const [rows] = await pool.query(
-      "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT id, nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
       [sessionId]
     );
 
     const resultados = [];
     for (const row of rows) {
       const dados = JSON.parse(row.dados);
+      const filtros = filtrosPorPlanilha[String(row.id)] || [];
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
           resultados.push({ _arquivo: row.nome_arquivo, ...linha });
@@ -166,16 +158,25 @@ export async function exportarResultados(req, res) {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
-    const filtros = parseFiltros(req.query.filtros);
+    const filtrosPorPlanilha = parseFiltrosPorPlanilha(req.query.filtros);
+
+    let colunasOrdenadas = null;
+    if (req.query.colunas) {
+      try {
+        const parsed = JSON.parse(req.query.colunas);
+        if (Array.isArray(parsed) && parsed.length) colunasOrdenadas = parsed;
+      } catch {}
+    }
 
     const [rows] = await pool.query(
-      "SELECT nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT id, nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
       [sessionId]
     );
 
     const resultados = [];
     for (const row of rows) {
       const dados = JSON.parse(row.dados);
+      const filtros = filtrosPorPlanilha[String(row.id)] || [];
       for (const linha of dados) {
         if (!filtros.length || linhaPassaFiltros(linha, filtros)) {
           resultados.push({ _arquivo: row.nome_arquivo, ...linha });
@@ -187,8 +188,22 @@ export async function exportarResultados(req, res) {
       return res.status(400).json({ ok: false, error: "Nenhum resultado para exportar." });
     }
 
+    let dadosParaExportar;
+    if (colunasOrdenadas) {
+      dadosParaExportar = resultados.map((linha) => {
+        const obj = {};
+        for (const col of colunasOrdenadas) {
+          const header = col.startsWith("_") ? col.slice(1) : col;
+          obj[header] = linha[col] ?? "";
+        }
+        return obj;
+      });
+    } else {
+      dadosParaExportar = resultados.map(({ _arquivo, ...rest }) => ({ arquivo: _arquivo, ...rest }));
+    }
+
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(resultados);
+    const ws = XLSX.utils.json_to_sheet(dadosParaExportar);
     XLSX.utils.book_append_sheet(wb, ws, "Resultados");
 
     const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
@@ -202,27 +217,28 @@ export async function exportarResultados(req, res) {
   }
 }
 
-export async function listarColunas(req, res) {
+export async function listarColunasPorPlanilha(req, res) {
   try {
     const sessionId = getSessionId(req);
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
 
     const [rows] = await pool.query(
-      "SELECT dados FROM planilhas_sessao WHERE session_id = ?",
+      "SELECT id, nome_arquivo, dados FROM planilhas_sessao WHERE session_id = ? ORDER BY criado_em ASC",
       [sessionId]
     );
 
-    const colunasSet = new Set();
-    for (const row of rows) {
+    const planilhas = rows.map((row) => {
       const dados = JSON.parse(row.dados);
-      if (dados.length) {
-        Object.keys(dados[0]).forEach((k) => colunasSet.add(k));
-      }
-    }
+      return {
+        id: row.id,
+        nome_arquivo: row.nome_arquivo,
+        colunas: dados.length ? Object.keys(dados[0]) : [],
+      };
+    });
 
-    return res.json({ ok: true, colunas: [...colunasSet] });
+    return res.json({ ok: true, planilhas });
   } catch (err) {
-    console.error("[listarColunas]", err);
+    console.error("[listarColunasPorPlanilha]", err);
     return res.status(500).json({ ok: false, error: "Erro ao listar colunas." });
   }
 }
