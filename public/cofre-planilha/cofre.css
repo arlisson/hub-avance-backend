@@ -235,7 +235,7 @@ body:not(.light-mode) .dropdown-item.danger { color:#ff4444; }
 
 .filtro-col-label {
   display:flex; align-items:center; gap:8px;
-  cursor:pointer; flex:0 0 110px; width:110px;
+  cursor:pointer; flex:1; min-width:0;
   font-size:13px; color:var(--text-secondary);
   transition:color .15s;
 }
@@ -249,7 +249,7 @@ body:not(.light-mode) .dropdown-item.danger { color:#ff4444; }
 .filtro-col-nome { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 .filtro-col-valor {
-  flex:1; min-width:0;
+  flex:0 0 140px;
   font-size:12px; padding:5px 10px;
   border-radius:8px;
 }
