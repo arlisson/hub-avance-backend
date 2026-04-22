@@ -1,5 +1,6 @@
 import { pool } from "../config/db.js";
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { unlink } from "fs/promises";
 import { promisify } from "util";
 import { gzip, gunzip } from "zlib";
@@ -46,6 +47,46 @@ function getSessionId(req) {
   return String(req.headers["x-session-id"] || req.query.sid || "").trim().slice(0, 64);
 }
 
+function extrairValorCelula(val) {
+  if (val == null) return "";
+  if (typeof val === "object" && "result" in val) return val.result ?? "";
+  if (val instanceof Date) return val.toLocaleString("pt-BR");
+  return val;
+}
+
+async function lerPlanilhaStream(filePath) {
+  const workbook = new ExcelJS.stream.xlsx.WorkbookReader(filePath, {
+    worksheets: "emit",
+    sharedStrings: "cache",
+    hyperlinks: "ignore",
+    styles: "ignore",
+    entries: "emit",
+  });
+
+  const dados = [];
+  let headers = null;
+
+  await new Promise((resolve, reject) => {
+    workbook.on("worksheet", (sheet) => {
+      sheet.on("row", (row) => {
+        const values = row.values.slice(1); // índice 0 é sempre null no ExcelJS
+        if (!headers) {
+          headers = values.map((v) => (v == null ? "" : String(v)));
+          return;
+        }
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = extrairValorCelula(values[i]); });
+        dados.push(obj);
+      });
+    });
+    workbook.on("end", resolve);
+    workbook.on("error", reject);
+    workbook.read().catch(reject);
+  });
+
+  return dados;
+}
+
 export async function uploadPlanilha(req, res) {
   const filePath = req.file?.path;
   try {
@@ -53,9 +94,7 @@ export async function uploadPlanilha(req, res) {
     if (!sessionId) return res.status(400).json({ ok: false, error: "session_id obrigatório." });
     if (!req.file)  return res.status(400).json({ ok: false, error: "Nenhum arquivo enviado." });
 
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+    const dados = await lerPlanilhaStream(filePath);
 
     if (!dados.length) return res.status(400).json({ ok: false, error: "Planilha vazia ou sem dados." });
 
