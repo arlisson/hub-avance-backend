@@ -15,14 +15,37 @@ const STORE_NAME = "planilhas";
 function abrirDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    // Configura o timeout para evitar que o site fique travado se o DB não responder
+    const timeout = setTimeout(() => reject("Timeout ao abrir banco de dados"), 5000);
+
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
       }
     };
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject("Erro ao abrir IndexedDB");
+
+    request.onsuccess = (e) => {
+      clearTimeout(timeout);
+      const db = e.target.result;
+      // Garante que o banco seja fechado se a página for recarregada ou fechada
+      db.onversionchange = () => {
+        db.close();
+        window.location.reload();
+      };
+      resolve(db);
+    };
+
+    request.onerror = (e) => {
+      clearTimeout(timeout);
+      console.error("Erro IndexedDB:", e.target.error);
+      reject("Erro ao abrir IndexedDB");
+    };
+    
+    request.onblocked = () => {
+      console.warn("Abertura do banco bloqueada por outra aba/conexão.");
+    };
   });
 }
 
