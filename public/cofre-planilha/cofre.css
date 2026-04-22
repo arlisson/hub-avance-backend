@@ -189,35 +189,41 @@ body:not(.light-mode) .dropdown-item.danger { color:#ff4444; }
 .btn-delete-file:hover { color:var(--danger); }
 
 /* ── 9. FILTROS POR PLANILHA ── */
-#filtros-lista {
-  display:flex; flex-direction:column; gap:8px;
-  overflow-y:auto;
-  max-height:240px;
-  flex-shrink:0;
-}
+#filtros-lista { flex-shrink:0; }
 
 .filtro-vazio { font-size:13px; color:var(--text-secondary); padding:4px 0; }
 
-.filtro-planilha { border:1px solid var(--border-color); border-radius:10px; overflow:hidden; flex-shrink:0; }
+.filtro-tabs-wrap { display:flex; flex-direction:column; gap:0; }
 
-.filtro-planilha-titulo {
-  display:flex; align-items:center; gap:8px;
-  padding:8px 12px;
-  background:var(--bg-hover);
-  border-bottom:1px solid var(--border-color);
-  font-size:12px; font-weight:600;
+.filtro-tabs-row { display:flex; gap:6px; flex-wrap:wrap; }
+
+.filtro-tab-btn {
+  padding:5px 14px;
+  border-radius:20px;
+  border:1px solid var(--border-color);
+  font-size:12px; font-weight:700;
+  color:var(--text-secondary);
+  background:transparent;
+  cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s;
 }
+.filtro-tab-btn:hover { border-color:var(--accent-cyan); color:var(--accent-cyan); }
+.filtro-tab-btn.active { background:var(--accent-cyan); color:var(--bg-sidebar); border-color:var(--accent-cyan); }
 
-.filtro-planilha-num { color:var(--accent-cyan); flex-shrink:0; }
-.filtro-planilha-nome { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); }
+.filtro-drawer { overflow:hidden; }
 
-.filtro-planilha-cols { padding:6px 8px; display:flex; flex-direction:column; gap:4px; }
+.filtro-drawer-panel {
+  display:none; flex-direction:column; gap:4px;
+  padding:10px 2px 4px;
+  max-height:200px; overflow-y:auto;
+}
+.filtro-drawer-panel.active { display:flex; }
 
 .filtro-col-item { display:flex; align-items:center; gap:8px; }
 
 .filtro-col-label {
   display:flex; align-items:center; gap:6px;
-  cursor:pointer; flex:1; min-width:0;
+  cursor:pointer; flex:0 0 auto; min-width:0;
   font-size:13px; color:var(--text-secondary);
   transition:color .15s;
 }
@@ -228,11 +234,9 @@ body:not(.light-mode) .dropdown-item.danger { color:#ff4444; }
 .filtro-col-nome { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 .filtro-col-valor {
-  width:130px; flex-shrink:0;
+  width:140px; flex-shrink:0;
   font-size:12px; padding:4px 8px;
-  transition:opacity .15s;
 }
-.filtro-col-valor:disabled { opacity:.35; cursor:not-allowed; }
 
 /* ── 10. BUSCAR ── */
 .filter-actions-row { display:flex; justify-content:flex-end; flex-shrink:0; }

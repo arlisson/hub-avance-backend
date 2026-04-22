@@ -201,28 +201,47 @@ function renderFiltrosPanel() {
     return;
   }
 
+  const wrap = document.createElement("div");
+  wrap.className = "filtro-tabs-wrap";
+
+  const tabsRow = document.createElement("div");
+  tabsRow.className = "filtro-tabs-row";
+
+  const drawer = document.createElement("div");
+  drawer.className = "filtro-drawer";
+
   planilhasInfo.forEach((p, i) => {
-    const secao = document.createElement("div");
-    secao.className = "filtro-planilha";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filtro-tab-btn";
+    btn.dataset.planilhaId = p.id;
+    btn.textContent = `${i + 1}º`;
+    btn.title = p.nome_arquivo;
+    tabsRow.appendChild(btn);
 
-    const titulo = document.createElement("div");
-    titulo.className = "filtro-planilha-titulo";
-    titulo.innerHTML = `
-      <span class="filtro-planilha-num">${i + 1}º</span>
-      <span class="filtro-planilha-nome" title="${escHtml(p.nome_arquivo)}">${escHtml(p.nome_arquivo)}</span>
-    `;
-
-    const cols = document.createElement("div");
-    cols.className = "filtro-planilha-cols";
+    const panel = document.createElement("div");
+    panel.className = "filtro-drawer-panel";
+    panel.dataset.planilhaId = p.id;
 
     for (const col of p.colunas) {
-      cols.appendChild(criarItemColuna(p.id, col));
+      panel.appendChild(criarItemColuna(p.id, col));
     }
+    drawer.appendChild(panel);
 
-    secao.appendChild(titulo);
-    secao.appendChild(cols);
-    lista.appendChild(secao);
+    btn.addEventListener("click", () => {
+      const isActive = btn.classList.contains("active");
+      tabsRow.querySelectorAll(".filtro-tab-btn").forEach((b) => b.classList.remove("active"));
+      drawer.querySelectorAll(".filtro-drawer-panel").forEach((dp) => dp.classList.remove("active"));
+      if (!isActive) {
+        btn.classList.add("active");
+        panel.classList.add("active");
+      }
+    });
   });
+
+  wrap.appendChild(tabsRow);
+  wrap.appendChild(drawer);
+  lista.appendChild(wrap);
 }
 
 function criarItemColuna(planilhaId, coluna) {
@@ -250,11 +269,11 @@ function criarItemColuna(planilhaId, coluna) {
   inp.type = "text";
   inp.className = "input-dark-lite filtro-col-valor";
   inp.placeholder = "Filtrar...";
-  inp.disabled = true;
+  inp.hidden = true;
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") buscar(); });
 
   chk.addEventListener("change", () => {
-    inp.disabled = !chk.checked;
+    inp.hidden = !chk.checked;
     if (!chk.checked) inp.value = "";
     else inp.focus();
   });
