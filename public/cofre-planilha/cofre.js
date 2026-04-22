@@ -683,66 +683,47 @@ async function confirmarExport() {
   fecharModalExport();
 
   toggleLoading(true, "Gerando exportação...");
-  await new Promise(r => setTimeout(r, 0));
+  
+  // Pequeno delay para garantir que o loader renderize antes de travar a thread
+  await new Promise(r => setTimeout(r, 50));
 
-  const filtros    = coletarFiltros();
-  const resultados = [];
-  for (const p of planilhas) {
-    const dados = await carregarDadosPlanilha(p.id);
-    const fp    = filtros[String(p.id)] || [];
-    for (const linha of dados) {
-      if (!fp.length || linhaPassaFiltros(linha, fp))
-        resultados.push({ _arquivo: p.nome, ...linha });
-    }
-  }
-  if (!resultados.length) { 
+  // Exporta EXATAMENTE o que foi filtrado na busca atual
+  const resultados = totalResultados;
+
+  if (!resultados || !resultados.length) { 
     toggleLoading(false);
     alert("Nenhum resultado para exportar."); 
     return; 
   }
 
-  // Se o número de linhas for muito grande, força a exportação para CSV
-  // XLSX gera um XML gigante na RAM, o que trava a aba inteira do navegador em datasets massivos.
-  const limiteExcel = 50000;
-  if (resultados.length > limiteExcel) {
-    const cabecalho = colunasOrdenadas.map(c => `"${c.replace(/"/g, '""')}"`).join(";");
-    const linhasCSV = resultados.map(linha => {
-      return colunasOrdenadas.map(c => {
-        const val = linha[c] ?? "";
-        return `"${String(val).replace(/"/g, '""')}"`;
-      }).join(";");
-    });
-    
-    // Adiciona o BOM (\uFEFF) para garantir que o Excel entenda o UTF-8 (Acentos)
-    const csvContent = "\uFEFF" + [cabecalho, ...linhasCSV].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = "resultado_cofre.csv"; a.click();
-    URL.revokeObjectURL(url);
-    toggleLoading(false);
-    setTimeout(() => alert(`O resultado era muito grande (${resultados.length.toLocaleString("pt-BR")} linhas). O arquivo foi exportado automaticamente no formato .CSV para evitar travamento do seu navegador.`), 300);
-    return;
+  // Aviso caso a planilha seja excessivamente grande e vá travar o navegador
+  if (resultados.length > 50000) {
+    console.warn(`Exportando ${resultados.length} linhas em .xlsx. Isso pode consumir muita memória e travar a aba.`);
   }
 
-  // Para datasets menores, permite usar o XLSX normalmente
-  const dadosParaExportar = resultados.map((linha) => {
-    const obj = {};
-    for (const col of colunasOrdenadas) { obj[col.startsWith("_") ? col.slice(1) : col] = linha[col] ?? ""; }
-    return obj;
-  });
+  try {
+    const dadosParaExportar = resultados.map((linha) => {
+      const obj = {};
+      for (const col of colunasOrdenadas) { obj[col.startsWith("_") ? col.slice(1) : col] = linha[col] ?? ""; }
+      return obj;
+    });
 
-  const wb  = XLSX.utils.book_new();
-  const ws  = XLSX.utils.json_to_sheet(dadosParaExportar);
-  XLSX.utils.book_append_sheet(wb, ws, "Resultados");
-  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    const wb  = XLSX.utils.book_new();
+    const ws  = XLSX.utils.json_to_sheet(dadosParaExportar);
+    XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+    const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
 
-  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href = url; a.download = "resultado_cofre.xlsx"; a.click();
-  URL.revokeObjectURL(url);
-  toggleLoading(false);
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "resultado_cofre.xlsx"; a.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    alert("Ocorreu um erro ao gerar o Excel. O arquivo pode ser grande demais para a memória do navegador.");
+    console.error("Erro na exportação XLSX:", error);
+  } finally {
+    toggleLoading(false);
+  }
 }
 
 function iniciarDragAndDrop(lista) {
