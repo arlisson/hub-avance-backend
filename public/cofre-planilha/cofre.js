@@ -7,6 +7,81 @@ let planilhas     = []; // [{ id, nome, dados, colunas }]
 let nextId        = 1;
 let ultimasColunas = [];
 
+// ── BANCO DE DADOS LOCAL (IndexedDB) ──────────────────────
+const DB_NAME = "CofrePlanilhasDB";
+const DB_VERSION = 1;
+const STORE_NAME = "planilhas";
+
+function abrirDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+      }
+    };
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject("Erro ao abrir IndexedDB");
+  });
+}
+
+async function salvarPlanilhaLocal(planilha) {
+  try {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+      const { id, ...dadosSemId } = planilha;
+      const request = store.add(dadosSemId);
+      request.onsuccess = (e) => {
+        planilha.id = e.target.result;
+        resolve(e.target.result);
+      };
+      request.onerror = () => reject("Erro ao salvar planilha");
+    });
+  } catch (err) { console.error(err); }
+}
+
+async function carregarPlanilhasLocais() {
+  try {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], "readonly");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject("Erro ao carregar planilhas");
+    });
+  } catch (err) { console.error(err); return []; }
+}
+
+async function removerPlanilhaLocal(id) {
+  try {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(Number(id));
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject("Erro ao remover planilha");
+    });
+  } catch (err) { console.error(err); }
+}
+
+async function limparBancoLocal() {
+  try {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject();
+    });
+  } catch (err) { console.error(err); }
+}
+
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   const themeToggle   = document.getElementById("theme-toggle");
@@ -37,6 +112,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // Carregar dados salvos do IndexedDB
+  toggleLoading(true, "Carregando cofre local...");
+  planilhas = await carregarPlanilhasLocais();
+  toggleLoading(false);
+
+  if (planilhas.length > 0) {
+    const ids = planilhas.map(p => p.id).filter(id => typeof id === 'number');
+    nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+    renderLista();
+    renderFiltrosPanel();
+    const statusEl = document.querySelector(".assistant-details .status");
+    if (statusEl) statusEl.textContent = "Dados salvos localmente no seu navegador";
+  }
+
   const uploadArea = document.getElementById("upload-area");
   const fileInput  = document.getElementById("file-input");
 
@@ -47,6 +136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("btn-buscar")?.addEventListener("click", buscar);
   document.getElementById("btn-export")?.addEventListener("click", abrirModalExport);
+  document.getElementById("btn-limpar-tudo")?.addEventListener("click", limparTudo);
 });
 
 // ── UPLOAD ────────────────────────────────────────────────
@@ -54,17 +144,30 @@ async function handleFiles(files) {
   const fileInput = document.getElementById("file-input");
   for (const file of files) {
     if (file.size > MAX_SIZE) { setStatus(`${file.name} excede 200 MB`, "err"); continue; }
+    
+    toggleLoading(true, `Processando ${file.name}...`);
     setStatus(`Processando ${file.name}…`, "");
+    
     try {
       const dados = await parsearArquivo(file);
       if (!dados.length) throw new Error("Planilha vazia ou sem dados.");
       const colunas = Object.keys(dados[0]);
-      planilhas.push({ id: nextId++, nome: file.name, dados, colunas });
+      
+      const novaPlanilha = { nome: file.name, dados, colunas };
+      
+      toggleLoading(true, `Salvando ${file.name} localmente...`);
+      await salvarPlanilhaLocal(novaPlanilha); 
+      planilhas.push(novaPlanilha);
+      
       setStatus(`${file.name} — ${dados.length} linhas carregadas`, "ok");
+      
+      const statusEl = document.querySelector(".assistant-details .status");
+      if (statusEl) statusEl.textContent = "Dados salvos localmente no seu navegador";
     } catch (err) {
       setStatus(`Erro: ${err.message}`, "err");
     }
   }
+  toggleLoading(false);
   if (fileInput) fileInput.value = "";
   renderLista();
   renderFiltrosPanel();
@@ -91,6 +194,25 @@ function setStatus(msg, tipo) {
   el.className = "upload-status" + (tipo ? " " + tipo : "");
 }
 
+async function limparTudo() {
+  if (!confirm("Isso apagará todas as planilhas carregadas do disco local. Deseja continuar?")) return;
+  
+  toggleLoading(true, "Limpando cofre...");
+  await limparBancoLocal();
+  planilhas = [];
+  nextId = 1;
+  renderLista();
+  renderFiltrosPanel();
+  
+  const tableWrapper = document.getElementById("table-wrapper");
+  if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Faça upload de planilhas e clique em Buscar.</p>';
+  const resultsBar = document.getElementById("results-bar");
+  if (resultsBar) resultsBar.hidden = true;
+  
+  toggleLoading(false);
+  setStatus("Cofre limpo com sucesso.", "ok");
+}
+
 // ── LISTA DE PLANILHAS ────────────────────────────────────
 function renderLista() {
   const fileList = document.getElementById("file-list");
@@ -99,6 +221,8 @@ function renderLista() {
 
   if (!planilhas.length) {
     fileList.innerHTML = '<li class="file-list-empty">Nenhuma planilha carregada.</li>';
+    const statusEl = document.querySelector(".assistant-details .status");
+    if (statusEl) statusEl.textContent = "Dados temporários — apagados ao fechar esta aba";
     return;
   }
 
@@ -115,8 +239,12 @@ function renderLista() {
   });
 
   fileList.querySelectorAll(".btn-delete-file").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      planilhas = planilhas.filter((p) => p.id !== Number(btn.dataset.id));
+    btn.addEventListener("click", async () => {
+      const idParaRemover = Number(btn.dataset.id);
+      toggleLoading(true, "Removendo arquivo...");
+      await removerPlanilhaLocal(idParaRemover);
+      planilhas = planilhas.filter((p) => p.id !== idParaRemover);
+      toggleLoading(false);
       setStatus("", "");
       renderLista();
       renderFiltrosPanel();
@@ -134,6 +262,17 @@ function renderFiltrosPanel() {
     lista.innerHTML = '<p class="filtro-vazio">Faça upload de planilhas para ver os filtros.</p>';
     return;
   }
+
+  // Busca Global
+  const globalSearchBox = document.createElement("div");
+  globalSearchBox.className = "global-search-box";
+  globalSearchBox.innerHTML = `
+    <div class="input-with-icon">
+      <i class="ph ph-magnifying-glass"></i>
+      <input type="text" id="global-search" placeholder="Busca global em todas as colunas..." class="global-search-input">
+    </div>
+  `;
+  lista.appendChild(globalSearchBox);
 
   const wrap    = document.createElement("div");
   wrap.className = "filtro-tabs-wrap";
@@ -176,6 +315,13 @@ function criarItemColuna(planilhaId, coluna) {
   const item = document.createElement("div");
   item.className = "filtro-col-item";
 
+  const head = document.createElement("div");
+  head.className = "filtro-col-head";
+  head.style.display = "flex";
+  head.style.justifyContent = "space-between";
+  head.style.alignItems = "center";
+  head.style.gap = "8px";
+
   const label = document.createElement("label");
   label.className = "filtro-col-label";
 
@@ -187,6 +333,25 @@ function criarItemColuna(planilhaId, coluna) {
   nome.className = "filtro-col-nome"; nome.textContent = coluna; nome.title = coluna;
 
   label.appendChild(chk); label.appendChild(nome);
+
+  const select = document.createElement("select");
+  select.className = "filtro-col-type";
+  select.style.padding = "2px 4px";
+  select.style.fontSize = "11px";
+  select.style.borderRadius = "4px";
+  select.style.background = "var(--bg-secondary)";
+  select.style.color = "var(--text-primary)";
+  select.style.border = "1px solid var(--border-color)";
+  select.innerHTML = `
+    <option value="contains">Contém</option>
+    <option value="exact">Exato</option>
+    <option value="starts">Começa</option>
+    <option value="ends">Termina</option>
+  `;
+  select.hidden = true;
+
+  head.appendChild(label);
+  head.appendChild(select);
 
   const tagsWrap = document.createElement("div");
   tagsWrap.className = "filtro-col-tags-wrap";
@@ -216,11 +381,12 @@ function criarItemColuna(planilhaId, coluna) {
 
   chk.addEventListener("change", () => {
     tagsWrap.hidden = !chk.checked;
+    select.hidden = !chk.checked;
     if (!chk.checked) { tagsBox.querySelectorAll(".filtro-col-tag").forEach((t) => t.remove()); tagInput.value = ""; }
     else tagInput.focus();
   });
 
-  item.appendChild(label);
+  item.appendChild(head);
   item.appendChild(tagsWrap);
   return item;
 }
@@ -246,6 +412,7 @@ function coletarFiltros() {
   document.querySelectorAll(".filtro-col-check:checked").forEach((chk) => {
     const item    = chk.closest(".filtro-col-item");
     const tagsBox = item?.querySelector(".filtro-col-tags");
+    const type    = item?.querySelector(".filtro-col-type")?.value || "contains";
     if (!tagsBox) return;
 
     const valores = [...tagsBox.querySelectorAll(".filtro-col-tag span:first-child")].map((s) => s.textContent.trim());
@@ -255,36 +422,59 @@ function coletarFiltros() {
 
     const pid = String(chk.dataset.planilha);
     if (!filtros[pid]) filtros[pid] = [];
-    filtros[pid].push({ coluna: chk.dataset.coluna, valores });
+    filtros[pid].push({ coluna: chk.dataset.coluna, valores, type });
   });
   return filtros;
 }
 
 // ── BUSCA ─────────────────────────────────────────────────
 function buscar() {
+  const globalTerm = document.getElementById("global-search")?.value.trim().toLowerCase();
   const tableWrapper = document.getElementById("table-wrapper");
   const resultsBar   = document.getElementById("results-bar");
+  
+  toggleLoading(true, "Filtrando dados...");
+  
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
 
   const filtros    = coletarFiltros();
   const resultados = [];
 
-  for (const p of planilhas) {
-    const fp = filtros[String(p.id)] || [];
-    for (const linha of p.dados) {
-      if (!fp.length || linhaPassaFiltros(linha, fp))
-        resultados.push({ _arquivo: p.nome, ...linha });
-    }
-  }
+  // Usar um pequeno delay para o spinner aparecer
+  setTimeout(() => {
+    for (const p of planilhas) {
+      const fp = filtros[String(p.id)] || [];
+      for (const linha of p.dados) {
+        // Filtro Global
+        if (globalTerm) {
+          const valoresLinha = Object.values(linha).join(" ").toLowerCase();
+          if (!valoresLinha.includes(globalTerm)) continue;
+        }
 
-  renderTabela(resultados);
+        // Filtros Específicos
+        if (!fp.length || linhaPassaFiltros(linha, fp)) {
+          resultados.push({ _arquivo: p.nome, ...linha });
+        }
+      }
+    }
+
+    renderTabela(resultados);
+    toggleLoading(false);
+  }, 50);
 }
 
 function linhaPassaFiltros(linha, filtros) {
-  for (const { coluna, valores } of filtros) {
+  for (const { coluna, valores, type } of filtros) {
     const cell = String(linha[coluna] ?? "").toLowerCase();
-    if (!valores.some((v) => cell.includes(v.toLowerCase()))) return false;
+    const passou = valores.some((v) => {
+      const term = v.toLowerCase();
+      if (type === "exact") return cell === term;
+      if (type === "starts") return cell.startsWith(term);
+      if (type === "ends") return cell.endsWith(term);
+      return cell.includes(term); // default contains
+    });
+    if (!passou) return false;
   }
   return true;
 }
@@ -420,6 +610,26 @@ function iniciarDragAndDrop(lista) {
     item.addEventListener("dragover",  (e) => { e.preventDefault(); if (item === dragSrc) return; lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over")); item.classList.add("drag-over"); });
     item.addEventListener("drop",      (e) => { e.preventDefault(); if (!dragSrc || dragSrc === item) return; const after = e.clientY > item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2; lista.insertBefore(dragSrc, after ? item.nextSibling : item); lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over")); });
   });
+}
+
+function toggleLoading(active, msg = "Processando...") {
+  let loader = document.getElementById("global-loader");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "global-loader";
+    loader.className = "global-loader";
+    loader.innerHTML = `
+      <div class="loader-content">
+        <div class="spinner"></div>
+        <p id="loader-text"></p>
+      </div>
+    `;
+    document.body.appendChild(loader);
+  }
+  const text = loader.querySelector("#loader-text");
+  if (text) text.textContent = msg;
+  if (active) loader.classList.add("active");
+  else loader.classList.remove("active");
 }
 
 // ── HELPERS ───────────────────────────────────────────────
