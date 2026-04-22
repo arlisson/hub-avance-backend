@@ -407,6 +407,7 @@ body.light-mode .table-wrapper { background: white; }
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index:200; display:flex; align-items:center; justify-content:center; }
 .modal { background:var(--bg-card); border:1px solid var(--border-color); border-radius:20px; padding:28px; width:460px; max-width:90vw; max-height:85vh; display:flex; flex-direction:column; gap:20px; box-shadow:var(--shadow-strong); }
 .modal-title { font-size:18px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:10px; }
+.col-reorder-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; min-height: 0; padding-right: 4px; list-style: none; }
 .col-reorder-item { background:var(--bg-hover); border:1px solid var(--border-color); border-radius:10px; padding:12px 16px; transition:all .2s; }
 .col-reorder-item:hover { border-color: var(--accent-cyan); background: rgba(87,197,234, 0.05); }
 

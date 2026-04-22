@@ -695,9 +695,37 @@ async function confirmarExport() {
         resultados.push({ _arquivo: p.nome, ...linha });
     }
   }
-  toggleLoading(false);
-  if (!resultados.length) { alert("Nenhum resultado para exportar."); return; }
+  if (!resultados.length) { 
+    toggleLoading(false);
+    alert("Nenhum resultado para exportar."); 
+    return; 
+  }
 
+  // Se o número de linhas for muito grande, força a exportação para CSV
+  // XLSX gera um XML gigante na RAM, o que trava a aba inteira do navegador em datasets massivos.
+  const limiteExcel = 50000;
+  if (resultados.length > limiteExcel) {
+    const cabecalho = colunasOrdenadas.map(c => `"${c.replace(/"/g, '""')}"`).join(";");
+    const linhasCSV = resultados.map(linha => {
+      return colunasOrdenadas.map(c => {
+        const val = linha[c] ?? "";
+        return `"${String(val).replace(/"/g, '""')}"`;
+      }).join(";");
+    });
+    
+    // Adiciona o BOM (\uFEFF) para garantir que o Excel entenda o UTF-8 (Acentos)
+    const csvContent = "\uFEFF" + [cabecalho, ...linhasCSV].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "resultado_cofre.csv"; a.click();
+    URL.revokeObjectURL(url);
+    toggleLoading(false);
+    setTimeout(() => alert(`O resultado era muito grande (${resultados.length.toLocaleString("pt-BR")} linhas). O arquivo foi exportado automaticamente no formato .CSV para evitar travamento do seu navegador.`), 300);
+    return;
+  }
+
+  // Para datasets menores, permite usar o XLSX normalmente
   const dadosParaExportar = resultados.map((linha) => {
     const obj = {};
     for (const col of colunasOrdenadas) { obj[col.startsWith("_") ? col.slice(1) : col] = linha[col] ?? ""; }
@@ -714,6 +742,7 @@ async function confirmarExport() {
   const a    = document.createElement("a");
   a.href = url; a.download = "resultado_cofre.xlsx"; a.click();
   URL.revokeObjectURL(url);
+  toggleLoading(false);
 }
 
 function iniciarDragAndDrop(lista) {
