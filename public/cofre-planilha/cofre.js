@@ -183,26 +183,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function handleFiles(files) {
   const fileInput = document.getElementById("file-input");
   for (const file of files) {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setStatus(`Upload bloqueado: "${file.name}" não é um arquivo CSV.`, "err");
+      continue;
+    }
+
     toggleLoading(true, `Processando ${file.name}...`);
     setStatus(`Processando ${file.name}…`, "");
 
     try {
-      const dados = await parsearArquivo(file);
-      if (!dados.length) throw new Error("Planilha vazia ou sem dados.");
-      const colunas = Object.keys(dados[0]);
-
-      toggleLoading(true, `Salvando ${file.name} localmente...`);
-      const id = await salvarPlanilhaLocal({ nome: file.name, colunas, dados });
+      // O worker faz o parse do CSV e salva direto no IndexedDB
+      // Só recebemos os metadados (id, colunas, total de linhas)
+      const { id, colunas, linhas } = await parsearArquivo(file);
+      
       planilhas.push({ id, nome: file.name, colunas });
 
-      const isLargeRows = dados.length > WARN_ROWS;
+      const isLargeRows = linhas > WARN_ROWS;
       if (isLargeRows) {
         setStatus(
-          `${file.name} — ${dados.length.toLocaleString("pt-BR")} linhas carregadas. Filtros podem ser mais lentos em dispositivos antigos.`,
+          `${file.name} — ${linhas.toLocaleString("pt-BR")} linhas salvas. Filtros podem ser mais lentos em dispositivos antigos.`,
           "warn"
         );
       } else {
-        setStatus(`${file.name} — ${dados.length.toLocaleString("pt-BR")} linhas carregadas`, "ok");
+        setStatus(`${file.name} — ${linhas.toLocaleString("pt-BR")} linhas salvas`, "ok");
       }
 
       const statusEl = document.querySelector(".assistant-details .status");
@@ -220,14 +223,27 @@ async function handleFiles(files) {
 function parsearArquivo(file) {
   return new Promise((resolve, reject) => {
     const worker = new Worker('./cofre-worker.js');
-    const reader = new FileReader();
-    reader.onload  = (e) => {
-      worker.postMessage({ buffer: e.target.result }, [e.target.result]);
-      worker.onmessage = ({ data }) => { worker.terminate(); data.ok ? resolve(data.dados) : reject(new Error(data.error)); };
-      worker.onerror   = (err) => { worker.terminate(); reject(new Error(err.message)); };
+    
+    // Timeout longo de 5 minutos para arquivos CSV gigantes
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(new Error("Tempo limite excedido. O arquivo é grande demais para ser processado de uma vez."));
+    }, 300_000); 
+
+    // Envia o objeto File direto para o worker (muito mais eficiente em memória)
+    worker.postMessage({ file, nome: file.name });
+    
+    worker.onmessage = ({ data }) => { 
+      clearTimeout(timeout); 
+      worker.terminate(); 
+      data.ok ? resolve(data) : reject(new Error(data.error)); 
     };
-    reader.onerror = () => reject(new Error("Erro ao ler arquivo."));
-    reader.readAsArrayBuffer(file);
+    
+    worker.onerror = (err) => { 
+      clearTimeout(timeout); 
+      worker.terminate(); 
+      reject(new Error(err.message || "Erro desconhecido no processamento do arquivo.")); 
+    };
   });
 }
 
@@ -279,7 +295,7 @@ function renderLista() {
     li.className = "file-item";
     li.innerHTML = `
       <span class="file-item-num">${i + 1}º</span>
-      <i class="ph ph-file-xls" style="color:var(--accent-cyan);flex-shrink:0"></i>
+      <i class="ph ph-file-csv" style="color:var(--accent-cyan);flex-shrink:0"></i>
       <span class="file-item-name" title="${escHtml(p.nome)}">${escHtml(p.nome)}</span>
       <button class="btn-delete-file" data-id="${p.id}" title="Remover"><i class="ph ph-trash"></i></button>
     `;
