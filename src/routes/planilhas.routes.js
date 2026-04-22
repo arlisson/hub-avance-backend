@@ -17,7 +17,7 @@ const upload = multer({
     destination: os.tmpdir(),
     filename: (_req, file, cb) => cb(null, `cofre-${Date.now()}-${file.originalname}`),
   }),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 200 * 1024 * 1024 },
 });
 
 router.post("/planilhas/upload", upload.single("file"), uploadPlanilha);
