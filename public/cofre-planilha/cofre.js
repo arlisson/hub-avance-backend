@@ -667,20 +667,12 @@ function renderControlesPaginacao(totalPaginas) {
 // ── EXPORTAR COM RESOLUÇÃO DE CONFLITOS ──────────────────
 async function abrirModalExport() {
   if (!totalResultados.length) return;
-
-  const conflitos = analisarConflitosColunas();
-
-  if (conflitos.length > 0) {
-    abrirModalResolucao(conflitos);
-  } else {
-    // Sem conflitos, segue para exportação normal (fundida)
-    renderModalOrdenacao(ultimasColunas, false);
-  }
+  const colSources = analisarConflitosColunas();
+  renderModalOrdenacao(ultimasColunas, colSources);
 }
 
 function analisarConflitosColunas() {
   const colSources = new Map(); // NomeColuna -> Set(NomesArquivos)
-  
   for (const row of totalResultados) {
     const file = row._arquivo;
     for (const key of Object.keys(row)) {
@@ -689,105 +681,43 @@ function analisarConflitosColunas() {
       colSources.get(key).add(file);
     }
   }
-
-  const conflitos = [];
-  for (const [col, sources] of colSources.entries()) {
-    if (sources.size > 1) {
-      conflitos.push({ coluna: col, arquivos: Array.from(sources) });
-    }
-  }
-  return conflitos;
+  return colSources;
 }
 
-function abrirModalResolucao(conflitos) {
-  const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
-  overlay.id = "resolve-modal";
-  overlay.innerHTML = `
-    <div class="modal">
-      <div class="modal-header">
-        <h2 class="modal-title"><i class="ph ph-warning-circle" style="color:var(--accent-cyan)"></i> Colunas duplicadas</h2>
-        <p class="modal-sub">Encontramos colunas com o mesmo nome em arquivos diferentes. Como deseja exportar?</p>
+function renderItemColuna(col) {
+  return `
+    <li class="col-reorder-item" draggable="true" 
+        data-id="${escHtml(col.id)}" 
+        data-label="${escHtml(col.label)}"
+        data-source="${escHtml(col.source || "")}"
+        data-original="${escHtml(col.original)}">
+      <i class="ph ph-dots-six-vertical drag-handle"></i>
+      <div class="col-reorder-label">
+        <span>${escHtml(col.label.startsWith("_") ? col.label.slice(1) : col.label)}</span>
+        ${col.source ? `<span class="col-source-badge">${escHtml(col.source)}</span>` : ""}
       </div>
-      <ul class="conflict-list">
-        ${conflitos.map(c => `
-          <li class="conflict-item">
-            <span class="conflict-col-name">${escHtml(c.coluna)}</span>
-            <span class="conflict-files">Presente em: ${c.arquivos.map(f => escHtml(f)).join(", ")}</span>
-          </li>
-        `).join("")}
-      </ul>
-      <div class="modal-actions" style="flex-direction:column; gap:10px">
-        <button class="btn-primary" id="btn-merge-all" style="width:100%">
-          <i class="ph ph-intersect"></i> Fundir colunas (padrão)
+      ${(col.hasConflict && !col.source) ? `
+        <button type="button" class="btn-split-col" title="Dividir por arquivo">
+          <i class="ph ph-columns"></i> Dividir
         </button>
-        <button class="btn-secondary" id="btn-split-all" style="width:100%">
-          <i class="ph ph-columns"></i> Manter colunas separadas
-        </button>
-        <button class="btn-modal-cancel" id="btn-resolve-cancel" style="width:100%; background:transparent; border:1px solid var(--border-color); box-shadow:none; color:var(--text-secondary)">
-          Cancelar
-        </button>
-      </div>
-    </div>`;
-
-  document.body.appendChild(overlay);
-
-  document.getElementById("btn-resolve-cancel").onclick = () => overlay.remove();
-
-  document.getElementById("btn-merge-all").onclick = () => {
-    overlay.remove();
-    renderModalOrdenacao(ultimasColunas, false);
-  };
-
-  document.getElementById("btn-split-all").onclick = () => {
-    overlay.remove();
-    const colunasSeparadas = gerarColunasSeparadas();
-    renderModalOrdenacao(colunasSeparadas, true);
-  };
+      ` : ""}
+      <button type="button" class="col-delete-btn" title="Remover"><i class="ph ph-x"></i></button>
+    </li>`;
 }
 
-function gerarColunasSeparadas() {
-  const colSources = new Map();
-  for (const row of totalResultados) {
-    const file = row._arquivo;
-    for (const key of Object.keys(row)) {
-      if (key === "_arquivo" || key.startsWith("_")) continue;
-      if (!colSources.has(key)) colSources.set(key, new Set());
-      colSources.get(key).add(file);
-    }
-  }
-
-  const finalCols = [];
-  // Sempre coloca o nome do arquivo como primeira coluna informativa
-  finalCols.push({ id: "_arquivo", label: "Origem (Arquivo)", source: null });
-
-  for (const [col, sources] of colSources.entries()) {
-    if (sources.size > 1) {
-      // Cria uma coluna para cada arquivo
-      for (const src of sources) {
-        finalCols.push({ 
-          id: `${col} (${src})`, 
-          label: col, 
-          source: src,
-          originalCol: col 
-        });
-      }
-    } else {
-      // Coluna única
-      finalCols.push({ 
-        id: col, 
-        label: col, 
-        source: Array.from(sources)[0],
-        originalCol: col
-      });
-    }
-  }
-  return finalCols;
-}
-
-function renderModalOrdenacao(colunas, isSplit) {
-  // Se for array de strings (merge), converte para objeto padrão
-  const colsData = colunas.map(c => typeof c === "string" ? { id: c, label: c, source: null } : c);
+function renderModalOrdenacao(colunas, colSources) {
+  // Prepara os dados iniciais das colunas (todas fundidas por padrão)
+  const colsData = colunas.map(colName => {
+    const sources = Array.from(colSources.get(colName) || []);
+    return {
+      id: colName,
+      label: colName,
+      source: null,
+      original: colName,
+      hasConflict: sources.size > 1 || sources.length > 1,
+      sources: sources
+    };
+  });
 
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay"; 
@@ -796,22 +726,10 @@ function renderModalOrdenacao(colunas, isSplit) {
     <div class="modal">
       <div class="modal-header">
         <h2 class="modal-title"><i class="ph ph-arrows-out-line-vertical"></i> Ordenar colunas</h2>
-        <p class="modal-sub">Arraste para definir a ordem no arquivo final.</p>
+        <p class="modal-sub">Arraste para ordenar. Use "Dividir" em colunas duplicadas se quiser separá-las por arquivo.</p>
       </div>
       <ul class="col-reorder-list" id="col-reorder-list">
-        ${colsData.map((col) => `
-          <li class="col-reorder-item" draggable="true" 
-              data-id="${escHtml(col.id)}" 
-              data-label="${escHtml(col.label)}"
-              data-source="${escHtml(col.source || "")}"
-              data-original="${escHtml(col.originalCol || col.id)}">
-            <i class="ph ph-dots-six-vertical drag-handle"></i>
-            <div class="col-reorder-label">
-              <span>${escHtml(col.label.startsWith("_") ? col.label.slice(1) : col.label)}</span>
-              ${col.source ? `<span class="col-source-badge">${escHtml(col.source)}</span>` : ""}
-            </div>
-            <button type="button" class="col-delete-btn" title="Remover"><i class="ph ph-x"></i></button>
-          </li>`).join("")}
+        ${colsData.map(col => renderItemColuna(col)).join("")}
       </ul>
       <div class="modal-actions">
         <button class="btn-modal-cancel" id="export-modal-cancel">Cancelar</button>
@@ -821,18 +739,45 @@ function renderModalOrdenacao(colunas, isSplit) {
 
   document.body.appendChild(overlay);
   document.getElementById("export-modal-cancel").onclick = () => overlay.remove();
-  document.getElementById("export-modal-confirm").onclick = () => confirmarExport(isSplit);
+  document.getElementById("export-modal-confirm").onclick = () => confirmarExport();
 
-  iniciarDragAndDrop(document.getElementById("col-reorder-list"));
+  const list = document.getElementById("col-reorder-list");
+  iniciarDragAndDrop(list);
   
-  // Lógica de deletar item
-  document.getElementById("col-reorder-list").onclick = (e) => {
-    const btn = e.target.closest(".col-delete-btn");
-    if (btn) btn.closest(".col-reorder-item").remove();
+  // Ações da lista (Delete e Split)
+  list.onclick = (e) => {
+    const btnDel = e.target.closest(".col-delete-btn");
+    if (btnDel) {
+      btnDel.closest(".col-reorder-item").remove();
+      return;
+    }
+
+    const btnSplit = e.target.closest(".btn-split-col");
+    if (btnSplit) {
+      const li = btnSplit.closest(".col-reorder-item");
+      const colName = li.dataset.original;
+      const sources = Array.from(colSources.get(colName) || []);
+      
+      const fragments = sources.map(src => {
+        const itemHtml = renderItemColuna({
+          id: `${colName} (${src})`,
+          label: colName,
+          source: src,
+          original: colName,
+          hasConflict: false,
+          sources: []
+        });
+        const temp = document.createElement("div");
+        temp.innerHTML = itemHtml;
+        return temp.firstElementChild;
+      });
+
+      li.replaceWith(...fragments);
+    }
   };
 }
 
-async function confirmarExport(isSplit) {
+async function confirmarExport() {
   const lista = document.getElementById("col-reorder-list");
   const configColunas = [...lista.querySelectorAll(".col-reorder-item")].map(li => ({
     id: li.dataset.id,
@@ -852,16 +797,14 @@ async function confirmarExport(isSplit) {
       return configColunas.map(col => {
         let valor = "";
         
-        if (isSplit) {
-          // Se for split, só preenche se a linha for do arquivo fonte da coluna
-          if (col.id === "_arquivo") {
-            valor = row._arquivo;
-          } else if (!col.source || row._arquivo === col.source) {
-            valor = row[col.original] ?? "";
-          }
+        if (col.id === "_arquivo") {
+          valor = row._arquivo;
+        } else if (col.source) {
+          // Coluna separada por arquivo: só preenche se a linha vier daquele arquivo
+          valor = (row._arquivo === col.source) ? (row[col.original] ?? "") : "";
         } else {
-          // Merge normal
-          valor = row[col.id] ?? "";
+          // Coluna fundida: pega o valor independente do arquivo
+          valor = row[col.original] ?? "";
         }
         
         return `"${String(valor).replace(/"/g, '""')}"`;
