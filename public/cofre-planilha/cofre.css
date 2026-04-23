@@ -1152,9 +1152,9 @@ body.light-mode .table-wrapper {
 }
 
 .btn-modal-cancel:hover {
-  background: #e63c3c;
+  opacity: .88;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(255, 77, 77, 0.35);
+  box-shadow: 0 8px 20px rgba(255, 77, 77, 0.45);
 }
 
 .btn-modal-cancel:active {
