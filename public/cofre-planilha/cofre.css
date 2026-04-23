@@ -1146,7 +1146,6 @@ body.light-mode .table-wrapper {
   border: 2px dashed var(--accent-cyan);
   border-radius: 10px;
   background: rgba(87, 197, 234, 0.06);
-  pointer-events: none;
   list-style: none;
 }
 

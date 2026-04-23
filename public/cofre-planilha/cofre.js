@@ -746,6 +746,15 @@ function iniciarDragAndDrop(lista) {
     });
   }
 
+  function cleanup() {
+    getItems().forEach(el => { el.style.transform = ""; el.classList.remove("flip-no-transition"); });
+    dragSrc?.classList.remove("dragging");
+    placeholder?.remove();
+    dragSrc = null;
+    placeholder = null;
+    lastPos = null;
+  }
+
   lista.addEventListener("dragstart", (e) => {
     const item = e.target.closest(".col-reorder-item");
     if (!item) return;
@@ -754,29 +763,24 @@ function iniciarDragAndDrop(lista) {
     placeholder = document.createElement("li");
     placeholder.className = "col-reorder-placeholder";
     placeholder.style.height = item.offsetHeight + "px";
-    setTimeout(() => {
-      item.classList.add("dragging");
-      item.after(placeholder);
-    }, 0);
+    item.after(placeholder); // inserido imediatamente — drop funciona desde o primeiro evento
+    setTimeout(() => item.classList.add("dragging"), 0);
   });
 
   lista.addEventListener("dragend", () => {
-    if (!dragSrc) return;
+    if (!dragSrc) return; // drop já tratou
     if (placeholder?.parentNode) placeholder.replaceWith(dragSrc);
-    dragSrc.classList.remove("dragging");
-    getItems().forEach(el => { el.style.transform = ""; el.classList.remove("flip-no-transition"); });
-    dragSrc = null;
-    placeholder = null;
-    lastPos = null;
+    cleanup();
   });
 
   lista.addEventListener("dragover", (e) => {
     e.preventDefault();
-    if (!dragSrc || !placeholder?.parentNode) return;
+    if (!dragSrc) return;
     const target = e.target.closest(".col-reorder-item");
     if (!target || target === dragSrc) return;
-    const rect = target.getBoundingClientRect();
-    const after = e.clientY > rect.top + rect.height / 2;
+    const { top, height } = target.getBoundingClientRect();
+    // threshold em 35%/65% — range maior para acionar a mudança
+    const after = e.clientY > top + height * 0.35;
     if (lastPos?.target === target && lastPos?.after === after) return;
     lastPos = { target, after };
     flip(() => after ? target.after(placeholder) : target.before(placeholder));
@@ -784,12 +788,9 @@ function iniciarDragAndDrop(lista) {
 
   lista.addEventListener("drop", (e) => {
     e.preventDefault();
-    if (!dragSrc || !placeholder?.parentNode) return;
-    placeholder.replaceWith(dragSrc);
-    dragSrc.classList.remove("dragging");
-    dragSrc = null;
-    placeholder = null;
-    lastPos = null;
+    if (!dragSrc) return;
+    if (placeholder?.parentNode) placeholder.replaceWith(dragSrc);
+    cleanup();
   });
 }
 
