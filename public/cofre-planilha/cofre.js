@@ -1,19 +1,19 @@
-const LOGIN_URL    = "/login/login.html";
-const HUB_URL      = "/paginaUnificada/index.html";
-const WARN_ROWS    = 50_000; // 50k linhas — avisa sobre filtros lentos
-const PAGE_SIZE    = 200;               // linhas por página na tabela de resultados
+const LOGIN_URL = "/login/login.html";
+const HUB_URL = "/paginaUnificada/index.html";
+const WARN_ROWS = 50_000; // 50k linhas — avisa sobre filtros lentos
+const PAGE_SIZE = 200;               // linhas por página na tabela de resultados
 
 // ── ESTADO LOCAL ──────────────────────────────────────────
-let planilhas       = []; // [{ id, nome, colunas }] — dados ficam só no IndexedDB
-let nextId          = 1;
-let ultimasColunas  = [];
+let planilhas = []; // [{ id, nome, colunas }] — dados ficam só no IndexedDB
+let nextId = 1;
+let ultimasColunas = [];
 let totalResultados = [];
-let paginaAtual     = 1;
+let paginaAtual = 1;
 
 // ── BANCO DE DADOS LOCAL (IndexedDB) ──────────────────────
-const DB_NAME    = "CofrePlanilhasDB";
+const DB_NAME = "CofrePlanilhasDB";
 const DB_VERSION = 2;
-const STORE_META  = "planilhas_meta";
+const STORE_META = "planilhas_meta";
 const STORE_DADOS = "planilhas_dados";
 
 function abrirDB() {
@@ -58,8 +58,8 @@ async function salvarPlanilhaLocal({ nome, colunas, dados }) {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const tx        = db.transaction([STORE_META, STORE_DADOS], "readwrite");
-      const metaStore  = tx.objectStore(STORE_META);
+      const tx = db.transaction([STORE_META, STORE_DADOS], "readwrite");
+      const metaStore = tx.objectStore(STORE_META);
       const dadosStore = tx.objectStore(STORE_DADOS);
       const req = metaStore.add({ nome, colunas });
       req.onsuccess = (e) => {
@@ -76,10 +76,10 @@ async function carregarPlanilhasLocais() {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const tx    = db.transaction([STORE_META], "readonly");
-      const req   = tx.objectStore(STORE_META).getAll();
+      const tx = db.transaction([STORE_META], "readonly");
+      const req = tx.objectStore(STORE_META).getAll();
       req.onsuccess = () => resolve(req.result);
-      req.onerror   = () => reject("Erro ao carregar planilhas");
+      req.onerror = () => reject("Erro ao carregar planilhas");
     });
   } catch (err) { console.error(err); return []; }
 }
@@ -92,7 +92,7 @@ async function removerPlanilhaLocal(id) {
       tx.objectStore(STORE_META).delete(Number(id));
       tx.objectStore(STORE_DADOS).delete(Number(id));
       tx.oncomplete = () => resolve();
-      tx.onerror    = () => reject("Erro ao remover planilha");
+      tx.onerror = () => reject("Erro ao remover planilha");
     });
   } catch (err) { console.error(err); }
 }
@@ -105,7 +105,7 @@ async function limparBancoLocal() {
       tx.objectStore(STORE_META).clear();
       tx.objectStore(STORE_DADOS).clear();
       tx.oncomplete = () => resolve();
-      tx.onerror    = () => reject();
+      tx.onerror = () => reject();
     });
   } catch (err) { console.error(err); }
 }
@@ -114,23 +114,23 @@ async function carregarDadosPlanilha(id) {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
-      const tx  = db.transaction([STORE_DADOS], "readonly");
+      const tx = db.transaction([STORE_DADOS], "readonly");
       const req = tx.objectStore(STORE_DADOS).get(Number(id));
       req.onsuccess = () => resolve(req.result?.dados ?? []);
-      req.onerror   = () => reject("Erro ao carregar dados");
+      req.onerror = () => reject("Erro ao carregar dados");
     });
   } catch (err) { console.error(err); return []; }
 }
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  const themeToggle   = document.getElementById("theme-toggle");
-  const settingsBtn   = document.getElementById("settings-btn");
-  const settingsMenu  = document.getElementById("settings-menu");
-  const menuBackHub   = document.getElementById("menu-back-hub");
-  const menuLogout    = document.getElementById("menu-logout");
+  const themeToggle = document.getElementById("theme-toggle");
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsMenu = document.getElementById("settings-menu");
+  const menuBackHub = document.getElementById("menu-back-hub");
+  const menuLogout = document.getElementById("menu-logout");
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
-  const userEmailEl   = document.getElementById("user-email");
+  const userEmailEl = document.getElementById("user-email");
 
   initTheme(themeToggle);
   initSettingsMenu(settingsBtn, settingsMenu);
@@ -138,13 +138,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   menuBackHub?.addEventListener("click", () => { window.location.href = HUB_URL; });
   menuLogout?.addEventListener("click", async () => {
-    try { await fetch("/api/logout", { method: "POST", credentials: "include" }); } catch {}
+    try { await fetch("/api/logout", { method: "POST", credentials: "include" }); } catch { }
     window.location.href = LOGIN_URL;
   });
 
   try {
     const res = await fetch("/api/profile", { credentials: "include" });
-    const me  = await res.json();
+    const me = await res.json();
     if (!me?.ok || !me?.user) throw new Error();
     if (userEmailEl) { userEmailEl.textContent = me.user.email || ""; userEmailEl.title = me.user.email || ""; }
   } catch {
@@ -167,9 +167,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const uploadArea = document.getElementById("upload-area");
-  const fileInput  = document.getElementById("file-input");
+  const fileInput = document.getElementById("file-input");
 
-  uploadArea?.addEventListener("dragover",  (e) => { e.preventDefault(); uploadArea.classList.add("drag-over"); });
+  uploadArea?.addEventListener("dragover", (e) => { e.preventDefault(); uploadArea.classList.add("drag-over"); });
   uploadArea?.addEventListener("dragleave", () => uploadArea.classList.remove("drag-over"));
   uploadArea?.addEventListener("drop", (e) => { e.preventDefault(); uploadArea.classList.remove("drag-over"); handleFiles(e.dataTransfer.files); });
   fileInput?.addEventListener("change", () => handleFiles(fileInput.files));
@@ -195,7 +195,7 @@ async function handleFiles(files) {
       // O worker faz o parse do CSV e salva direto no IndexedDB
       // Só recebemos os metadados (id, colunas, total de linhas)
       const { id, colunas, linhas } = await parsearArquivo(file);
-      
+
       planilhas.push({ id, nome: file.name, colunas });
 
       const isLargeRows = linhas > WARN_ROWS;
@@ -223,26 +223,26 @@ async function handleFiles(files) {
 function parsearArquivo(file) {
   return new Promise((resolve, reject) => {
     const worker = new Worker('./cofre-worker.js?v=' + Date.now());
-    
+
     // Timeout longo de 5 minutos para arquivos CSV gigantes
     const timeout = setTimeout(() => {
       worker.terminate();
       reject(new Error("Tempo limite excedido. O arquivo é grande demais para ser processado de uma vez."));
-    }, 300_000); 
+    }, 300_000);
 
     // Envia o objeto File direto para o worker (muito mais eficiente em memória)
     worker.postMessage({ file, nome: file.name });
-    
-    worker.onmessage = ({ data }) => { 
-      clearTimeout(timeout); 
-      worker.terminate(); 
-      data.ok ? resolve(data) : reject(new Error(data.error)); 
+
+    worker.onmessage = ({ data }) => {
+      clearTimeout(timeout);
+      worker.terminate();
+      data.ok ? resolve(data) : reject(new Error(data.error));
     };
-    
-    worker.onerror = (err) => { 
-      clearTimeout(timeout); 
-      worker.terminate(); 
-      reject(new Error(err.message || "Erro desconhecido no processamento do arquivo.")); 
+
+    worker.onerror = (err) => {
+      clearTimeout(timeout);
+      worker.terminate();
+      reject(new Error(err.message || "Erro desconhecido no processamento do arquivo."));
     };
   });
 }
@@ -256,7 +256,7 @@ function setStatus(msg, tipo) {
 
 async function limparTudo() {
   if (!confirm("Isso apagará todas as planilhas carregadas do disco local. Deseja continuar?")) return;
-  
+
   toggleLoading(true, "Limpando cofre...");
   await limparBancoLocal();
   planilhas = [];
@@ -338,7 +338,7 @@ function renderFiltrosPanel() {
   `;
   lista.appendChild(globalSearchBox);
 
-  const wrap    = document.createElement("div");
+  const wrap = document.createElement("div");
   wrap.className = "filtro-tabs-wrap";
 
   const tabsRow = document.createElement("div");
@@ -464,9 +464,9 @@ function adicionarTag(tagsBox, tagInput, value) {
 function coletarFiltros() {
   const filtros = {};
   document.querySelectorAll(".filtro-col-check:checked").forEach((chk) => {
-    const item    = chk.closest(".filtro-col-item");
+    const item = chk.closest(".filtro-col-item");
     const tagsBox = item?.querySelector(".filtro-col-tags");
-    const type    = item?.querySelector(".filtro-col-type")?.value || "contains";
+    const type = item?.querySelector(".filtro-col-type")?.value || "contains";
     if (!tagsBox) return;
 
     const valores = [...tagsBox.querySelectorAll(".filtro-col-tag span:first-child")].map((s) => s.textContent.trim());
@@ -483,21 +483,21 @@ function coletarFiltros() {
 
 // ── BUSCA ─────────────────────────────────────────────────
 async function buscar() {
-  const globalTerm   = document.getElementById("global-search")?.value.trim().toLowerCase();
+  const globalTerm = document.getElementById("global-search")?.value.trim().toLowerCase();
   const tableWrapper = document.getElementById("table-wrapper");
-  const resultsBar   = document.getElementById("results-bar");
+  const resultsBar = document.getElementById("results-bar");
 
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
   toggleLoading(true, "Filtrando dados...");
   await new Promise(r => setTimeout(r, 0)); // yield para o spinner aparecer antes do processamento
 
-  const filtros    = coletarFiltros();
+  const filtros = coletarFiltros();
   const resultados = [];
 
   for (const p of planilhas) {
     const dados = await carregarDadosPlanilha(p.id);
-    const fp    = filtros[String(p.id)] || [];
+    const fp = filtros[String(p.id)] || [];
     for (const linha of dados) {
       if (globalTerm) {
         const valoresLinha = Object.values(linha).join(" ").toLowerCase();
@@ -532,7 +532,7 @@ function linhaPassaFiltros(linha, filtros) {
 
 function renderTabela(rows) {
   const tableWrapper = document.getElementById("table-wrapper");
-  const resultsBar   = document.getElementById("results-bar");
+  const resultsBar = document.getElementById("results-bar");
   const resultsCount = document.getElementById("results-count");
 
   if (!rows.length) {
@@ -552,9 +552,9 @@ function renderTabela(rows) {
   }
   ultimasColunas = [...colMap.values()];
 
-  const total  = totalResultados.length;
+  const total = totalResultados.length;
   const inicio = (paginaAtual - 1) * PAGE_SIZE + 1;
-  const fim    = Math.min(paginaAtual * PAGE_SIZE, total);
+  const fim = Math.min(paginaAtual * PAGE_SIZE, total);
   if (resultsCount) {
     resultsCount.textContent = total > PAGE_SIZE
       ? `Exibindo ${inicio.toLocaleString("pt-BR")}–${fim.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} resultados`
@@ -562,9 +562,9 @@ function renderTabela(rows) {
   }
   if (resultsBar) resultsBar.hidden = false;
 
-  const table  = document.createElement("table");
+  const table = document.createElement("table");
   table.className = "results-table";
-  const thead  = document.createElement("thead");
+  const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
   for (const col of ultimasColunas) {
     const th = document.createElement("th");
@@ -577,7 +577,7 @@ function renderTabela(rows) {
   for (const row of rows) {
     const tr = document.createElement("tr");
     for (const col of ultimasColunas) {
-      const td  = document.createElement("td");
+      const td = document.createElement("td");
       const val = row[col] ?? "";
       td.textContent = val; td.title = String(val);
       tr.appendChild(td);
@@ -602,7 +602,7 @@ function renderPagina() {
 
   const totalPaginas = Math.ceil(totalResultados.length / PAGE_SIZE);
   const inicio = (paginaAtual - 1) * PAGE_SIZE;
-  const fim    = Math.min(inicio + PAGE_SIZE, totalResultados.length);
+  const fim = Math.min(inicio + PAGE_SIZE, totalResultados.length);
   renderTabela(totalResultados.slice(inicio, fim));
   renderControlesPaginacao(totalPaginas);
 }
@@ -683,17 +683,17 @@ async function confirmarExport() {
   fecharModalExport();
 
   toggleLoading(true, "Gerando exportação CSV...");
-  
+
   // Pequeno delay para garantir que o loader renderize antes de travar a thread
   await new Promise(r => setTimeout(r, 50));
 
   // Exporta EXATAMENTE o que foi filtrado na busca atual
   const resultados = totalResultados;
 
-  if (!resultados || !resultados.length) { 
+  if (!resultados || !resultados.length) {
     toggleLoading(false);
-    alert("Nenhum resultado para exportar."); 
-    return; 
+    alert("Nenhum resultado para exportar.");
+    return;
   }
 
   try {
@@ -704,12 +704,12 @@ async function confirmarExport() {
         return `"${String(val).replace(/"/g, '""')}"`;
       }).join(";");
     });
-    
+
     // Adiciona o BOM (\uFEFF) para garantir que o Excel entenda o UTF-8 (Acentos)
     const csvContent = "\uFEFF" + [cabecalho, ...linhasCSV].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
     a.href = url; a.download = "resultado_cofre.csv"; a.click();
     URL.revokeObjectURL(url);
   } catch (error) {
@@ -723,11 +723,68 @@ async function confirmarExport() {
 function iniciarDragAndDrop(lista) {
   if (!lista) return;
   let dragSrc = null;
-  lista.querySelectorAll(".col-reorder-item").forEach((item) => {
-    item.addEventListener("dragstart", (e) => { dragSrc = item; item.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
-    item.addEventListener("dragend",   () => { dragSrc = null; lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("dragging", "drag-over")); });
-    item.addEventListener("dragover",  (e) => { e.preventDefault(); if (item === dragSrc) return; lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over")); item.classList.add("drag-over"); });
-    item.addEventListener("drop",      (e) => { e.preventDefault(); if (!dragSrc || dragSrc === item) return; const after = e.clientY > item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2; lista.insertBefore(dragSrc, after ? item.nextSibling : item); lista.querySelectorAll(".col-reorder-item").forEach((i) => i.classList.remove("drag-over")); });
+  let srcIndex = null;
+
+  function items() { return [...lista.querySelectorAll(".col-reorder-item")]; }
+
+  function resetTransforms() {
+    items().forEach(i => { i.style.transform = ""; i.classList.remove("dragging"); });
+  }
+
+  function animateGap(targetIndex) {
+    const all = items();
+    const itemH = (all[0]?.getBoundingClientRect().height ?? 48) + 8;
+    all.forEach((item, i) => {
+      if (item === dragSrc) return;
+      if (srcIndex < targetIndex && i > srcIndex && i <= targetIndex) {
+        item.style.transform = `translateY(-${itemH}px)`;
+      } else if (srcIndex > targetIndex && i >= targetIndex && i < srcIndex) {
+        item.style.transform = `translateY(${itemH}px)`;
+      } else {
+        item.style.transform = "";
+      }
+    });
+  }
+
+  lista.addEventListener("dragstart", (e) => {
+    const item = e.target.closest(".col-reorder-item");
+    if (!item) return;
+    dragSrc = item;
+    srcIndex = items().indexOf(item);
+    item.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+  });
+
+  lista.addEventListener("dragend", () => {
+    resetTransforms();
+    dragSrc = null;
+    srcIndex = null;
+  });
+
+  lista.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    if (!dragSrc) return;
+    const target = e.target.closest(".col-reorder-item");
+    if (!target || target === dragSrc) return;
+    animateGap(items().indexOf(target));
+  });
+
+  lista.addEventListener("dragleave", (e) => {
+    if (!lista.contains(e.relatedTarget)) {
+      items().forEach(i => { if (i !== dragSrc) i.style.transform = ""; });
+    }
+  });
+
+  lista.addEventListener("drop", (e) => {
+    e.preventDefault();
+    if (!dragSrc) return;
+    const target = e.target.closest(".col-reorder-item");
+    if (!target || target === dragSrc) return;
+    const after = e.clientY > target.getBoundingClientRect().top + target.getBoundingClientRect().height / 2;
+    lista.insertBefore(dragSrc, after ? target.nextSibling : target);
+    resetTransforms();
+    dragSrc = null;
+    srcIndex = null;
   });
 }
 
@@ -777,7 +834,7 @@ function updateThemeIcon(btn, isDark) {
 function initSettingsMenu(btn, menu) {
   if (!btn || !menu) return;
   const close = () => { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); };
-  const open  = () => { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); };
+  const open = () => { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); };
   btn.setAttribute("aria-expanded", "false");
   btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden ? open() : close(); });
   document.addEventListener("click", (e) => { if (!document.getElementById("sidebar-userbar")?.contains(e.target)) close(); });
