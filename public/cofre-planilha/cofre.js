@@ -722,38 +722,9 @@ async function confirmarExport() {
 
 function iniciarDragAndDrop(lista) {
   if (!lista) return;
+
   let dragSrc = null;
   let placeholder = null;
-  let lastPos = null;
-
-  function getItems() {
-    return [...lista.querySelectorAll(".col-reorder-item")];
-  }
-
-  // FLIP: registra posições antes, faz a ação, anima a diferença
-  function flip(action) {
-    const els = getItems().filter(el => el !== dragSrc);
-    const tops = new Map(els.map(el => [el, el.getBoundingClientRect().top]));
-    action();
-    els.forEach(el => {
-      const delta = tops.get(el) - el.getBoundingClientRect().top;
-      if (Math.abs(delta) < 1) return;
-      el.classList.add("flip-no-transition");
-      el.style.transform = `translateY(${delta}px)`;
-      el.getBoundingClientRect(); // força reflow
-      el.classList.remove("flip-no-transition");
-      el.style.transform = "";
-    });
-  }
-
-  function cleanup() {
-    getItems().forEach(el => { el.style.transform = ""; el.classList.remove("flip-no-transition"); });
-    dragSrc?.classList.remove("dragging");
-    placeholder?.remove();
-    dragSrc = null;
-    placeholder = null;
-    lastPos = null;
-  }
 
   lista.addEventListener("dragstart", (e) => {
     const item = e.target.closest(".col-reorder-item");
@@ -763,34 +734,38 @@ function iniciarDragAndDrop(lista) {
     placeholder = document.createElement("li");
     placeholder.className = "col-reorder-placeholder";
     placeholder.style.height = item.offsetHeight + "px";
-    item.after(placeholder); // inserido imediatamente — drop funciona desde o primeiro evento
+    item.after(placeholder);
     setTimeout(() => item.classList.add("dragging"), 0);
   });
 
   lista.addEventListener("dragend", () => {
     if (!dragSrc) return; // drop já tratou
-    if (placeholder?.parentNode) placeholder.replaceWith(dragSrc);
-    cleanup();
+    placeholder?.remove();
+    dragSrc.classList.remove("dragging");
+    dragSrc = null;
+    placeholder = null;
   });
 
   lista.addEventListener("dragover", (e) => {
     e.preventDefault();
-    if (!dragSrc) return;
+    if (!dragSrc || !placeholder) return;
     const target = e.target.closest(".col-reorder-item");
     if (!target || target === dragSrc) return;
-    const { top, height } = target.getBoundingClientRect();
-    // threshold em 35%/65% — range maior para acionar a mudança
-    const after = e.clientY > top + height * 0.35;
-    if (lastPos?.target === target && lastPos?.after === after) return;
-    lastPos = { target, after };
-    flip(() => after ? target.after(placeholder) : target.before(placeholder));
+    const rect = target.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      target.before(placeholder);
+    } else {
+      target.after(placeholder);
+    }
   });
 
   lista.addEventListener("drop", (e) => {
     e.preventDefault();
-    if (!dragSrc) return;
-    if (placeholder?.parentNode) placeholder.replaceWith(dragSrc);
-    cleanup();
+    if (!dragSrc || !placeholder) return;
+    placeholder.replaceWith(dragSrc);
+    dragSrc.classList.remove("dragging");
+    dragSrc = null;
+    placeholder = null;
   });
 }
 
