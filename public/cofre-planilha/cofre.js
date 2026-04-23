@@ -838,7 +838,6 @@ function toggleLoading(active, msg = "Processando...", percent = null) {
         </div>
         <div class="progress-info" id="progress-info" style="display:none">
           <span id="progress-percent">0%</span>
-          <span>Aguarde...</span>
         </div>
       </div>
     `;
@@ -854,10 +853,11 @@ function toggleLoading(active, msg = "Processando...", percent = null) {
   if (text) text.textContent = msg;
   
   if (percent !== null) {
+    const p = Math.min(100, Math.max(0, percent));
     if (progCont) progCont.style.display = "block";
     if (progInfo) progInfo.style.display = "flex";
-    if (progBar) progBar.style.width = percent + "%";
-    if (progPerc) progPerc.textContent = percent + "%";
+    if (progBar) progBar.style.width = p + "%";
+    if (progPerc) progPerc.textContent = p + "%";
   } else {
     if (progCont) progCont.style.display = "none";
     if (progInfo) progInfo.style.display = "none";
