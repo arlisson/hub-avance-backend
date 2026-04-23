@@ -85,12 +85,29 @@ async function carregarPlanilhasLocais() {
 async function removerPlanilhaLocal(id) {
   try {
     const db = await abrirDB();
+    const idNum = Number(id);
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_META, STORE_DADOS], "readwrite");
-      tx.objectStore(STORE_META).delete(Number(id));
-      tx.objectStore(STORE_DADOS).delete(Number(id));
+      
+      // 1. Remove os metadados
+      tx.objectStore(STORE_META).delete(idNum);
+      
+      // 2. Remove todos os lotes vinculados no STORE_DADOS usando um cursor no índice
+      const storeDados = tx.objectStore(STORE_DADOS);
+      const index = storeDados.index("fileId");
+      const range = IDBKeyRange.only(idNum);
+      
+      const cursorReq = index.openCursor(range);
+      cursorReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
       tx.oncomplete = () => resolve();
-      tx.onerror = () => reject("Erro ao remover planilha");
+      tx.onerror = () => reject("Erro ao remover planilha e lotes");
     });
   } catch (err) { console.error(err); }
 }
@@ -108,14 +125,19 @@ async function limparBancoLocal() {
   } catch (err) { console.error(err); }
 }
 
-async function carregarDadosPlanilha(id) {
+async function carregarDadosPlanilha(fileId) {
   try {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_DADOS], "readonly");
-      const req = tx.objectStore(STORE_DADOS).get(Number(id));
-      req.onsuccess = () => resolve(req.result?.dados ?? []);
-      req.onerror = () => reject("Erro ao carregar dados");
+      const store = tx.objectStore(STORE_DADOS);
+      const index = store.index("fileId");
+      const req = index.getAll(Number(fileId));
+      req.onsuccess = () => {
+        const todosOsDados = req.result.reduce((acc, batch) => acc.concat(batch.dados), []);
+        resolve(todosOsDados);
+      };
+      req.onerror = () => reject("Erro ao carregar lotes de dados");
     });
   } catch (err) { console.error(err); return []; }
 }
