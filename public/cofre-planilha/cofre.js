@@ -723,8 +723,35 @@ async function confirmarExport() {
 function iniciarDragAndDrop(lista) {
   if (!lista) return;
 
+  const overlay = lista.closest(".modal-overlay");
+  if (!overlay) return;
+
   let dragSrc = null;
   let placeholder = null;
+
+  function moverPlaceholder(clientY) {
+    const items = [...lista.querySelectorAll(".col-reorder-item")].filter(el => el !== dragSrc);
+    if (!items.length) return;
+
+    let nearest = null;
+    let nearestDist = Infinity;
+    let insertAfter = false;
+
+    for (const item of items) {
+      const rect = item.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const dist = Math.abs(clientY - mid);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = item;
+        insertAfter = clientY > mid;
+      }
+    }
+
+    if (nearest) {
+      insertAfter ? nearest.after(placeholder) : nearest.before(placeholder);
+    }
+  }
 
   lista.addEventListener("dragstart", (e) => {
     const item = e.target.closest(".col-reorder-item");
@@ -738,31 +765,24 @@ function iniciarDragAndDrop(lista) {
     setTimeout(() => item.classList.add("dragging"), 0);
   });
 
-  lista.addEventListener("dragend", () => {
-    if (!dragSrc) return; // drop já tratou
-    placeholder?.remove();
+  overlay.addEventListener("dragover", (e) => {
+    if (!dragSrc || !placeholder) return;
+    e.preventDefault();
+    moverPlaceholder(e.clientY);
+  });
+
+  overlay.addEventListener("drop", (e) => {
+    if (!dragSrc || !placeholder) return;
+    e.preventDefault();
+    placeholder.replaceWith(dragSrc);
     dragSrc.classList.remove("dragging");
     dragSrc = null;
     placeholder = null;
   });
 
-  lista.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    if (!dragSrc || !placeholder) return;
-    const target = e.target.closest(".col-reorder-item");
-    if (!target || target === dragSrc) return;
-    const rect = target.getBoundingClientRect();
-    if (e.clientY < rect.top + rect.height / 2) {
-      target.before(placeholder);
-    } else {
-      target.after(placeholder);
-    }
-  });
-
-  lista.addEventListener("drop", (e) => {
-    e.preventDefault();
-    if (!dragSrc || !placeholder) return;
-    placeholder.replaceWith(dragSrc);
+  overlay.addEventListener("dragend", () => {
+    if (!dragSrc) return; // drop já tratou
+    placeholder?.remove();
     dragSrc.classList.remove("dragging");
     dragSrc = null;
     placeholder = null;
