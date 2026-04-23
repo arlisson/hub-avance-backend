@@ -1125,6 +1125,8 @@ body.light-mode .table-wrapper {
   gap: 10px;
   transition: transform 0.2s ease, opacity 0.15s ease, border-color 0.2s, background 0.2s;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .col-reorder-item:hover {
