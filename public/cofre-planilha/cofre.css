@@ -1121,12 +1121,31 @@ body.light-mode .table-wrapper {
   border-radius: 10px;
   padding: 12px 16px;
   transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .col-reorder-item:hover {
   border-color: var(--accent-cyan);
   background: rgba(87, 197, 234, 0.05);
 }
+
+.col-reorder-label { flex: 1; }
+
+.col-delete-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4d4d;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background .2s, color .2s;
+  flex-shrink: 0;
+}
+
+.col-delete-btn:hover { background: rgba(255, 77, 77, 0.15); }
 
 .modal-actions {
   display: flex;
