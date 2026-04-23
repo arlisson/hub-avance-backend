@@ -667,8 +667,21 @@ function renderControlesPaginacao(totalPaginas) {
 // ── EXPORTAR COM RESOLUÇÃO DE CONFLITOS ──────────────────
 async function abrirModalExport() {
   if (!totalResultados.length) return;
+
   const colSources = analisarConflitosColunas();
-  renderModalOrdenacao(ultimasColunas, colSources);
+  const conflitos = [];
+  for (const [col, sources] of colSources.entries()) {
+    if (sources.size > 1) {
+      conflitos.push({ coluna: col, arquivos: Array.from(sources) });
+    }
+  }
+
+  if (conflitos.length > 0) {
+    abrirModalResolucao(conflitos, colSources);
+  } else {
+    const finalCols = ultimasColunas.map(c => ({ id: c, label: c, source: null, original: c }));
+    renderModalOrdenacao(finalCols);
+  }
 }
 
 function analisarConflitosColunas() {
@@ -684,41 +697,84 @@ function analisarConflitosColunas() {
   return colSources;
 }
 
-function renderItemColuna(col) {
-  return `
-    <li class="col-reorder-item" draggable="true" 
-        data-id="${escHtml(col.id)}" 
-        data-label="${escHtml(col.label)}"
-        data-source="${escHtml(col.source || "")}"
-        data-original="${escHtml(col.original)}">
-      <i class="ph ph-dots-six-vertical drag-handle"></i>
-      <div class="col-reorder-label">
-        <span>${escHtml(col.label.startsWith("_") ? col.label.slice(1) : col.label)}</span>
-        ${col.source ? `<span class="col-source-badge">${escHtml(col.source)}</span>` : ""}
+function abrirModalResolucao(conflitos, colSources) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "resolve-modal";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="ph ph-warning-circle" style="color:var(--accent-cyan)"></i> Colunas duplicadas</h2>
+        <p class="modal-sub">Escolha quais colunas deseja unir (fundir) e quais deseja manter separadas por arquivo.</p>
       </div>
-      ${(col.hasConflict && !col.source) ? `
-        <button type="button" class="btn-split-col" title="Dividir por arquivo">
-          <i class="ph ph-columns"></i> Dividir
+      <ul class="conflict-list" id="conflict-list">
+        ${conflitos.map(c => `
+          <li class="conflict-item">
+            <div class="conflict-check-wrap">
+              <input type="checkbox" class="conflict-check" checked data-col="${escHtml(c.coluna)}" id="chk-${escHtml(c.coluna)}">
+            </div>
+            <label class="conflict-info" for="chk-${escHtml(c.coluna)}">
+              <span class="conflict-col-name">${escHtml(c.coluna)}</span>
+              <span class="conflict-files">Fundir dados de: ${c.arquivos.map(f => escHtml(f)).join(", ")}</span>
+            </label>
+          </li>
+        `).join("")}
+      </ul>
+      <div class="modal-actions" style="margin-top:10px">
+        <button class="btn-modal-cancel" id="btn-resolve-cancel" style="background:transparent; border:1px solid var(--border-color); box-shadow:none; color:var(--text-secondary)"> 
+          Cancelar
         </button>
-      ` : ""}
-      <button type="button" class="col-delete-btn" title="Remover"><i class="ph ph-x"></i></button>
-    </li>`;
+        <button class="btn-primary" id="btn-resolve-confirm">
+          Continuar <i class="ph ph-caret-right"></i>
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById("btn-resolve-cancel").onclick = () => overlay.remove();
+
+  document.getElementById("btn-resolve-confirm").onclick = () => {
+    const escolhas = {};
+    overlay.querySelectorAll(".conflict-check").forEach(chk => {
+      escolhas[chk.dataset.col] = chk.checked;
+    });
+    
+    overlay.remove();
+    const finalCols = gerarConfiguracaoColunas(colSources, escolhas);
+    renderModalOrdenacao(finalCols);
+  };
 }
 
-function renderModalOrdenacao(colunas, colSources) {
-  // Prepara os dados iniciais das colunas (todas fundidas por padrão)
-  const colsData = colunas.map(colName => {
-    const sources = Array.from(colSources.get(colName) || []);
-    return {
-      id: colName,
-      label: colName,
-      source: null,
-      original: colName,
-      hasConflict: sources.size > 1 || sources.length > 1,
-      sources: sources
-    };
-  });
+function gerarConfiguracaoColunas(colSources, escolhas) {
+  const finalCols = [];
+  finalCols.push({ id: "_arquivo", label: "Origem (Arquivo)", source: null, original: "_arquivo" });
 
+  for (const [col, sources] of colSources.entries()) {
+    const deveFundir = escolhas[col] !== false;
+
+    if (!deveFundir && sources.size > 1) {
+      for (const src of sources) {
+        finalCols.push({ 
+          id: `${col} (${src})`, 
+          label: col, 
+          source: src,
+          original: col 
+        });
+      }
+    } else {
+      finalCols.push({ 
+        id: col, 
+        label: col, 
+        source: null,
+        original: col
+      });
+    }
+  }
+  return finalCols;
+}
+
+function renderModalOrdenacao(configColunas) {
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay"; 
   overlay.id = "export-modal";
@@ -726,10 +782,22 @@ function renderModalOrdenacao(colunas, colSources) {
     <div class="modal">
       <div class="modal-header">
         <h2 class="modal-title"><i class="ph ph-arrows-out-line-vertical"></i> Ordenar colunas</h2>
-        <p class="modal-sub">Arraste para ordenar. Use "Dividir" em colunas duplicadas se quiser separá-las por arquivo.</p>
+        <p class="modal-sub">Arraste para definir a ordem final no arquivo CSV.</p>
       </div>
       <ul class="col-reorder-list" id="col-reorder-list">
-        ${colsData.map(col => renderItemColuna(col)).join("")}
+        ${configColunas.map((col) => `
+          <li class="col-reorder-item" draggable="true" 
+              data-id="${escHtml(col.id)}" 
+              data-label="${escHtml(col.label)}"
+              data-source="${escHtml(col.source || "")}"
+              data-original="${escHtml(col.original)}">
+            <i class="ph ph-dots-six-vertical drag-handle"></i>
+            <div class="col-reorder-label">
+              <span>${escHtml(col.label.startsWith("_") ? col.label.slice(1) : col.label)}</span>
+              ${col.source ? `<span class="col-source-badge" style="font-size:9px; color:var(--accent-cyan); opacity:0.8; font-style:italic">Origem: ${escHtml(col.source)}</span>` : ""}
+            </div>
+            <button type="button" class="col-delete-btn" title="Remover"><i class="ph ph-x"></i></button>
+          </li>`).join("")}
       </ul>
       <div class="modal-actions">
         <button class="btn-modal-cancel" id="export-modal-cancel">Cancelar</button>
@@ -741,39 +809,11 @@ function renderModalOrdenacao(colunas, colSources) {
   document.getElementById("export-modal-cancel").onclick = () => overlay.remove();
   document.getElementById("export-modal-confirm").onclick = () => confirmarExport();
 
-  const list = document.getElementById("col-reorder-list");
-  iniciarDragAndDrop(list);
+  iniciarDragAndDrop(document.getElementById("col-reorder-list"));
   
-  // Ações da lista (Delete e Split)
-  list.onclick = (e) => {
-    const btnDel = e.target.closest(".col-delete-btn");
-    if (btnDel) {
-      btnDel.closest(".col-reorder-item").remove();
-      return;
-    }
-
-    const btnSplit = e.target.closest(".btn-split-col");
-    if (btnSplit) {
-      const li = btnSplit.closest(".col-reorder-item");
-      const colName = li.dataset.original;
-      const sources = Array.from(colSources.get(colName) || []);
-      
-      const fragments = sources.map(src => {
-        const itemHtml = renderItemColuna({
-          id: `${colName} (${src})`,
-          label: colName,
-          source: src,
-          original: colName,
-          hasConflict: false,
-          sources: []
-        });
-        const temp = document.createElement("div");
-        temp.innerHTML = itemHtml;
-        return temp.firstElementChild;
-      });
-
-      li.replaceWith(...fragments);
-    }
+  document.getElementById("col-reorder-list").onclick = (e) => {
+    const btn = e.target.closest(".col-delete-btn");
+    if (btn) btn.closest(".col-reorder-item").remove();
   };
 }
 
@@ -792,21 +832,12 @@ async function confirmarExport() {
 
   try {
     const cabecalho = configColunas.map(c => `"${c.id.replace(/"/g, '""')}"`).join(";");
-    
     const linhasCSV = totalResultados.map(row => {
       return configColunas.map(col => {
         let valor = "";
-        
-        if (col.id === "_arquivo") {
-          valor = row._arquivo;
-        } else if (col.source) {
-          // Coluna separada por arquivo: só preenche se a linha vier daquele arquivo
-          valor = (row._arquivo === col.source) ? (row[col.original] ?? "") : "";
-        } else {
-          // Coluna fundida: pega o valor independente do arquivo
-          valor = row[col.original] ?? "";
-        }
-        
+        if (col.id === "_arquivo") valor = row._arquivo;
+        else if (col.source) valor = (row._arquivo === col.source) ? (row[col.original] ?? "") : "";
+        else valor = row[col.original] ?? "";
         return `"${String(valor).replace(/"/g, '""')}"`;
       }).join(";");
     });
@@ -815,13 +846,10 @@ async function confirmarExport() {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `exportacao_${Date.now()}.csv`;
-    a.click();
+    a.href = url; a.download = `exportacao_${Date.now()}.csv`; a.click();
     URL.revokeObjectURL(url);
   } catch (error) {
-    console.error(error);
-    alert("Erro ao gerar exportação.");
+    console.error(error); alert("Erro ao gerar exportação.");
   } finally {
     toggleLoading(false);
   }
