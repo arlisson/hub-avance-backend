@@ -664,24 +664,153 @@ function renderControlesPaginacao(totalPaginas) {
   });
 }
 
-// ── EXPORTAR COM REORDENAÇÃO ──────────────────────────────
-function abrirModalExport() {
-  if (!ultimasColunas.length) return;
+// ── EXPORTAR COM RESOLUÇÃO DE CONFLITOS ──────────────────
+async function abrirModalExport() {
+  if (!totalResultados.length) return;
+
+  const conflitos = analisarConflitosColunas();
+
+  if (conflitos.length > 0) {
+    abrirModalResolucao(conflitos);
+  } else {
+    // Sem conflitos, segue para exportação normal (fundida)
+    renderModalOrdenacao(ultimasColunas, false);
+  }
+}
+
+function analisarConflitosColunas() {
+  const colSources = new Map(); // NomeColuna -> Set(NomesArquivos)
+  
+  for (const row of totalResultados) {
+    const file = row._arquivo;
+    for (const key of Object.keys(row)) {
+      if (key === "_arquivo" || key.startsWith("_")) continue;
+      if (!colSources.has(key)) colSources.set(key, new Set());
+      colSources.get(key).add(file);
+    }
+  }
+
+  const conflitos = [];
+  for (const [col, sources] of colSources.entries()) {
+    if (sources.size > 1) {
+      conflitos.push({ coluna: col, arquivos: Array.from(sources) });
+    }
+  }
+  return conflitos;
+}
+
+function abrirModalResolucao(conflitos) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "resolve-modal";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="ph ph-warning-circle" style="color:var(--accent-cyan)"></i> Colunas duplicadas</h2>
+        <p class="modal-sub">Encontramos colunas com o mesmo nome em arquivos diferentes. Como deseja exportar?</p>
+      </div>
+      <ul class="conflict-list">
+        ${conflitos.map(c => `
+          <li class="conflict-item">
+            <span class="conflict-col-name">${escHtml(c.coluna)}</span>
+            <span class="conflict-files">Presente em: ${c.arquivos.map(f => escHtml(f)).join(", ")}</span>
+          </li>
+        `).join("")}
+      </ul>
+      <div class="modal-actions" style="flex-direction:column; gap:10px">
+        <button class="btn-primary" id="btn-merge-all" style="width:100%">
+          <i class="ph ph-intersect"></i> Fundir colunas (padrão)
+        </button>
+        <button class="btn-secondary" id="btn-split-all" style="width:100%">
+          <i class="ph ph-columns"></i> Manter colunas separadas
+        </button>
+        <button class="btn-modal-cancel" id="btn-resolve-cancel" style="width:100%; background:transparent; border:1px solid var(--border-color); box-shadow:none; color:var(--text-secondary)">
+          Cancelar
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById("btn-resolve-cancel").onclick = () => overlay.remove();
+
+  document.getElementById("btn-merge-all").onclick = () => {
+    overlay.remove();
+    renderModalOrdenacao(ultimasColunas, false);
+  };
+
+  document.getElementById("btn-split-all").onclick = () => {
+    overlay.remove();
+    const colunasSeparadas = gerarColunasSeparadas();
+    renderModalOrdenacao(colunasSeparadas, true);
+  };
+}
+
+function gerarColunasSeparadas() {
+  const colSources = new Map();
+  for (const row of totalResultados) {
+    const file = row._arquivo;
+    for (const key of Object.keys(row)) {
+      if (key === "_arquivo" || key.startsWith("_")) continue;
+      if (!colSources.has(key)) colSources.set(key, new Set());
+      colSources.get(key).add(file);
+    }
+  }
+
+  const finalCols = [];
+  // Sempre coloca o nome do arquivo como primeira coluna informativa
+  finalCols.push({ id: "_arquivo", label: "Origem (Arquivo)", source: null });
+
+  for (const [col, sources] of colSources.entries()) {
+    if (sources.size > 1) {
+      // Cria uma coluna para cada arquivo
+      for (const src of sources) {
+        finalCols.push({ 
+          id: `${col} (${src})`, 
+          label: col, 
+          source: src,
+          originalCol: col 
+        });
+      }
+    } else {
+      // Coluna única
+      finalCols.push({ 
+        id: col, 
+        label: col, 
+        source: Array.from(sources)[0],
+        originalCol: col
+      });
+    }
+  }
+  return finalCols;
+}
+
+function renderModalOrdenacao(colunas, isSplit) {
+  // Se for array de strings (merge), converte para objeto padrão
+  const colsData = colunas.map(c => typeof c === "string" ? { id: c, label: c, source: null } : c);
 
   const overlay = document.createElement("div");
-  overlay.className = "modal-overlay"; overlay.id = "export-modal";
+  overlay.className = "modal-overlay"; 
+  overlay.id = "export-modal";
   overlay.innerHTML = `
     <div class="modal">
       <div class="modal-header">
         <h2 class="modal-title"><i class="ph ph-arrows-out-line-vertical"></i> Ordenar colunas</h2>
-        <p class="modal-sub">Arraste para definir a ordem das colunas na planilha exportada.</p>
+        <p class="modal-sub">Arraste para definir a ordem no arquivo final.</p>
       </div>
       <ul class="col-reorder-list" id="col-reorder-list">
-        ${ultimasColunas.map((col) => `
-          <li class="col-reorder-item" draggable="true" data-col="${escHtml(col)}">
+        ${colsData.map((col) => `
+          <li class="col-reorder-item" draggable="true" 
+              data-id="${escHtml(col.id)}" 
+              data-label="${escHtml(col.label)}"
+              data-source="${escHtml(col.source || "")}"
+              data-original="${escHtml(col.originalCol || col.id)}">
             <i class="ph ph-dots-six-vertical drag-handle"></i>
-            <span class="col-reorder-label">${escHtml(col.startsWith("_") ? col.slice(1) : col)}</span>
-            <button type="button" class="col-delete-btn" title="Remover coluna"><i class="ph ph-x"></i></button>
+            <div class="col-reorder-label">
+              <span>${escHtml(col.label.startsWith("_") ? col.label.slice(1) : col.label)}</span>
+              ${col.source ? `<span class="col-source-badge">${escHtml(col.source)}</span>` : ""}
+            </div>
+            <button type="button" class="col-delete-btn" title="Remover"><i class="ph ph-x"></i></button>
           </li>`).join("")}
       </ul>
       <div class="modal-actions">
@@ -691,54 +820,65 @@ function abrirModalExport() {
     </div>`;
 
   document.body.appendChild(overlay);
-  document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
-  document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
+  document.getElementById("export-modal-cancel").onclick = () => overlay.remove();
+  document.getElementById("export-modal-confirm").onclick = () => confirmarExport(isSplit);
 
-  const reorderList = document.getElementById("col-reorder-list");
-  reorderList?.addEventListener("click", (e) => { const btn = e.target.closest(".col-delete-btn"); if (btn) btn.closest(".col-reorder-item")?.remove(); });
-  iniciarDragAndDrop(reorderList);
+  iniciarDragAndDrop(document.getElementById("col-reorder-list"));
+  
+  // Lógica de deletar item
+  document.getElementById("col-reorder-list").onclick = (e) => {
+    const btn = e.target.closest(".col-delete-btn");
+    if (btn) btn.closest(".col-reorder-item").remove();
+  };
 }
 
-function fecharModalExport() { document.getElementById("export-modal")?.remove(); }
-
-async function confirmarExport() {
+async function confirmarExport(isSplit) {
   const lista = document.getElementById("col-reorder-list");
-  const colunasOrdenadas = [...lista.querySelectorAll(".col-reorder-item")].map(li => li.dataset.col);
-  fecharModalExport();
+  const configColunas = [...lista.querySelectorAll(".col-reorder-item")].map(li => ({
+    id: li.dataset.id,
+    label: li.dataset.label,
+    source: li.dataset.source || null,
+    original: li.dataset.original
+  }));
 
+  document.getElementById("export-modal").remove();
   toggleLoading(true, "Gerando exportação CSV...");
-
-  // Pequeno delay para garantir que o loader renderize antes de travar a thread
   await new Promise(r => setTimeout(r, 50));
 
-  // Exporta EXATAMENTE o que foi filtrado na busca atual
-  const resultados = totalResultados;
-
-  if (!resultados || !resultados.length) {
-    toggleLoading(false);
-    alert("Nenhum resultado para exportar.");
-    return;
-  }
-
   try {
-    const cabecalho = colunasOrdenadas.map(c => `"${c.replace(/"/g, '""')}"`).join(";");
-    const linhasCSV = resultados.map(linha => {
-      return colunasOrdenadas.map(c => {
-        const val = linha[c] ?? "";
-        return `"${String(val).replace(/"/g, '""')}"`;
+    const cabecalho = configColunas.map(c => `"${c.id.replace(/"/g, '""')}"`).join(";");
+    
+    const linhasCSV = totalResultados.map(row => {
+      return configColunas.map(col => {
+        let valor = "";
+        
+        if (isSplit) {
+          // Se for split, só preenche se a linha for do arquivo fonte da coluna
+          if (col.id === "_arquivo") {
+            valor = row._arquivo;
+          } else if (!col.source || row._arquivo === col.source) {
+            valor = row[col.original] ?? "";
+          }
+        } else {
+          // Merge normal
+          valor = row[col.id] ?? "";
+        }
+        
+        return `"${String(valor).replace(/"/g, '""')}"`;
       }).join(";");
     });
 
-    // Adiciona o BOM (\uFEFF) para garantir que o Excel entenda o UTF-8 (Acentos)
     const csvContent = "\uFEFF" + [cabecalho, ...linhasCSV].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "resultado_cofre.csv"; a.click();
+    a.href = url;
+    a.download = `exportacao_${Date.now()}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   } catch (error) {
-    alert("Ocorreu um erro ao gerar o CSV.");
-    console.error("Erro na exportação CSV:", error);
+    console.error(error);
+    alert("Erro ao gerar exportação.");
   } finally {
     toggleLoading(false);
   }
