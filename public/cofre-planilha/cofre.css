@@ -1129,6 +1129,14 @@ body.light-mode .table-wrapper {
   -webkit-user-select: none;
 }
 
+.col-reorder-item * {
+  pointer-events: none;
+}
+
+.col-reorder-item .col-delete-btn {
+  pointer-events: auto;
+}
+
 .col-reorder-item:hover {
   border-color: var(--accent-cyan);
   background: rgba(87, 197, 234, 0.05);

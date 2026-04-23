@@ -730,12 +730,12 @@ function iniciarDragAndDrop(lista) {
   let placeholder = null;
 
   function moverPlaceholder(clientY) {
-    const items = [...lista.querySelectorAll(".col-reorder-item")].filter(el => el !== dragSrc);
+    // Filtrar apenas itens reais, ignorando o que está sendo arrastado e o próprio placeholder
+    const items = [...lista.querySelectorAll(".col-reorder-item:not(.dragging)")];
     if (!items.length) return;
 
     let nearest = null;
     let nearestDist = Infinity;
-    let insertAfter = false;
 
     for (const item of items) {
       const rect = item.getBoundingClientRect();
@@ -744,25 +744,36 @@ function iniciarDragAndDrop(lista) {
       if (dist < nearestDist) {
         nearestDist = dist;
         nearest = item;
-        insertAfter = clientY > mid;
       }
     }
 
     if (nearest) {
-      insertAfter ? nearest.after(placeholder) : nearest.before(placeholder);
+      const rect = nearest.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (clientY < mid) {
+        nearest.before(placeholder);
+      } else {
+        nearest.after(placeholder);
+      }
     }
   }
 
   lista.addEventListener("dragstart", (e) => {
     const item = e.target.closest(".col-reorder-item");
     if (!item) return;
+
     dragSrc = item;
     e.dataTransfer.effectAllowed = "move";
+    
     placeholder = document.createElement("li");
     placeholder.className = "col-reorder-placeholder";
     placeholder.style.height = item.offsetHeight + "px";
-    item.after(placeholder);
-    setTimeout(() => item.classList.add("dragging"), 0);
+    
+    // Pequeno delay para a classe dragging não afetar a imagem de drag do navegador
+    setTimeout(() => {
+      item.classList.add("dragging");
+      item.after(placeholder);
+    }, 0);
   });
 
   overlay.addEventListener("dragover", (e) => {
@@ -781,7 +792,7 @@ function iniciarDragAndDrop(lista) {
   });
 
   overlay.addEventListener("dragend", () => {
-    if (!dragSrc) return; // drop já tratou
+    if (!dragSrc) return;
     placeholder?.remove();
     dragSrc.classList.remove("dragging");
     dragSrc = null;
