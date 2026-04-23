@@ -250,10 +250,14 @@ function parsearArquivo(file) {
       reject(new Error("Tempo limite excedido. O arquivo é grande demais para ser processado de uma vez."));
     }, 300_000);
 
-    // Envia o objeto File direto para o worker (muito mais eficiente em memória)
+    // Envia o objeto File direto para o worker
     worker.postMessage({ file, nome: file.name });
 
     worker.onmessage = ({ data }) => {
+      if (data.type === 'progress') {
+        toggleLoading(true, data.msg, data.percent);
+        return;
+      }
       clearTimeout(timeout);
       worker.terminate();
       data.ok ? resolve(data) : reject(new Error(data.error));
@@ -820,7 +824,7 @@ function iniciarDragAndDrop(lista) {
   });
 }
 
-function toggleLoading(active, msg = "Processando...") {
+function toggleLoading(active, msg = "Processando...", percent = null) {
   let loader = document.getElementById("global-loader");
   if (!loader) {
     loader = document.createElement("div");
@@ -828,17 +832,87 @@ function toggleLoading(active, msg = "Processando...") {
     loader.className = "global-loader";
     loader.innerHTML = `
       <div class="loader-content">
-        <div class="spinner"></div>
         <p id="loader-text"></p>
+        <div class="progress-container" id="progress-container" style="display:none">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-info" id="progress-info" style="display:none">
+          <span id="progress-percent">0%</span>
+          <span>Aguarde...</span>
+        </div>
       </div>
     `;
     document.body.appendChild(loader);
   }
+  
   const text = loader.querySelector("#loader-text");
+  const progCont = loader.querySelector("#progress-container");
+  const progBar = loader.querySelector("#progress-bar");
+  const progInfo = loader.querySelector("#progress-info");
+  const progPerc = loader.querySelector("#progress-percent");
+
   if (text) text.textContent = msg;
+  
+  if (percent !== null) {
+    if (progCont) progCont.style.display = "block";
+    if (progInfo) progInfo.style.display = "flex";
+    if (progBar) progBar.style.width = percent + "%";
+    if (progPerc) progPerc.textContent = percent + "%";
+  } else {
+    if (progCont) progCont.style.display = "none";
+    if (progInfo) progInfo.style.display = "none";
+  }
+
   if (active) loader.classList.add("active");
-  else loader.classList.remove("active");
+  else {
+    loader.classList.remove("active");
+    if (progBar) progBar.style.width = "0%";
+  }
 }
+
+// ── HELPERS ───────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function initTheme(btn) {
+  if (!btn) return;
+  const isLight = localStorage.getItem("theme") === "light";
+  document.body.classList.toggle("light-mode", isLight);
+  updateThemeIcon(btn, !isLight);
+  btn.addEventListener("click", () => {
+    const nowLight = document.body.classList.toggle("light-mode");
+    localStorage.setItem("theme", nowLight ? "light" : "dark");
+    updateThemeIcon(btn, !nowLight);
+  });
+}
+
+function updateThemeIcon(btn, isDark) {
+  const icon = btn?.querySelector("i"); const text = btn?.querySelector("span");
+  if (icon) icon.className = isDark ? "ph ph-sun" : "ph ph-moon";
+  if (text) text.textContent = isDark ? "Modo claro" : "Modo escuro";
+}
+
+function initSettingsMenu(btn, menu) {
+  if (!btn || !menu) return;
+  const close = () => { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+  const open = () => { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); };
+  btn.setAttribute("aria-expanded", "false");
+  btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden ? open() : close(); });
+  document.addEventListener("click", (e) => { if (!document.getElementById("sidebar-userbar")?.contains(e.target)) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+}
+
+function initMobileSidebar(menuBtn) {
+  if (!menuBtn) return;
+  menuBtn.addEventListener("click", () => document.body.classList.toggle("sidebar-open"));
+  document.addEventListener("click", (e) => {
+    if (!document.body.classList.contains("sidebar-open")) return;
+    const sidebar = document.querySelector(".sidebar");
+    if (!sidebar?.contains(e.target) && !menuBtn.contains(e.target)) document.body.classList.remove("sidebar-open");
+  });
+}
+
 
 // ── HELPERS ───────────────────────────────────────────────
 function escHtml(str) {
