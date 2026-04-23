@@ -723,26 +723,26 @@ async function confirmarExport() {
 function iniciarDragAndDrop(lista) {
   if (!lista) return;
   let dragSrc = null;
-  let srcIndex = null;
+  let placeholder = null;
+  let lastPos = null;
 
-  function items() { return [...lista.querySelectorAll(".col-reorder-item")]; }
-
-  function resetTransforms() {
-    items().forEach(i => { i.style.transform = ""; i.classList.remove("dragging"); });
+  function getItems() {
+    return [...lista.querySelectorAll(".col-reorder-item")];
   }
 
-  function animateGap(targetIndex) {
-    const all = items();
-    const itemH = (all[0]?.getBoundingClientRect().height ?? 48) + 8;
-    all.forEach((item, i) => {
-      if (item === dragSrc) return;
-      if (srcIndex < targetIndex && i > srcIndex && i <= targetIndex) {
-        item.style.transform = `translateY(-${itemH}px)`;
-      } else if (srcIndex > targetIndex && i >= targetIndex && i < srcIndex) {
-        item.style.transform = `translateY(${itemH}px)`;
-      } else {
-        item.style.transform = "";
-      }
+  // FLIP: registra posições antes, faz a ação, anima a diferença
+  function flip(action) {
+    const els = getItems().filter(el => el !== dragSrc);
+    const tops = new Map(els.map(el => [el, el.getBoundingClientRect().top]));
+    action();
+    els.forEach(el => {
+      const delta = tops.get(el) - el.getBoundingClientRect().top;
+      if (Math.abs(delta) < 1) return;
+      el.classList.add("flip-no-transition");
+      el.style.transform = `translateY(${delta}px)`;
+      el.getBoundingClientRect(); // força reflow
+      el.classList.remove("flip-no-transition");
+      el.style.transform = "";
     });
   }
 
@@ -750,41 +750,46 @@ function iniciarDragAndDrop(lista) {
     const item = e.target.closest(".col-reorder-item");
     if (!item) return;
     dragSrc = item;
-    srcIndex = items().indexOf(item);
-    item.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
+    placeholder = document.createElement("li");
+    placeholder.className = "col-reorder-placeholder";
+    placeholder.style.height = item.offsetHeight + "px";
+    setTimeout(() => {
+      item.classList.add("dragging");
+      item.after(placeholder);
+    }, 0);
   });
 
   lista.addEventListener("dragend", () => {
-    resetTransforms();
+    if (!dragSrc) return;
+    if (placeholder?.parentNode) placeholder.replaceWith(dragSrc);
+    dragSrc.classList.remove("dragging");
+    getItems().forEach(el => { el.style.transform = ""; el.classList.remove("flip-no-transition"); });
     dragSrc = null;
-    srcIndex = null;
+    placeholder = null;
+    lastPos = null;
   });
 
   lista.addEventListener("dragover", (e) => {
     e.preventDefault();
-    if (!dragSrc) return;
+    if (!dragSrc || !placeholder?.parentNode) return;
     const target = e.target.closest(".col-reorder-item");
     if (!target || target === dragSrc) return;
-    animateGap(items().indexOf(target));
-  });
-
-  lista.addEventListener("dragleave", (e) => {
-    if (!lista.contains(e.relatedTarget)) {
-      items().forEach(i => { if (i !== dragSrc) i.style.transform = ""; });
-    }
+    const rect = target.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    if (lastPos?.target === target && lastPos?.after === after) return;
+    lastPos = { target, after };
+    flip(() => after ? target.after(placeholder) : target.before(placeholder));
   });
 
   lista.addEventListener("drop", (e) => {
     e.preventDefault();
-    if (!dragSrc) return;
-    const target = e.target.closest(".col-reorder-item");
-    if (!target || target === dragSrc) return;
-    const after = e.clientY > target.getBoundingClientRect().top + target.getBoundingClientRect().height / 2;
-    lista.insertBefore(dragSrc, after ? target.nextSibling : target);
-    resetTransforms();
+    if (!dragSrc || !placeholder?.parentNode) return;
+    placeholder.replaceWith(dragSrc);
+    dragSrc.classList.remove("dragging");
     dragSrc = null;
-    srcIndex = null;
+    placeholder = null;
+    lastPos = null;
   });
 }
 

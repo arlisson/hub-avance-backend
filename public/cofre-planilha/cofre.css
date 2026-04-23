@@ -1123,7 +1123,7 @@ body.light-mode .table-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.2s, background 0.2s;
+  transition: transform 0.2s ease, opacity 0.15s ease, border-color 0.2s, background 0.2s;
   cursor: grab;
 }
 
@@ -1133,9 +1133,21 @@ body.light-mode .table-wrapper {
 }
 
 .col-reorder-item.dragging {
-  opacity: 0.35;
+  opacity: 0.3;
   border-color: var(--accent-cyan);
   cursor: grabbing;
+}
+
+.col-reorder-item.flip-no-transition {
+  transition: none !important;
+}
+
+.col-reorder-placeholder {
+  border: 2px dashed var(--accent-cyan);
+  border-radius: 10px;
+  background: rgba(87, 197, 234, 0.06);
+  pointer-events: none;
+  list-style: none;
 }
 
 .col-reorder-label { flex: 1; }
