@@ -70,7 +70,7 @@ self.onmessage = async function ({ data }) {
 
       // Envia progresso para a UI
       const percent = Math.min(100, Math.round((offset / file.size) * 100));
-      self.postMessage({ type: 'progress', percent, msg: `Processando arquivo: ${percent}%` });
+      self.postMessage({ type: 'progress', percent, msg: `Lendo arquivo: ${percent}%` });
 
       text = leftover + text;
       const lines = text.split(/\r?\n/);

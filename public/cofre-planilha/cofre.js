@@ -832,13 +832,10 @@ function toggleLoading(active, msg = "Processando...", percent = null) {
     loader.className = "global-loader";
     loader.innerHTML = `
       <div class="loader-content">
-        <p id="loader-text"></p>
         <div class="progress-container" id="progress-container" style="display:none">
           <div class="progress-bar" id="progress-bar"></div>
         </div>
-        <div class="progress-info" id="progress-info" style="display:none">
-          <span id="progress-percent">0%</span>
-        </div>
+        <p id="loader-text"></p>
       </div>
     `;
     document.body.appendChild(loader);
@@ -847,20 +844,15 @@ function toggleLoading(active, msg = "Processando...", percent = null) {
   const text = loader.querySelector("#loader-text");
   const progCont = loader.querySelector("#progress-container");
   const progBar = loader.querySelector("#progress-bar");
-  const progInfo = loader.querySelector("#progress-info");
-  const progPerc = loader.querySelector("#progress-percent");
 
   if (text) text.textContent = msg;
   
   if (percent !== null) {
     const p = Math.min(100, Math.max(0, percent));
     if (progCont) progCont.style.display = "block";
-    if (progInfo) progInfo.style.display = "flex";
     if (progBar) progBar.style.width = p + "%";
-    if (progPerc) progPerc.textContent = p + "%";
   } else {
     if (progCont) progCont.style.display = "none";
-    if (progInfo) progInfo.style.display = "none";
   }
 
   if (active) loader.classList.add("active");
