@@ -1209,48 +1209,76 @@ body.light-mode .table-wrapper {
 
 .conflict-item {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   background: var(--bg-card);
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border-color);
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .conflict-item:hover {
   border-color: var(--accent-cyan);
+  background: rgba(87, 197, 234, 0.03);
 }
 
-.conflict-check-wrap {
+.conflict-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.conflict-check {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent-cyan);
-  cursor: pointer;
-}
-
-.conflict-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .conflict-col-name {
-  color: var(--text-primary);
+  color: var(--accent-cyan);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.conflict-question {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.conflict-choices {
+  display: flex;
+  gap: 20px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+body.light-mode .conflict-choices {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.conflict-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.conflict-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-cyan);
+  cursor: pointer;
 }
 
 .conflict-files {
   font-size: 11px;
   color: var(--text-secondary);
+  opacity: 0.8;
   font-style: italic;
 }
 

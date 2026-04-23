@@ -702,21 +702,30 @@ function abrirModalResolucao(conflitos, colSources) {
   overlay.className = "modal-overlay";
   overlay.id = "resolve-modal";
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal" style="width: 520px">
       <div class="modal-header">
         <h2 class="modal-title"><i class="ph ph-warning-circle" style="color:var(--accent-cyan)"></i> Colunas duplicadas</h2>
-        <p class="modal-sub">Escolha quais colunas deseja unir (fundir) e quais deseja manter separadas por arquivo.</p>
+        <p class="modal-sub">Identificamos colunas com o mesmo nome em arquivos diferentes. Como deseja exportar cada uma?</p>
       </div>
       <ul class="conflict-list" id="conflict-list">
         ${conflitos.map(c => `
           <li class="conflict-item">
-            <div class="conflict-check-wrap">
-              <input type="checkbox" class="conflict-check" checked data-col="${escHtml(c.coluna)}" id="chk-${escHtml(c.coluna)}">
-            </div>
-            <label class="conflict-info" for="chk-${escHtml(c.coluna)}">
+            <div class="conflict-header">
+              <i class="ph ph-columns" style="color:var(--accent-cyan)"></i>
               <span class="conflict-col-name">${escHtml(c.coluna)}</span>
-              <span class="conflict-files">Fundir dados de: ${c.arquivos.map(f => escHtml(f)).join(", ")}</span>
-            </label>
+            </div>
+            <div class="conflict-question">Deseja unir ou manter separado?</div>
+            <div class="conflict-choices">
+              <label class="conflict-option">
+                <input type="radio" name="choice-${escHtml(c.coluna)}" value="merge" checked>
+                <span>Unir colunas</span>
+              </label>
+              <label class="conflict-option">
+                <input type="radio" name="choice-${escHtml(c.coluna)}" value="split">
+                <span>Manter separado</span>
+              </label>
+            </div>
+            <div class="conflict-files">Presente em: ${c.arquivos.map(f => escHtml(f)).join(", ")}</div>
           </li>
         `).join("")}
       </ul>
@@ -736,8 +745,9 @@ function abrirModalResolucao(conflitos, colSources) {
 
   document.getElementById("btn-resolve-confirm").onclick = () => {
     const escolhas = {};
-    overlay.querySelectorAll(".conflict-check").forEach(chk => {
-      escolhas[chk.dataset.col] = chk.checked;
+    conflitos.forEach(c => {
+      const radio = document.querySelector(`input[name="choice-${c.coluna}"]:checked`);
+      escolhas[c.coluna] = radio.value === "merge";
     });
     
     overlay.remove();
