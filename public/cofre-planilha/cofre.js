@@ -12,7 +12,7 @@ let paginaAtual = 1;
 
 // ── BANCO DE DADOS LOCAL (IndexedDB) ──────────────────────
 const DB_NAME = "CofrePlanilhasDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_META = "planilhas_meta";
 const STORE_DADOS = "planilhas_dados";
 
@@ -23,16 +23,14 @@ function abrirDB() {
 
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
-      // Remove store legado do v1 (dados eram armazenados juntos com metadados)
-      if (db.objectStoreNames.contains("planilhas")) {
-        db.deleteObjectStore("planilhas");
-      }
       if (!db.objectStoreNames.contains(STORE_META)) {
         db.createObjectStore(STORE_META, { keyPath: "id", autoIncrement: true });
       }
-      if (!db.objectStoreNames.contains(STORE_DADOS)) {
-        db.createObjectStore(STORE_DADOS, { keyPath: "id" });
+      if (db.objectStoreNames.contains(STORE_DADOS)) {
+        db.deleteObjectStore(STORE_DADOS);
       }
+      const dadosStore = db.createObjectStore(STORE_DADOS, { keyPath: "id", autoIncrement: true });
+      dadosStore.createIndex("fileId", "fileId", { unique: false });
     };
 
     request.onsuccess = (e) => {
