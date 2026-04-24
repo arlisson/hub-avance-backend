@@ -227,6 +227,47 @@
       </div>
     </div>
 
-    <script src="./cofre.js?v=57"></script>
+    <!-- Modal de Configuração de Schema (Tipos em Lote) -->
+    <div class="filtros-modal-overlay" id="schema-modal-overlay" hidden>
+      <div class="filtros-modal">
+        <div class="filtros-modal-header">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <i class="ph ph-gear-six"></i>
+            <span>Configurar Tipos da Planilha</span>
+          </div>
+          <button class="filtros-modal-close" id="btn-fechar-schema">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+        <div class="filtros-modal-body">
+          <p class="schema-detail">
+            Defina o tipo de cada coluna para habilitar filtros específicos de
+            <b>Número</b> e <b>Data</b>.
+          </p>
+          <div class="table-wrapper">
+            <table class="schema-table">
+              <thead>
+                <tr>
+                  <th>Coluna</th>
+                  <th>Tipo de Dado</th>
+                  <th>Configurações</th>
+                </tr>
+              </thead>
+              <tbody id="schema-table-body">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="filtros-modal-footer">
+          <button class="btn-primary" id="btn-salvar-schema">
+            <i class="ph ph-check"></i>
+            Salvar e Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./cofre.js?v=49"></script>
   </body>
 </html>
