@@ -197,6 +197,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-buscar")?.addEventListener("click", buscar);
   document.getElementById("btn-export")?.addEventListener("click", abrirModalExport);
   document.getElementById("btn-limpar-tudo")?.addEventListener("click", limparTudo);
+
+  // modal de filtros
+  document.getElementById("btn-configurar-filtros")?.addEventListener("click", abrirModalFiltros);
+  document.getElementById("btn-fechar-filtros")?.addEventListener("click", fecharModalFiltros);
+  document.getElementById("btn-fechar-sem-buscar")?.addEventListener("click", fecharModalFiltros);
+  document.getElementById("filtros-modal-overlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "filtros-modal-overlay") fecharModalFiltros();
+  });
+  document.getElementById("btn-aplicar-filtros")?.addEventListener("click", () => {
+    fecharModalFiltros();
+    buscar();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") fecharModalFiltros();
+  });
 });
 
 // ── UPLOAD ────────────────────────────────────────────────
@@ -341,6 +356,26 @@ function renderLista() {
 }
 
 // ── FILTROS POR PLANILHA ──────────────────────────────────
+function abrirModalFiltros() {
+  const overlay = document.getElementById("filtros-modal-overlay");
+  if (!overlay) return;
+  overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+  document.getElementById("global-search")?.focus();
+}
+
+function fecharModalFiltros() {
+  const overlay = document.getElementById("filtros-modal-overlay");
+  if (!overlay) return;
+  overlay.hidden = true;
+  document.body.style.overflow = "";
+  // atualiza badge do botão com contagem de filtros ativos
+  const count = document.querySelectorAll(".filtro-card--ativo").length
+    + (document.getElementById("global-search")?.value.trim() ? 1 : 0);
+  const btn = document.getElementById("btn-configurar-filtros");
+  if (btn) btn.classList.toggle("has-filters", count > 0);
+}
+
 function renderFiltrosPanel() {
   const lista = document.getElementById("filtros-lista");
   if (!lista) return;
@@ -351,14 +386,7 @@ function renderFiltrosPanel() {
     return;
   }
 
-  // 1. Barra de chips de filtros ativos
-  const chipsBar = document.createElement("div");
-  chipsBar.id = "filtros-chips-bar";
-  chipsBar.className = "filtros-chips-bar";
-  chipsBar.innerHTML = '<span class="filtros-chips-vazio">Nenhum filtro ativo</span>';
-  lista.appendChild(chipsBar);
-
-  // 2. Busca global
+  // 1. Busca global
   const globalSearchBox = document.createElement("div");
   globalSearchBox.className = "global-search-box";
   globalSearchBox.innerHTML = `
@@ -370,7 +398,7 @@ function renderFiltrosPanel() {
   lista.appendChild(globalSearchBox);
   globalSearchBox.querySelector("#global-search").addEventListener("input", atualizarChipsFiltrosAtivos);
 
-  // 3. Seletor de planilha (dropdown se múltiplas, nome se só uma)
+  // 2. Seletor de planilha (dropdown se múltiplas, nome se só uma)
   const drawer = document.createElement("div");
   drawer.id = "filtro-drawer-novo";
   drawer.className = "filtro-drawer-novo";
@@ -401,7 +429,7 @@ function renderFiltrosPanel() {
     lista.appendChild(nomeWrap);
   }
 
-  // 4. Busca de coluna
+  // 3. Busca de coluna
   const colSearch = document.createElement("div");
   colSearch.className = "filtro-coluna-search";
   colSearch.innerHTML = `
@@ -413,7 +441,7 @@ function renderFiltrosPanel() {
   lista.appendChild(colSearch);
   colSearch.querySelector("#coluna-search").addEventListener("input", (e) => filtrarColunasVisiveis(e.target.value));
 
-  // 5. Painéis de colunas — um por planilha, todos no DOM (preserva filtros ao trocar aba)
+  // 4. Painéis de colunas — um por planilha, todos no DOM (preserva filtros ao trocar aba)
   planilhas.forEach((p, i) => {
     const panel = document.createElement("div");
     panel.className = "filtro-panel-planilha";

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cofre de Planilhas | AVANCE</title>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="./cofre.css?v=36" />
+    <link rel="stylesheet" href="./cofre.css?v=38" />
     <script src="./xlsx.min.js"></script>
   </head>
   <body>
@@ -136,51 +136,97 @@
             </ul>
           </aside>
 
-          <!-- PAINEL DIREITO: filtro + resultados -->
+          <!-- PAINEL DIREITO: barra de ação + tabela -->
           <section class="cofre-panel cofre-panel-right">
-            <!-- Sidebar de filtros -->
-            <div class="filtros-sidebar">
-              <h2 class="section-title">
-                <i class="ph ph-funnel"></i> Filtrar dados
-              </h2>
-
-              <div id="filtros-lista"></div>
-
-              <div class="filter-actions-row">
-                <button
-                  class="btn-primary filter-btn"
-                  id="btn-buscar"
-                  type="button"
-                >
-                  <i class="ph ph-magnifying-glass"></i>
-                  Buscar
-                </button>
+            <!-- Barra de ação superior -->
+            <div class="resultados-topbar">
+              <button
+                id="btn-configurar-filtros"
+                class="btn-filtros"
+                type="button"
+              >
+                <i class="ph ph-funnel"></i>
+                <span>Filtros</span>
+              </button>
+              <div class="filtros-chips-bar" id="filtros-chips-bar">
+                <span class="filtros-chips-vazio">Nenhum filtro ativo</span>
               </div>
+              <button
+                class="btn-primary filter-btn"
+                id="btn-buscar"
+                type="button"
+              >
+                <i class="ph ph-magnifying-glass"></i>
+                Buscar
+              </button>
             </div>
 
-            <!-- Área de resultados -->
-            <div class="resultados-area">
-              <div class="results-bar" id="results-bar" hidden>
-                <span id="results-count" class="results-count"></span>
-                <button class="btn-export" id="btn-export" type="button">
-                  <i class="ph ph-download-simple"></i>
-                  Exportar
-                </button>
-              </div>
-
-              <div class="table-wrapper" id="table-wrapper">
-                <p class="table-placeholder">
-                  Faça upload de planilhas e clique em Buscar.
-                </p>
-              </div>
-
-              <div id="pagination" class="pagination" hidden></div>
+            <!-- Barra de resultados (aparece após busca) -->
+            <div class="results-bar" id="results-bar" hidden>
+              <span id="results-count" class="results-count"></span>
+              <button class="btn-export" id="btn-export" type="button">
+                <i class="ph ph-download-simple"></i>
+                Exportar
+              </button>
             </div>
+
+            <!-- Tabela -->
+            <div class="table-wrapper" id="table-wrapper">
+              <p class="table-placeholder">
+                Faça upload de planilhas e clique em Buscar.
+              </p>
+            </div>
+
+            <div id="pagination" class="pagination" hidden></div>
           </section>
         </div>
       </div>
     </main>
 
-    <script src="./cofre.js?v=46"></script>
+    <!-- Modal de configuração de filtros -->
+    <div class="filtros-modal-overlay" id="filtros-modal-overlay" hidden>
+      <div
+        class="filtros-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filtros-modal-titulo"
+      >
+        <div class="filtros-modal-header">
+          <span id="filtros-modal-titulo">
+            <i class="ph ph-funnel"></i> Configurar filtros
+          </span>
+          <button
+            type="button"
+            class="filtros-modal-close"
+            id="btn-fechar-filtros"
+            aria-label="Fechar"
+          >
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+        <div class="filtros-modal-body">
+          <div id="filtros-lista"></div>
+        </div>
+        <div class="filtros-modal-footer">
+          <button
+            type="button"
+            class="btn-secondary"
+            id="btn-fechar-sem-buscar"
+          >
+            Fechar
+          </button>
+          <button
+            type="button"
+            class="btn-primary filter-btn"
+            id="btn-aplicar-filtros"
+          >
+            <i class="ph ph-magnifying-glass"></i>
+            Aplicar e buscar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./cofre.js?v=48"></script>
   </body>
 </html>
