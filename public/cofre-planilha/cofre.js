@@ -529,18 +529,61 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
   if (tipo === "number") {
     body.innerHTML = `
       <div class="filtro-card-row">
-        <div class="filtro-card-field">
-          <label class="filtro-card-field-label">Mínimo</label>
-          <input type="number" class="filtro-card-input filtro-card-input-principal" step="any"
-            data-planilha="${pid}" data-coluna="${col}" data-op="range-min">
-        </div>
-        <div class="filtro-card-field">
-          <label class="filtro-card-field-label">Máximo</label>
-          <input type="number" class="filtro-card-input" step="any"
-            data-planilha="${pid}" data-coluna="${col}" data-op="range-max">
+        <select class="filtro-card-op-select num-op-select" data-planilha="${pid}" data-coluna="${col}" data-op="num-op">
+          <option value="range">Intervalo (De/Até)</option>
+          <option value="exact">Valor Exato (=)</option>
+        </select>
+      </div>
+      <div class="num-inputs-area">
+        <div class="filtro-card-row">
+          <div class="filtro-card-field">
+            <label class="filtro-card-field-label">Mínimo</label>
+            <input type="number" class="filtro-card-input filtro-card-input-principal" step="any"
+              data-planilha="${pid}" data-coluna="${col}" data-op="range-min">
+          </div>
+          <div class="filtro-card-field">
+            <label class="filtro-card-field-label">Máximo</label>
+            <input type="number" class="filtro-card-input" step="any"
+              data-planilha="${pid}" data-coluna="${col}" data-op="range-max">
+          </div>
         </div>
       </div>
     `;
+
+    const opSelect = body.querySelector(".num-op-select");
+    const inputsArea = body.querySelector(".num-inputs-area");
+
+    opSelect.addEventListener("change", () => {
+      const isRange = opSelect.value === "range";
+      if (isRange) {
+        inputsArea.innerHTML = `
+          <div class="filtro-card-row">
+            <div class="filtro-card-field">
+              <label class="filtro-card-field-label">Mínimo</label>
+              <input type="number" class="filtro-card-input filtro-card-input-principal" step="any"
+                data-planilha="${pid}" data-coluna="${col}" data-op="range-min">
+            </div>
+            <div class="filtro-card-field">
+              <label class="filtro-card-field-label">Máximo</label>
+              <input type="number" class="filtro-card-input" step="any"
+                data-planilha="${pid}" data-coluna="${col}" data-op="range-max">
+            </div>
+          </div>
+        `;
+      } else {
+        inputsArea.innerHTML = `
+          <div class="filtro-card-row">
+            <div class="filtro-card-field">
+              <label class="filtro-card-field-label">Valor exato</label>
+              <input type="number" class="filtro-card-input filtro-card-input-principal" step="any"
+                data-planilha="${pid}" data-coluna="${col}" data-op="exact-val" placeholder="Ex: 123">
+            </div>
+          </div>
+        `;
+      }
+      card.classList.remove("filtro-card--ativo");
+      atualizarChipsFiltrosAtivos();
+    });
   } else if (tipo === "date") {
     body.innerHTML = `
       <div class="filtro-card-row">
