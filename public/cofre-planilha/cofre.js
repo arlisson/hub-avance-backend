@@ -372,18 +372,33 @@ function renderFiltrosPanel() {
   drawer.className = "filtro-drawer";
 
   planilhas.forEach((p, i) => {
+    const tabItem = document.createElement("div");
+    tabItem.className = "filtro-tab-item";
+    
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "filtro-tab-btn";
     btn.dataset.planilhaId = p.id;
     btn.textContent = `${i + 1}º`;
     btn.title = p.nome;
-    tabsRow.appendChild(btn);
+
+    const configBtn = document.createElement("button");
+    configBtn.type = "button";
+    configBtn.className = "filtro-tab-config";
+    configBtn.innerHTML = '<i class="ph ph-gear"></i>';
+    configBtn.title = "Configurar tipos de dados";
+    configBtn.onclick = (e) => { e.stopPropagation(); abrirConfigSchema(p); };
+
+    tabItem.appendChild(btn);
+    tabItem.appendChild(configBtn);
+    tabsRow.appendChild(tabItem);
 
     const panel = document.createElement("div");
     panel.className = "filtro-drawer-panel";
     panel.dataset.planilhaId = p.id;
-    for (const col of p.colunas) panel.appendChild(criarItemColuna(p.id, col));
+    for (const col of p.colunas) {
+      panel.appendChild(criarItemColuna(p.id, col, p.schema?.[col]));
+    }
     drawer.appendChild(panel);
 
     btn.addEventListener("click", () => {
@@ -399,9 +414,102 @@ function renderFiltrosPanel() {
   lista.appendChild(wrap);
 }
 
-function criarItemColuna(planilhaId, coluna) {
+function abrirConfigSchema(planilha) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal" style="width: 600px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="ph ph-gear-six"></i> Configurar Tipos: ${escHtml(planilha.nome)}</h2>
+        <p class="modal-sub">Verifique se os tipos de dados foram detectados corretamente para habilitar filtros avançados.</p>
+      </div>
+      <div style="flex: 1; overflow-y: auto; margin: 15px 0; border: 1px solid var(--border-color); border-radius: 8px;">
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Coluna</th>
+              <th>Tipo de Dado</th>
+              <th>Detalhe</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${planilha.colunas.map(col => {
+              const s = planilha.schema?.[col] || { type: 'text' };
+              return `
+                <tr data-coluna="${escHtml(col)}">
+                  <td style="font-weight: 500;">${escHtml(col)}</td>
+                  <td>
+                    <select class="schema-type-select">
+                      <option value="text" ${s.type === 'text' ? 'selected' : ''}>Texto</option>
+                      <option value="number" ${s.type === 'number' ? 'selected' : ''}>Número</option>
+                      <option value="date" ${s.type === 'date' ? 'selected' : ''}>Data</option>
+                    </select>
+                  </td>
+                  <td class="schema-detail">
+                    ${s.type === 'number' ? `Separador: <b>${s.decimal}</b>` : ''}
+                    ${s.type === 'date' ? `Formato: <b>${s.format}</b>` : ''}
+                    ${s.type === 'text' ? '-' : ''}
+                  </td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" id="btn-schema-cancel">Cancelar</button>
+        <button class="btn-primary" id="btn-schema-save"><i class="ph ph-check"></i> Salvar Alterações</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  
+  document.getElementById("btn-schema-cancel").onclick = () => overlay.remove();
+  document.getElementById("btn-schema-save").onclick = async () => {
+    const rows = overlay.querySelectorAll("tbody tr");
+    const novoSchema = {};
+    
+    rows.forEach(tr => {
+      const col = tr.dataset.coluna;
+      const type = tr.querySelector(".schema-type-select").value;
+      const original = planilha.schema?.[col] || {};
+      
+      novoSchema[col] = { 
+        type, 
+        decimal: original.decimal || (type === 'number' ? ',' : null),
+        format: original.format || (type === 'date' ? 'DD/MM/YYYY' : null)
+      };
+    });
+
+    await salvarSchemaLocal(planilha.id, novoSchema);
+    overlay.remove();
+    window.location.reload(); // Recarrega para aplicar os novos tipos na UI de filtros
+  };
+}
+
+async function salvarSchemaLocal(id, schema) {
+  try {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORE_META], "readwrite");
+      const store = tx.objectStore(STORE_META);
+      const req = store.get(Number(id));
+      req.onsuccess = () => {
+        const data = req.result;
+        data.schema = schema;
+        store.put(data);
+        tx.oncomplete = resolve;
+      };
+      req.onerror = reject;
+    });
+  } catch (err) { console.error(err); }
+}
+
+function criarItemColuna(planilhaId, coluna, schemaCol) {
   const item = document.createElement("div");
   item.className = "filtro-col-item";
+  item.dataset.type = schemaCol?.type || "text";
 
   const head = document.createElement("div");
   head.className = "filtro-col-head";
@@ -414,18 +522,37 @@ function criarItemColuna(planilhaId, coluna) {
   chk.dataset.planilha = planilhaId; chk.dataset.coluna = coluna;
 
   const nome = document.createElement("span");
-  nome.className = "filtro-col-nome"; nome.textContent = coluna; nome.title = coluna;
+  nome.className = "filtro-col-nome"; 
+  nome.innerHTML = `${escHtml(coluna)} ${getIconForType(schemaCol?.type)}`;
+  nome.title = coluna;
 
   label.appendChild(chk); label.appendChild(nome);
 
   const select = document.createElement("select");
   select.className = "filtro-col-type";
-  select.innerHTML = `
-    <option value="contains">Contém</option>
-    <option value="exact">Exato</option>
-    <option value="starts">Começa com</option>
-    <option value="ends">Termina com</option>
-  `;
+  
+  if (schemaCol?.type === "number") {
+    select.innerHTML = `
+      <option value="range">Intervalo (Min/Max)</option>
+      <option value="exact">Igual a</option>
+      <option value="greater">Maior que</option>
+      <option value="less">Menor que</option>
+    `;
+  } else if (schemaCol?.type === "date") {
+    select.innerHTML = `
+      <option value="period">Período</option>
+      <option value="exact">Data exata</option>
+      <option value="after">Depois de</option>
+      <option value="before">Antes de</option>
+    `;
+  } else {
+    select.innerHTML = `
+      <option value="contains">Contém</option>
+      <option value="exact">Exato</option>
+      <option value="starts">Começa com</option>
+      <option value="ends">Termina com</option>
+    `;
+  }
   select.hidden = true;
 
   head.appendChild(label);
@@ -514,7 +641,7 @@ async function buscar() {
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
   toggleLoading(true, "Filtrando dados...");
-  await new Promise(r => setTimeout(r, 0)); // yield para o spinner aparecer antes do processamento
+  await new Promise(r => setTimeout(r, 0));
 
   const filtros = coletarFiltros();
   const resultados = [];
@@ -522,12 +649,14 @@ async function buscar() {
   for (const p of planilhas) {
     const dados = await carregarDadosPlanilha(p.id);
     const fp = filtros[String(p.id)] || [];
+    const schema = p.schema || {};
+
     for (const linha of dados) {
       if (globalTerm) {
         const valoresLinha = Object.values(linha).join(" ").toLowerCase();
         if (!valoresLinha.includes(globalTerm)) continue;
       }
-      if (!fp.length || linhaPassaFiltros(linha, fp)) {
+      if (!fp.length || linhaPassaFiltros(linha, fp, schema)) {
         resultados.push({ _arquivo: p.nome, ...linha });
       }
     }
@@ -539,19 +668,105 @@ async function buscar() {
   toggleLoading(false);
 }
 
-function linhaPassaFiltros(linha, filtros) {
+function linhaPassaFiltros(linha, filtros, schema) {
   for (const { coluna, valores, type } of filtros) {
-    const cell = String(linha[coluna] ?? "").toLowerCase();
-    const passou = valores.some((v) => {
-      const term = v.toLowerCase();
-      if (type === "exact") return cell === term;
-      if (type === "starts") return cell.startsWith(term);
-      if (type === "ends") return cell.endsWith(term);
-      return cell.includes(term); // default contains
-    });
-    if (!passou) return false;
+    const raw = linha[coluna];
+    const s = schema[coluna] || { type: 'text' };
+
+    if (s.type === 'number') {
+      const num = parseNumber(raw, s.decimal);
+      if (isNaN(num)) return false;
+
+      let passou = false;
+      if (type === 'range') {
+        const min = parseNumber(valores[0], s.decimal);
+        const max = parseNumber(valores[1], s.decimal);
+        passou = (isNaN(min) || num >= min) && (isNaN(max) || num <= max);
+      } else {
+        passou = valores.some(v => {
+          const target = parseNumber(v, s.decimal);
+          if (isNaN(target)) return false;
+          if (type === 'greater') return num > target;
+          if (type === 'less') return num < target;
+          if (type === 'exact') return num === target;
+          return false;
+        });
+      }
+      if (!passou) return false;
+
+    } else if (s.type === 'date') {
+      const dt = parseDate(raw, s.format);
+      if (!dt) return false;
+
+      let passou = false;
+      if (type === 'period') {
+        const start = parseDate(valores[0], s.format);
+        const end = parseDate(valores[1], s.format);
+        passou = (!start || dt >= start) && (!end || dt <= end);
+      } else {
+        passou = valores.some(v => {
+          const target = parseDate(v, s.format);
+          if (!target) return false;
+          if (type === 'after') return dt > target;
+          if (type === 'before') return dt < target;
+          if (type === 'exact') return dt.getTime() === target.getTime();
+          return false;
+        });
+      }
+      if (!passou) return false;
+
+    } else {
+      const cell = String(raw ?? "").toLowerCase();
+      const passou = valores.some((v) => {
+        const term = v.toLowerCase();
+        if (type === "exact") return cell === term;
+        if (type === "starts") return cell.startsWith(term);
+        if (type === "ends") return cell.endsWith(term);
+        return cell.includes(term);
+      });
+      if (!passou) return false;
+    }
   }
   return true;
+}
+
+// ── PARSE HELPERS ─────────────────────────────────────────
+function parseNumber(val, decimalSep) {
+  if (val === null || val === undefined || val === "") return NaN;
+  let s = String(val).replace(/[R$\s]/g, "");
+  if (decimalSep === ",") {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else {
+    s = s.replace(/,/g, "");
+  }
+  return parseFloat(s);
+}
+
+function parseDate(val, format) {
+  if (!val) return null;
+  const s = String(val).trim();
+  
+  // ISO format YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s);
+
+  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (!match) return null;
+
+  let d, m, y;
+  if (format === "MM/DD/YYYY") {
+    m = parseInt(match[1]) - 1;
+    d = parseInt(match[2]);
+    y = parseInt(match[3]);
+  } else {
+    // Default DD/MM/YYYY
+    d = parseInt(match[1]);
+    m = parseInt(match[2]) - 1;
+    y = parseInt(match[3]);
+  }
+  
+  if (y < 100) y += 2000;
+  const date = new Date(y, m, d);
+  return isNaN(date.getTime()) ? null : date;
 }
 
 function renderTabela(rows) {
@@ -1004,6 +1219,12 @@ function updateThemeIcon(btn, isDark) {
   const icon = btn?.querySelector("i"); const text = btn?.querySelector("span");
   if (icon) icon.className = isDark ? "ph ph-sun" : "ph ph-moon";
   if (text) text.textContent = isDark ? "Modo claro" : "Modo escuro";
+}
+
+function getIconForType(type) {
+  if (type === "number") return '<i class="ph ph-hash" style="color:var(--accent-cyan); font-size:12px; margin-left:4px" title="Tipo: Número"></i>';
+  if (type === "date") return '<i class="ph ph-calendar" style="color:var(--accent-cyan); font-size:12px; margin-left:4px" title="Tipo: Data"></i>';
+  return "";
 }
 
 function initSettingsMenu(btn, menu) {
