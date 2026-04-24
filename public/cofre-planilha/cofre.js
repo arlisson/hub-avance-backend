@@ -606,21 +606,22 @@ function linhaPassaFiltros(linha, filtros, schema) {
     } else if (s.type === 'date') {
       const dt = parseDate(rawVal, s.format);
       if (!dt) return false;
+
+      // Normalização para string YYYY-MM-DD para comparação segura sem fuso horário
+      const dtString = dt.getFullYear() + "-" + 
+                       String(dt.getMonth() + 1).padStart(2, '0') + "-" + 
+                       String(dt.getDate()).padStart(2, '0');
+      
       if (type === 'period') {
-        const start = parseDate(valores[0], "YYYY-MM-DD");
-        const end = parseDate(valores[1], "YYYY-MM-DD");
-        if (start && dt < start) return false;
-        if (end) {
-          const endOfDay = new Date(end.getTime());
-          endOfDay.setHours(23, 59, 59, 999);
-          if (dt > endOfDay) return false;
-        }
+        // valores[0] e [1] já vêm do input como YYYY-MM-DD
+        const startVal = valores[0];
+        const endVal = valores[1];
+        
+        if (startVal && dtString < startVal) return false;
+        if (endVal && dtString > endVal) return false;
       } else if (type === 'exact') {
-        const target = parseDate(valores[0], "YYYY-MM-DD");
-        if (target) {
-          const sameDay = dt.getFullYear() === target.getFullYear() && dt.getMonth() === target.getMonth() && dt.getDate() === target.getDate();
-          if (!sameDay) return false;
-        }
+        const targetVal = valores[0]; // YYYY-MM-DD
+        if (targetVal && dtString !== targetVal) return false;
       }
     } else {
       const cell = String(rawVal).toLowerCase();
@@ -650,17 +651,46 @@ function parseNumber(val, decimalSep) {
 function parseDate(val, format) {
   if (!val) return null;
   const s = String(val).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const d = new Date(s.includes(" ") ? s.replace(" ", "T") : s);
-    return isNaN(d.getTime()) ? null : d;
+
+  // 1. Trata YYYY-MM-DD (formato do input date do navegador)
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const y = parseInt(isoMatch[1]);
+    const m = parseInt(isoMatch[2]) - 1;
+    const d = parseInt(isoMatch[3]);
+    // Usando o construtor numérico, o JS assume Horário Local. 
+    // new Date("2026-04-01") -> UTC (Errado)
+    // new Date(2026, 3, 1)    -> Local (Correto)
+    const date = new Date(y, m, d);
+    return isNaN(date.getTime()) ? null : date;
   }
+
+  // 2. Trata formatos de planilha (DD/MM/YYYY ou MM/DD/YYYY)
   const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(\s\d{2}:\d{2})?/);
   if (!match) return null;
+
   let d, m, y;
-  if (format === "MM/DD/YYYY") { m = parseInt(match[1]) - 1; d = parseInt(match[2]); y = parseInt(match[3]); }
-  else { d = parseInt(match[1]); m = parseInt(match[2]) - 1; y = parseInt(match[3]); }
+  if (format === "MM/DD/YYYY") {
+    m = parseInt(match[1]) - 1;
+    d = parseInt(match[2]);
+    y = parseInt(match[3]);
+  } else {
+    d = parseInt(match[1]);
+    m = parseInt(match[2]) - 1;
+    y = parseInt(match[3]);
+  }
+  
   if (y < 100) y += 2000;
-  const date = new Date(y, m, d);
+
+  let hh = 0, mm = 0;
+  if (match[4]) {
+    const timeParts = match[4].trim().split(":");
+    hh = parseInt(timeParts[0]) || 0;
+    mm = parseInt(timeParts[1]) || 0;
+  }
+
+  // Também usando construtor numérico para garantir Local Time
+  const date = new Date(y, m, d, hh, mm);
   return isNaN(date.getTime()) ? null : date;
 }
 function atualizarChipsFiltrosAtivos() {
