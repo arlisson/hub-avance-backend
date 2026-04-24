@@ -553,6 +553,16 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
     const opSelect = body.querySelector(".num-op-select");
     const inputsArea = body.querySelector(".num-inputs-area");
 
+    const setupNumInputs = () => {
+      inputsArea.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", () => {
+          const temValor = Array.from(inputsArea.querySelectorAll("input")).some(i => i.value.trim() !== "");
+          card.classList.toggle("filtro-card--ativo", temValor);
+          atualizarChipsFiltrosAtivos();
+        });
+      });
+    };
+
     opSelect.addEventListener("change", () => {
       const isRange = opSelect.value === "range";
       if (isRange) {
@@ -583,7 +593,10 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
       }
       card.classList.remove("filtro-card--ativo");
       atualizarChipsFiltrosAtivos();
+      setupNumInputs(); // Reatribui eventos aos novos elementos
     });
+
+    setupNumInputs(); // Inicializa pela primeira vez
   } else if (tipo === "date") {
     body.innerHTML = `
       <div class="filtro-card-row">
