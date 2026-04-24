@@ -39,10 +39,87 @@ function parseCSVLine(text, delimiter) {
   return fields;
 }
 
+// ── INFERÊNCIA DE TIPOS ───────────────────────────────────
+function inferirEsquema(amostra, colunas) {
+  const schema = {};
+  colunas.forEach(col => {
+    const valores = amostra.map(row => String(row[col] || "").trim()).filter(v => v !== "");
+    if (valores.length === 0) {
+      schema[col] = { type: "text" };
+      return;
+    }
+
+    // Testar Data
+    const dataMeta = testarData(valores);
+    if (dataMeta) {
+      schema[col] = { type: "date", format: dataMeta };
+      return;
+    }
+
+    // Testar Número
+    const numMeta = testarNumero(valores);
+    if (numMeta) {
+      schema[col] = { type: "number", decimal: numMeta };
+      return;
+    }
+
+    schema[col] = { type: "text" };
+  });
+  return schema;
+}
+
+function testarData(valores) {
+  const regexIso = /^\d{4}-\d{2}-\d{2}/;
+  const regexBrEn = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/;
+  
+  let possivelBr = 0; // DD/MM
+  let possivelEn = 0; // MM/DD
+  let isIso = 0;
+
+  for (const v of valores.slice(0, 100)) {
+    if (regexIso.test(v)) { isIso++; continue; }
+    const match = v.match(regexBrEn);
+    if (match) {
+      const p1 = parseInt(match[1]);
+      const p2 = parseInt(match[2]);
+      if (p1 > 12) possivelBr++;
+      if (p2 > 12) possivelEn++;
+    } else {
+      return null; // Se um valor não parece data, a coluna toda não é
+    }
+  }
+
+  if (isIso > 0) return "YYYY-MM-DD";
+  if (possivelEn > 0 && possivelBr === 0) return "MM/DD/YYYY";
+  return "DD/MM/YYYY"; // Default para Brasil ou se ambíguo
+}
+
+function testarNumero(valores) {
+  let virgulas = 0;
+  let pontos = 0;
+  let numericCount = 0;
+
+  for (const v of valores.slice(0, 100)) {
+    // Remove símbolos de moeda e espaços
+    const clean = v.replace(/[R$\s]/g, "");
+    if (/^-?\d+([.,]\d+)?$/.test(clean)) {
+      numericCount++;
+      if (clean.includes(",")) virgulas++;
+      if (clean.includes(".")) pontos++;
+    }
+  }
+
+  if (numericCount < valores.slice(0, 100).length * 0.8) return null;
+
+  // Se tem mais vírgulas que pontos como separador único, ou se tem padrão 1.000,00
+  if (virgulas > 0) return ",";
+  return ".";
+}
+
 self.onmessage = async function ({ data }) {
   const { file, nome } = data;
-  const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB para leitura de texto
-  const BATCH_SIZE = 50000;           // 50k linhas para gravação no banco
+  const CHUNK_SIZE = 10 * 1024 * 1024; 
+  const BATCH_SIZE = 50000;           
   
   let offset = 0;
   let leftover = "";
@@ -51,14 +128,14 @@ self.onmessage = async function ({ data }) {
   let totalLinhas = 0;
   let batchBuffer = [];
   let fileId = null;
+  let amostraParaSchema = [];
 
   try {
     const db = await abrirDB();
 
-    // 1. Cria a entrada de metadados primeiro para obter o ID do arquivo
     fileId = await new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_META], "readwrite");
-      const req = tx.objectStore(STORE_META).add({ nome, colunas: [] }); // Colunas virão depois
+      const req = tx.objectStore(STORE_META).add({ nome, colunas: [], schema: {} });
       req.onsuccess = (e) => resolve(e.target.result);
       req.onerror = () => reject("Erro ao criar metadados");
     });
@@ -68,7 +145,6 @@ self.onmessage = async function ({ data }) {
       let text = await chunk.text();
       offset += CHUNK_SIZE;
 
-      // Envia progresso para a UI
       const percent = Math.min(100, Math.round((offset / file.size) * 100));
       self.postMessage({ type: 'progress', percent, msg: `Lendo arquivo: ${percent}%` });
 
@@ -93,18 +169,17 @@ self.onmessage = async function ({ data }) {
             obj[colunas[j]] = fields[j] !== undefined ? fields[j] : "";
           }
           batchBuffer.push(obj);
+          if (amostraParaSchema.length < 200) amostraParaSchema.push(obj);
           totalLinhas++;
 
-          // Grava o lote se atingir o tamanho definido
           if (batchBuffer.length >= BATCH_SIZE) {
             await salvarLote(db, fileId, batchBuffer);
-            batchBuffer = []; // Limpa RAM imediatamente
+            batchBuffer = [];
           }
         }
       }
     }
 
-    // Processa última sobra
     if (leftover.trim()) {
       const fields = parseCSVLine(leftover.trim(), delimiter);
       if (colunas) {
@@ -117,13 +192,14 @@ self.onmessage = async function ({ data }) {
       }
     }
 
-    // Salva o que sobrou no buffer
     if (batchBuffer.length > 0) {
       await salvarLote(db, fileId, batchBuffer);
       batchBuffer = [];
     }
 
-    // Atualiza metadados com as colunas reais encontradas
+    // Gerar Schema baseado na amostra
+    const schema = inferirEsquema(amostraParaSchema, colunas);
+
     await new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_META], "readwrite");
       const store = tx.objectStore(STORE_META);
@@ -131,13 +207,14 @@ self.onmessage = async function ({ data }) {
       req.onsuccess = () => {
         const data = req.result;
         data.colunas = colunas;
+        data.schema = schema;
         store.put(data);
         tx.oncomplete = resolve;
       };
       req.onerror = reject;
     });
 
-    self.postMessage({ ok: true, id: fileId, colunas, linhas: totalLinhas });
+    self.postMessage({ ok: true, id: fileId, colunas, schema, linhas: totalLinhas });
 
   } catch (err) {
     console.error(err);

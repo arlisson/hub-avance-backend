@@ -1,135 +1,180 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cofre de Planilhas | AVANCE</title>
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <link rel="stylesheet" href="./cofre.css?v=31" />
-  <script src="./xlsx.min.js"></script>
-</head>
-<body>
-
-  <aside class="sidebar">
-    <div class="logo-container">
-      <a href="/paginaUnificada/index.html">
-        <img src="../img/LogoEscuroSemFundo.png" alt="Logo Avance" class="company-logo logo-escuro" />
-        <img src="../img/LogoClaraSemFundo.png" alt="Logo Avance" class="company-logo logo-claro" />
-      </a>
-    </div>
-
-    <div class="chat-list" style="margin-top: 20px;">
-      <div class="chat-item active">
-        <i class="ph ph-vault"></i>
-        <div class="chat-info">
-          <div class="chat-title">Cofre de Planilhas</div>
-          <div class="chat-date">Upload, filtro e exportação</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="sidebar-footer-item user-info-item" id="sidebar-userbar">
-        <i class="ph ph-envelope-simple"></i>
-        <span class="user-email-text" id="user-email"></span>
-        <button class="settings-dots" id="settings-btn" type="button" aria-label="Configurações">
-          <i class="ph ph-dots-three-vertical"></i>
-        </button>
-        <div class="settings-dropdown" id="settings-menu" hidden>
-          <button type="button" class="dropdown-item" id="menu-back-hub">
-            <i class="ph ph-house"></i>
-            <span>Voltar ao Hub</span>
-          </button>
-          <button type="button" class="dropdown-item danger" id="menu-logout">
-            <i class="ph ph-sign-out"></i>
-            <span>Sair</span>
-          </button>
-        </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cofre de Planilhas | AVANCE</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./cofre.css?v=32" />
+    <script src="./xlsx.min.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="logo-container">
+        <a href="/paginaUnificada/index.html">
+          <img
+            src="../img/LogoEscuroSemFundo.png"
+            alt="Logo Avance"
+            class="company-logo logo-escuro"
+          />
+          <img
+            src="../img/LogoClaraSemFundo.png"
+            alt="Logo Avance"
+            class="company-logo logo-claro"
+          />
+        </a>
       </div>
 
-      <button class="sidebar-footer-item" id="theme-toggle" type="button">
-        <i class="ph ph-moon"></i>
-        <span>Modo escuro</span>
-      </button>
-    </div>
-  </aside>
-
-  <main class="main-content">
-    <header class="chat-header">
-      <button class="mobile-menu-btn" id="mobile-menu-btn" type="button">
-        <i class="ph ph-list"></i>
-      </button>
-      <div class="assistant-info">
-        <div class="assistant-avatar">
+      <div class="chat-list" style="margin-top: 20px">
+        <div class="chat-item active">
           <i class="ph ph-vault"></i>
-        </div>
-        <div class="assistant-details">
-          <span class="name">Cofre de Planilhas</span>
-          <span class="status">Dados temporários — apagados ao fechar esta aba</span>
+          <div class="chat-info">
+            <div class="chat-title">Cofre de Planilhas</div>
+            <div class="chat-date">Upload, filtro e exportação</div>
+          </div>
         </div>
       </div>
-    </header>
 
-    <div class="cofre-wrap">
-      <div class="cofre-grid">
-
-        <!-- PAINEL ESQUERDO: upload + lista -->
-        <aside class="cofre-panel">
-          <h2 class="section-title"><i class="ph ph-upload-simple"></i> Upload</h2>
-
-          <label class="upload-area" id="upload-area">
-            <input type="file" id="file-input" accept=".csv" multiple hidden />
-            <i class="ph ph-file-csv upload-icon"></i>
-            <span class="upload-label">Clique ou arraste arquivos .csv</span>
-            <span class="upload-sub">Apenas arquivos formato CSV (separado por vírgula ou ponto e vírgula)</span>
-          </label>
-
-          <div id="upload-status" class="upload-status"></div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px">
-            <h2 class="section-title" style="margin:0"><i class="ph ph-stack"></i> Planilhas carregadas</h2>
-            <button id="btn-limpar-tudo" class="btn-clear-all" title="Limpar todo o cofre" style="display:none">
-              <i class="ph ph-trash"></i> Limpar tudo
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-item user-info-item" id="sidebar-userbar">
+          <i class="ph ph-envelope-simple"></i>
+          <span class="user-email-text" id="user-email"></span>
+          <button
+            class="settings-dots"
+            id="settings-btn"
+            type="button"
+            aria-label="Configurações"
+          >
+            <i class="ph ph-dots-three-vertical"></i>
+          </button>
+          <div class="settings-dropdown" id="settings-menu" hidden>
+            <button type="button" class="dropdown-item" id="menu-back-hub">
+              <i class="ph ph-house"></i>
+              <span>Voltar ao Hub</span>
+            </button>
+            <button type="button" class="dropdown-item danger" id="menu-logout">
+              <i class="ph ph-sign-out"></i>
+              <span>Sair</span>
             </button>
           </div>
+        </div>
 
-          <ul class="file-list" id="file-list">
-            <li class="file-list-empty">Nenhuma planilha carregada.</li>
-          </ul>
-        </aside>
-
-        <!-- PAINEL DIREITO: filtro + resultados -->
-        <section class="cofre-panel cofre-panel-right">
-          <h2 class="section-title"><i class="ph ph-funnel"></i> Filtrar dados</h2>
-
-          <div id="filtros-lista"></div>
-
-          <div class="filter-actions-row">
-            <button class="btn-primary filter-btn" id="btn-buscar" type="button">
-              <i class="ph ph-magnifying-glass"></i>
-              Buscar
-            </button>
-          </div>
-
-          <div class="results-bar" id="results-bar" hidden>
-            <span id="results-count" class="results-count"></span>
-            <button class="btn-export" id="btn-export" type="button">
-              <i class="ph ph-download-simple"></i>
-              Exportar
-            </button>
-          </div>
-
-          <div class="table-wrapper" id="table-wrapper">
-            <p class="table-placeholder">Faça upload de planilhas e clique em Buscar.</p>
-          </div>
-
-          <div id="pagination" class="pagination" hidden></div>
-        </section>
-
+        <button class="sidebar-footer-item" id="theme-toggle" type="button">
+          <i class="ph ph-moon"></i>
+          <span>Modo escuro</span>
+        </button>
       </div>
-    </div>
-  </main>
+    </aside>
 
-  <script src="./cofre.js?v=42"></script>
-</body>
+    <main class="main-content">
+      <header class="chat-header">
+        <button class="mobile-menu-btn" id="mobile-menu-btn" type="button">
+          <i class="ph ph-list"></i>
+        </button>
+        <div class="assistant-info">
+          <div class="assistant-avatar">
+            <i class="ph ph-vault"></i>
+          </div>
+          <div class="assistant-details">
+            <span class="name">Cofre de Planilhas</span>
+            <span class="status"
+              >Dados temporários — apagados ao fechar esta aba</span
+            >
+          </div>
+        </div>
+      </header>
+
+      <div class="cofre-wrap">
+        <div class="cofre-grid">
+          <!-- PAINEL ESQUERDO: upload + lista -->
+          <aside class="cofre-panel">
+            <h2 class="section-title">
+              <i class="ph ph-upload-simple"></i> Upload
+            </h2>
+
+            <label class="upload-area" id="upload-area">
+              <input
+                type="file"
+                id="file-input"
+                accept=".csv"
+                multiple
+                hidden
+              />
+              <i class="ph ph-file-csv upload-icon"></i>
+              <span class="upload-label">Clique ou arraste arquivos .csv</span>
+              <span class="upload-sub"
+                >Apenas arquivos formato CSV (separado por vírgula ou ponto e
+                vírgula)</span
+              >
+            </label>
+
+            <div id="upload-status" class="upload-status"></div>
+
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 8px;
+              "
+            >
+              <h2 class="section-title" style="margin: 0">
+                <i class="ph ph-stack"></i> Planilhas carregadas
+              </h2>
+              <button
+                id="btn-limpar-tudo"
+                class="btn-clear-all"
+                title="Limpar todo o cofre"
+                style="display: none"
+              >
+                <i class="ph ph-trash"></i> Limpar tudo
+              </button>
+            </div>
+
+            <ul class="file-list" id="file-list">
+              <li class="file-list-empty">Nenhuma planilha carregada.</li>
+            </ul>
+          </aside>
+
+          <!-- PAINEL DIREITO: filtro + resultados -->
+          <section class="cofre-panel cofre-panel-right">
+            <h2 class="section-title">
+              <i class="ph ph-funnel"></i> Filtrar dados
+            </h2>
+
+            <div id="filtros-lista"></div>
+
+            <div class="filter-actions-row">
+              <button
+                class="btn-primary filter-btn"
+                id="btn-buscar"
+                type="button"
+              >
+                <i class="ph ph-magnifying-glass"></i>
+                Buscar
+              </button>
+            </div>
+
+            <div class="results-bar" id="results-bar" hidden>
+              <span id="results-count" class="results-count"></span>
+              <button class="btn-export" id="btn-export" type="button">
+                <i class="ph ph-download-simple"></i>
+                Exportar
+              </button>
+            </div>
+
+            <div class="table-wrapper" id="table-wrapper">
+              <p class="table-placeholder">
+                Faça upload de planilhas e clique em Buscar.
+              </p>
+            </div>
+
+            <div id="pagination" class="pagination" hidden></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script src="./cofre.js?v=43"></script>
+  </body>
 </html>
