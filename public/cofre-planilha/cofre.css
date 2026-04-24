@@ -875,108 +875,143 @@ body.light-mode .coluna-search-input { background: white; }
   box-shadow: 0 0 0 3px rgba(87, 197, 234, 0.08);
 }
 
-/* Drawer e painéis */
+/* Abas de planilhas */
+.filtro-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 4px 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  scrollbar-width: none;
+}
+.filtro-tabs::-webkit-scrollbar { display: none; }
+
+.filtro-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.filtro-tab-item:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+}
+
+.filtro-tab-item.active {
+  background: rgba(87, 197, 234, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 4px 12px rgba(87, 197, 234, 0.1);
+}
+
+.filtro-tab-item i { font-size: 16px; }
+
+/* Grid de colunas e Cards */
 .filtro-drawer-novo {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(0,0,0,0.05);
+  min-height: 200px;
 }
-
-body.light-mode .filtro-drawer-novo { background: rgba(0,0,0,0.02); }
 
 .filtro-panel-planilha {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-content: start;
 }
 
-.filtro-panel-planilha .filtro-card:nth-child(odd):not(.filtro-card--open) {
-  border-right: 1px solid var(--border-color);
-}
-
+/* Remove a expansão para as duas colunas: abre como gaveta na própria coluna */
 .filtro-panel-planilha .filtro-card.filtro-card--open {
-  grid-column: 1 / -1;
+  grid-column: auto; 
   border-right: none;
 }
 
-/* Cards de coluna */
-.filtro-card {
-  border-bottom: 1px solid var(--border-color);
-  transition: background 0.15s;
+.filtro-panel-planilha .filtro-card:nth-child(odd) {
+  border-right: 1px solid var(--border-color);
 }
 
-.filtro-card:last-child { border-bottom: none; }
+.filtro-card {
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  background: transparent;
+}
 
-.filtro-card--ativo .filtro-card-header {
-  background: rgba(87, 197, 234, 0.06);
+.filtro-card--ativo {
+  background: rgba(87, 197, 234, 0.04) !important;
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.filtro-card--open {
+  background: var(--bg-hover);
 }
 
 .filtro-card-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 12px;
   cursor: pointer;
-  transition: background 0.15s;
   user-select: none;
 }
 
-.filtro-card-header:hover { background: var(--bg-hover); }
-.filtro-card--open .filtro-card-header { background: var(--bg-hover); }
-
+/* Botão de Tipo muito mais evidente */
 .filtro-card-type-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.15s;
-  padding: 0;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: all 0.2s;
 }
 
+body.light-mode .filtro-card-type-btn { background: #f0f4f8; }
+
 .filtro-card-type-btn:hover {
-  border-color: var(--border-color);
   background: var(--bg-hover);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .filtro-card-nome {
   flex: 1;
-  min-width: 0;
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color 0.15s;
 }
 
 .filtro-card--ativo .filtro-card-nome {
-  color: var(--accent-cyan);
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: 700;
 }
-
-.filtro-card-chevron {
-  font-size: 12px;
-  color: var(--text-secondary);
-  transition: transform 0.2s;
-  flex-shrink: 0;
-}
-
-.filtro-card--open .filtro-card-chevron { transform: rotate(180deg); }
 
 .filtro-card-body {
-  padding: 8px 12px 12px;
+  padding: 4px 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(0,0,0,0.1);
+  gap: 12px;
+  border-top: 1px solid rgba(87, 197, 234, 0.1);
 }
 
 /* Corrige: display:flex explícito anulava o atributo hidden */

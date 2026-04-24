@@ -392,41 +392,43 @@ function renderFiltrosPanel() {
   globalSearchBox.innerHTML = `
     <div class="input-with-icon">
       <i class="ph ph-magnifying-glass"></i>
-      <input type="text" id="global-search" placeholder="Busca global em todas as colunas..." class="global-search-input">
+      <input type="text" id="global-search" placeholder="Busca rápida em todos os dados..." class="global-search-input">
     </div>
   `;
   lista.appendChild(globalSearchBox);
   globalSearchBox.querySelector("#global-search").addEventListener("input", atualizarChipsFiltrosAtivos);
 
-  // 2. Seletor de planilha (dropdown se múltiplas, nome se só uma)
+  // 2. Navegação por Abas (se houver mais de uma planilha)
   const drawer = document.createElement("div");
   drawer.id = "filtro-drawer-novo";
   drawer.className = "filtro-drawer-novo";
 
   if (planilhas.length > 1) {
-    const selectorWrap = document.createElement("div");
-    selectorWrap.className = "filtro-planilha-selector";
-    selectorWrap.innerHTML = `
-      <label class="filtro-planilha-label"><i class="ph ph-files"></i> Planilha:</label>
-      <select class="filtro-planilha-select" id="filtro-planilha-select">
-        ${planilhas.map(p => `<option value="${p.id}" title="${escHtml(p.nome)}">${escHtml(p.nome.length > 35 ? p.nome.slice(0, 32) + "…" : p.nome)}</option>`).join("")}
-      </select>
-    `;
-    lista.appendChild(selectorWrap);
-
-    selectorWrap.querySelector("#filtro-planilha-select").addEventListener("change", (e) => {
-      const pid = e.target.value;
-      drawer.querySelectorAll(".filtro-panel-planilha").forEach(p => {
-        p.hidden = String(p.dataset.planilhaId) !== pid;
+    const tabsContainer = document.createElement("div");
+    tabsContainer.className = "filtro-tabs";
+    
+    planilhas.forEach((p, i) => {
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = `filtro-tab-item${i === 0 ? " active" : ""}`;
+      tab.dataset.planilhaId = p.id;
+      tab.innerHTML = `<i class="ph ph-file-csv"></i> <span>${escHtml(p.nome.length > 20 ? p.nome.slice(0, 17) + "…" : p.nome)}</span>`;
+      
+      tab.addEventListener("click", () => {
+        tabsContainer.querySelectorAll(".filtro-tab-item").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        
+        drawer.querySelectorAll(".filtro-panel-planilha").forEach(panel => {
+          panel.hidden = panel.dataset.planilhaId !== String(p.id);
+        });
+        
+        const colInput = document.getElementById("coluna-search");
+        if (colInput) { colInput.value = ""; filtrarColunasVisiveis(""); }
       });
-      const colInput = document.getElementById("coluna-search");
-      if (colInput) { colInput.value = ""; filtrarColunasVisiveis(""); }
+      
+      tabsContainer.appendChild(tab);
     });
-  } else {
-    const nomeWrap = document.createElement("div");
-    nomeWrap.className = "filtro-planilha-nome";
-    nomeWrap.innerHTML = `<i class="ph ph-file-csv"></i><span title="${escHtml(planilhas[0].nome)}">${escHtml(planilhas[0].nome.length > 40 ? planilhas[0].nome.slice(0, 37) + "…" : planilhas[0].nome)}</span>`;
-    lista.appendChild(nomeWrap);
+    lista.appendChild(tabsContainer);
   }
 
   // 3. Busca de coluna
@@ -435,7 +437,7 @@ function renderFiltrosPanel() {
   colSearch.innerHTML = `
     <div class="input-with-icon">
       <i class="ph ph-list-magnifying-glass"></i>
-      <input type="text" id="coluna-search" placeholder="Buscar coluna..." class="coluna-search-input">
+      <input type="text" id="coluna-search" placeholder="Encontrar uma coluna específica..." class="coluna-search-input">
     </div>
   `;
   lista.appendChild(colSearch);
@@ -480,8 +482,8 @@ function criarCartaoColuna(planilha, coluna, schemaCol) {
   const typeBtn = document.createElement("button");
   typeBtn.type = "button";
   typeBtn.className = "filtro-card-type-btn";
-  typeBtn.title = `Tipo: ${getTipoLabel(tipo)}. Clique para alterar.`;
-  typeBtn.innerHTML = getIconForType(tipo);
+  typeBtn.title = "Clique para mudar o tipo (Texto, Número ou Data)";
+  typeBtn.innerHTML = `${getIconForType(tipo)} <span>${getTipoLabel(tipo)}</span>`;
   typeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     abrirPopoverTipo(typeBtn, planilha, coluna, schemaCol, card);
@@ -747,7 +749,7 @@ function abrirPopoverTipo(btn, planilha, coluna, schemaColAtual, card) {
 }
 
 function getTipoLabel(type) {
-  return { text: "Texto", number: "Número", date: "Data" }[type] || "Texto";
+  return { text: "ABC", number: "123", date: "DATA" }[type] || "ABC";
 }
 
 function criarItemColuna() {} // mantido por compatibilidade — substituído por criarCartaoColuna
@@ -1408,9 +1410,9 @@ function updateThemeIcon(btn, isDark) {
 }
 
 function getIconForType(type) {
-  if (type === "number") return '<i class="ph ph-hash" style="color:var(--accent-cyan); font-size:13px" title="Tipo: Número"></i>';
-  if (type === "date") return '<i class="ph ph-calendar" style="color:var(--accent-cyan); font-size:13px" title="Tipo: Data"></i>';
-  return '<i class="ph ph-text-aa" style="color:var(--text-secondary); font-size:13px" title="Tipo: Texto"></i>';
+  if (type === "number") return '<i class="ph ph-hash"></i>';
+  if (type === "date") return '<i class="ph ph-calendar"></i>';
+  return '<i class="ph ph-text-aa"></i>';
 }
 
 function initSettingsMenu(btn, menu) {
