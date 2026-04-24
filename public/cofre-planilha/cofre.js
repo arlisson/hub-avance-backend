@@ -530,13 +530,13 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
     body.innerHTML = `
       <div class="filtro-card-row">
         <div class="filtro-card-field">
-          <label class="filtro-card-field-label">De</label>
-          <input type="number" class="filtro-card-input filtro-card-input-principal" placeholder="Mínimo"
+          <label class="filtro-card-field-label">Mínimo</label>
+          <input type="number" class="filtro-card-input filtro-card-input-principal" step="any"
             data-planilha="${pid}" data-coluna="${col}" data-op="range-min">
         </div>
         <div class="filtro-card-field">
-          <label class="filtro-card-field-label">Até</label>
-          <input type="number" class="filtro-card-input" placeholder="Máximo"
+          <label class="filtro-card-field-label">Máximo</label>
+          <input type="number" class="filtro-card-input" step="any"
             data-planilha="${pid}" data-coluna="${col}" data-op="range-max">
         </div>
       </div>
@@ -565,7 +565,7 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
           <option value="starts">Começa com</option>
           <option value="ends">Termina com</option>
         </select>
-        <input type="text" class="filtro-card-input filtro-card-input-principal" placeholder="Digite aqui..."
+        <input type="text" class="filtro-card-input filtro-card-input-principal" placeholder="Digite para filtrar..."
           data-planilha="${pid}" data-coluna="${col}" data-op="text-val">
       </div>
     `;
@@ -574,7 +574,7 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
   const limparBtn = document.createElement("button");
   limparBtn.type = "button";
   limparBtn.className = "filtro-card-limpar";
-  limparBtn.innerHTML = '<i class="ph ph-x"></i> Limpar';
+  limparBtn.innerHTML = '<i class="ph ph-x"></i> Limpar este campo';
   limparBtn.addEventListener("click", () => {
     body.querySelectorAll("input").forEach(i => i.value = "");
     card.classList.remove("filtro-card--ativo");
@@ -583,7 +583,8 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
   body.appendChild(limparBtn);
 
   body.addEventListener("input", () => {
-    const temValor = [...body.querySelectorAll("input")].some(i => i.value.trim() !== "");
+    const inputs = body.querySelectorAll("input");
+    const temValor = Array.from(inputs).some(i => i.value.trim() !== "");
     card.classList.toggle("filtro-card--ativo", temValor);
     atualizarChipsFiltrosAtivos();
   });
@@ -814,90 +815,95 @@ async function buscar() {
   if (tableWrapper) tableWrapper.innerHTML = '<p class="table-placeholder">Buscando…</p>';
   if (resultsBar) resultsBar.hidden = true;
   toggleLoading(true, "Filtrando dados...");
-  await new Promise(r => setTimeout(r, 0));
+  
+  // Forçar o navegador a processar o loader antes de travar a thread
+  await new Promise(r => setTimeout(r, 50));
 
-  const filtros = coletarFiltros();
+  const filtrosPorPlanilha = coletarFiltros();
   const resultados = [];
 
-  for (const p of planilhas) {
-    const dados = await carregarDadosPlanilha(p.id);
-    const fp = filtros[String(p.id)] || [];
-    const schema = p.schema || {};
+  try {
+    for (const p of planilhas) {
+      const dados = await carregarDadosPlanilha(p.id);
+      const filtrosDestaPlanilha = filtrosPorPlanilha[String(p.id)] || [];
+      const schemaPlanilha = p.schema || {};
 
-    for (const linha of dados) {
-      if (globalTerm) {
-        const valoresLinha = Object.values(linha).join(" ").toLowerCase();
-        if (!valoresLinha.includes(globalTerm)) continue;
-      }
-      if (!fp.length || linhaPassaFiltros(linha, fp, schema)) {
+      for (const linha of dados) {
+        // 1. Filtro Global
+        if (globalTerm) {
+          const valoresLinha = Object.values(linha).join(" ").toLowerCase();
+          if (!valoresLinha.includes(globalTerm)) continue;
+        }
+
+        // 2. Filtros Específicos de Coluna
+        if (filtrosDestaPlanilha.length > 0) {
+          if (!linhaPassaFiltros(linha, filtrosDestaPlanilha, schemaPlanilha)) {
+            continue;
+          }
+        }
+        
         resultados.push({ _arquivo: p.nome, ...linha });
       }
     }
-  }
 
-  totalResultados = resultados;
-  paginaAtual = 1;
-  renderPagina();
-  toggleLoading(false);
+    totalResultados = resultados;
+    paginaAtual = 1;
+    renderPagina();
+  } catch (err) {
+    console.error("Erro durante a busca:", err);
+    if (tableWrapper) tableWrapper.innerHTML = `<p class="table-placeholder err">Erro ao filtrar: ${err.message}</p>`;
+  } finally {
+    toggleLoading(false);
+  }
 }
 
 function linhaPassaFiltros(linha, filtros, schema) {
-  for (const { coluna, valores, type } of filtros) {
-    const raw = linha[coluna];
+  for (const f of filtros) {
+    const { coluna, valores, type } = f;
+    const rawValue = linha[coluna];
     const s = schema[coluna] || { type: 'text' };
+    
+    // Se a célula for nula/indefinida e houver filtro, não passa (exceto se o filtro for vazio, mas coletarFiltros já ignora vazios)
+    if (rawValue === undefined || rawValue === null) return false;
 
     if (s.type === 'number') {
-      const num = parseNumber(raw, s.decimal);
+      const num = parseNumber(rawValue, s.decimal || ",");
       if (isNaN(num)) return false;
 
-      let passou = false;
       if (type === 'range') {
-        const min = parseNumber(valores[0], s.decimal);
-        const max = parseNumber(valores[1], s.decimal);
-        passou = (isNaN(min) || num >= min) && (isNaN(max) || num <= max);
-      } else {
-        passou = valores.some(v => {
-          const target = parseNumber(v, s.decimal);
-          if (isNaN(target)) return false;
-          if (type === 'greater') return num > target;
-          if (type === 'less') return num < target;
-          if (type === 'exact') return num === target;
-          return false;
-        });
+        const min = parseNumber(valores[0], s.decimal || ",");
+        const max = parseNumber(valores[1], s.decimal || ",");
+        if (!isNaN(min) && num < min) return false;
+        if (!isNaN(max) && num > max) return false;
       }
-      if (!passou) return false;
-
     } else if (s.type === 'date') {
-      const dt = parseDate(raw, s.format);
+      const dt = parseDate(rawValue, s.format);
       if (!dt) return false;
 
-      let passou = false;
       if (type === 'period') {
-        const start = parseDate(valores[0], s.format);
-        const end = parseDate(valores[1], s.format);
-        passou = (!start || dt >= start) && (!end || dt <= end);
-      } else {
-        passou = valores.some(v => {
-          const target = parseDate(v, s.format);
-          if (!target) return false;
-          if (type === 'after') return dt > target;
-          if (type === 'before') return dt < target;
-          if (type === 'exact') return dt.getTime() === target.getTime();
-          return false;
-        });
+        // No coletarFiltros, datas são convertidas para DD/MM/YYYY para o chip, 
+        // mas aqui precisamos comparar objetos Date.
+        // Importante: valores[0] e valores[1] vem do input date (YYYY-MM-DD)
+        const start = parseDate(valores[0], "YYYY-MM-DD");
+        const end = parseDate(valores[1], "YYYY-MM-DD");
+        
+        if (start && dt < start) return false;
+        if (end && dt > end) return false;
       }
-      if (!passou) return false;
-
     } else {
-      const cell = String(raw ?? "").toLowerCase();
-      const passou = valores.some((v) => {
-        const term = v.toLowerCase();
-        if (type === "exact") return cell === term;
-        if (type === "starts") return cell.startsWith(term);
-        if (type === "ends") return cell.endsWith(term);
-        return cell.includes(term);
-      });
-      if (!passou) return false;
+      const cell = String(rawValue).toLowerCase();
+      const term = String(valores[0]).toLowerCase();
+      
+      if (type === "exact") {
+        if (cell !== term) return false;
+      } else if (type === "starts") {
+        if (!cell.startsWith(term)) return false;
+      } else if (type === "ends") {
+        if (!cell.endsWith(term)) return false;
+      } else {
+        // default: contains
+        if (!cell.includes(term)) return false;
+      }
     }
   }
   return true;
