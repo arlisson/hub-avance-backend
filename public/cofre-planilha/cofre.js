@@ -746,10 +746,15 @@ function parseDate(val, format) {
   if (!val) return null;
   const s = String(val).trim();
   
-  // ISO format YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s);
+  // ISO format YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    // Substituir espaço por T para garantir compatibilidade ISO (YYYY-MM-DDTHH:mm:ss)
+    const normalized = s.includes(" ") ? s.replace(" ", "T") : s;
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d;
+  }
 
-  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(\s\d{2}:\d{2}(:\d{2})?)?/);
   if (!match) return null;
 
   let d, m, y;
@@ -765,7 +770,17 @@ function parseDate(val, format) {
   }
   
   if (y < 100) y += 2000;
-  const date = new Date(y, m, d);
+
+  // Extrair hora, minuto, segundo se existirem
+  let hh = 0, mm = 0, ss = 0;
+  if (match[4]) {
+    const timeParts = match[4].trim().split(":");
+    hh = parseInt(timeParts[0]) || 0;
+    mm = parseInt(timeParts[1]) || 0;
+    ss = parseInt(timeParts[2]) || 0;
+  }
+
+  const date = new Date(y, m, d, hh, mm, ss);
   return isNaN(date.getTime()) ? null : date;
 }
 

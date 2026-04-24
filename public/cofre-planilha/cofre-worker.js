@@ -69,8 +69,8 @@ function inferirEsquema(amostra, colunas) {
 }
 
 function testarData(valores) {
-  const regexIso = /^\d{4}-\d{2}-\d{2}/;
-  const regexBrEn = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/;
+  const regexIso = /^\d{4}-\d{2}-\d{2}(\s\d{2}:\d{2}(:\d{2})?)?/;
+  const regexBrEn = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(\s\d{2}:\d{2}(:\d{2})?)?/;
   
   let possivelBr = 0; // DD/MM
   let possivelEn = 0; // MM/DD
