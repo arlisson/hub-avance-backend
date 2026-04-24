@@ -457,9 +457,64 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
   } else if (tipo === "date") {
     body.innerHTML = `
       <div class="filtro-card-row">
-        <div class="filtro-card-field"><label class="filtro-card-field-label">De</label><input type="date" class="filtro-card-input filtro-card-input-principal" data-op="period-start"></div>
-        <div class="filtro-card-field"><label class="filtro-card-field-label">Até</label><input type="date" class="filtro-card-input" data-op="period-end"></div>
+        <select class="filtro-card-op-select date-op-select" data-op="date-op">
+          <option value="period">Período (De/Até)</option>
+          <option value="exact">Dia Específico (=)</option>
+        </select>
+      </div>
+      <div class="date-inputs-area">
+        <div class="filtro-card-row">
+          <div class="filtro-card-field">
+            <label class="filtro-card-field-label">De</label>
+            <input type="date" class="filtro-card-input filtro-card-input-principal" data-op="period-start">
+          </div>
+          <div class="filtro-card-field">
+            <label class="filtro-card-field-label">Até</label>
+            <input type="date" class="filtro-card-input" data-op="period-end">
+          </div>
+        </div>
       </div>`;
+
+    const opSelect = body.querySelector(".date-op-select");
+    const inputsArea = body.querySelector(".date-inputs-area");
+
+    const setupDateInputs = () => {
+      inputsArea.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", () => {
+          const temValor = Array.from(inputsArea.querySelectorAll("input")).some(i => i.value.trim() !== "");
+          card.classList.toggle("filtro-card--ativo", temValor);
+          atualizarChipsFiltrosAtivos();
+        });
+      });
+    };
+
+    opSelect.addEventListener("change", () => {
+      if (opSelect.value === "period") {
+        inputsArea.innerHTML = `
+          <div class="filtro-card-row">
+            <div class="filtro-card-field">
+              <label class="filtro-card-field-label">De</label>
+              <input type="date" class="filtro-card-input filtro-card-input-principal" data-op="period-start">
+            </div>
+            <div class="filtro-card-field">
+              <label class="filtro-card-field-label">Até</label>
+              <input type="date" class="filtro-card-input" data-op="period-end">
+            </div>
+          </div>`;
+      } else {
+        inputsArea.innerHTML = `
+          <div class="filtro-card-row">
+            <div class="filtro-card-field">
+              <label class="filtro-card-field-label">Data exata</label>
+              <input type="date" class="filtro-card-input filtro-card-input-principal" data-op="exact-date">
+            </div>
+          </div>`;
+      }
+      card.classList.remove("filtro-card--ativo");
+      atualizarChipsFiltrosAtivos();
+      setupDateInputs();
+    });
+    setupDateInputs();
   } else {
     body.innerHTML = `
       <div class="filtro-card-row filtro-card-row--text">
@@ -502,9 +557,15 @@ function coletarFiltros() {
         if (val) filtros[pid].push({ coluna, valores: [val], type: "exact" });
       }
     } else if (tipo === "date") {
-      const start = card.querySelector("[data-op='period-start']")?.value.trim();
-      const end = card.querySelector("[data-op='period-end']")?.value.trim();
-      if (start || end) filtros[pid].push({ coluna, valores: [start, end], type: "period" });
+      const op = card.querySelector("[data-op='date-op']")?.value || "period";
+      if (op === "period") {
+        const start = card.querySelector("[data-op='period-start']")?.value.trim();
+        const end = card.querySelector("[data-op='period-end']")?.value.trim();
+        if (start || end) filtros[pid].push({ coluna, valores: [start, end], type: "period" });
+      } else {
+        const val = card.querySelector("[data-op='exact-date']")?.value.trim();
+        if (val) filtros[pid].push({ coluna, valores: [val], type: "exact" });
+      }
     } else {
       const val = card.querySelector("[data-op='text-val']")?.value.trim();
       const op = card.querySelector("[data-op='text-op']")?.value || "contains";
@@ -561,10 +622,22 @@ function linhaPassaFiltros(linha, filtros, schema) {
     } else if (s.type === 'date') {
       const dt = parseDate(rawVal, s.format);
       if (!dt) return false;
-      const start = parseDate(valores[0], "YYYY-MM-DD");
-      const end = parseDate(valores[1], "YYYY-MM-DD");
-      if (start && dt < start) return false;
-      if (end && dt > end) return false;
+      
+      if (type === 'period') {
+        const start = parseDate(valores[0], "YYYY-MM-DD");
+        const end = parseDate(valores[1], "YYYY-MM-DD");
+        if (start && dt < start) return false;
+        if (end && dt > end) return false;
+      } else if (type === 'exact') {
+        const target = parseDate(valores[0], "YYYY-MM-DD");
+        if (target) {
+          // Comparar apenas Ano, Mês e Dia (ignorar horas)
+          const sameDay = dt.getFullYear() === target.getFullYear() &&
+                          dt.getMonth() === target.getMonth() &&
+                          dt.getDate() === target.getDate();
+          if (!sameDay) return false;
+        }
+      }
     } else {
       const cell = String(rawVal).toLowerCase();
       const term = String(valores[0]).toLowerCase();
@@ -577,36 +650,8 @@ function linhaPassaFiltros(linha, filtros, schema) {
   return true;
 }
 
-// ── HELPERS ───────────────────────────────────────────────
-function getTipoLabel(type) { return { text: "ABC", number: "123", date: "DATA" }[type] || "ABC"; }
-function getIconForType(type) {
-  if (type === "number") return '<i class="ph ph-hash"></i>';
-  if (type === "date") return '<i class="ph ph-calendar"></i>';
-  return '<i class="ph ph-text-aa"></i>';
-}
-function parseNumber(val, decimalSep) {
-  if (val === null || val === undefined || val === "") return NaN;
-  let s = String(val).replace(/[R$\s]/g, "");
-  if (decimalSep === ",") { s = s.replace(/\./g, "").replace(",", "."); }
-  else { s = s.replace(/,/g, ""); }
-  return parseFloat(s);
-}
-function parseDate(val, format) {
-  if (!val) return null;
-  const s = String(val).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const d = new Date(s.includes(" ") ? s.replace(" ", "T") : s);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(\s\d{2}:\d{2})?/);
-  if (!match) return null;
-  let d, m, y;
-  if (format === "MM/DD/YYYY") { m = parseInt(match[1]) - 1; d = parseInt(match[2]); y = parseInt(match[3]); }
-  else { d = parseInt(match[1]); m = parseInt(match[2]) - 1; y = parseInt(match[3]); }
-  if (y < 100) y += 2000;
-  const date = new Date(y, m, d);
-  return isNaN(date.getTime()) ? null : date;
-}
+// ... rest of helpers ...
+
 function atualizarChipsFiltrosAtivos() {
   const bar = document.getElementById("filtros-chips-bar");
   if (!bar) return;
@@ -630,11 +675,17 @@ function atualizarChipsFiltrosAtivos() {
         if (val) resumo = `${coluna} = ${val}`;
       }
     } else if (tipo === "date") {
-      const s = card.querySelector("[data-op='period-start']")?.value.trim();
-      const e = card.querySelector("[data-op='period-end']")?.value.trim();
-      if (s && e) resumo = `${coluna}: ${formatDateBR(s)}–${formatDateBR(e)}`;
-      else if (s) resumo = `${coluna} de ${formatDateBR(s)}`;
-      else if (e) resumo = `${coluna} até ${formatDateBR(e)}`;
+      const op = card.querySelector("[data-op='date-op']")?.value || "period";
+      if (op === "period") {
+        const s = card.querySelector("[data-op='period-start']")?.value.trim();
+        const e = card.querySelector("[data-op='period-end']")?.value.trim();
+        if (s && e) resumo = `${coluna}: ${formatDateBR(s)}–${formatDateBR(e)}`;
+        else if (s) resumo = `${coluna} de ${formatDateBR(s)}`;
+        else if (e) resumo = `${coluna} até ${formatDateBR(e)}`;
+      } else {
+        const val = card.querySelector("[data-op='exact-date']")?.value.trim();
+        if (val) resumo = `${coluna} = ${formatDateBR(val)}`;
+      }
     } else {
       const val = card.querySelector("[data-op='text-val']")?.value.trim();
       const op = card.querySelector("[data-op='text-op']")?.value || "contains";
