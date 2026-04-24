@@ -42,6 +42,10 @@ body.light-mode {
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   height: -webkit-fill-available;
 }
