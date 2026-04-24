@@ -127,9 +127,13 @@ async function salvarSchemaLocal(id, schema) {
       const req = store.get(Number(id));
       req.onsuccess = () => {
         const data = req.result;
-        data.schema = schema;
-        store.put(data);
-        tx.oncomplete = resolve;
+        if (data) {
+          data.schema = schema;
+          store.put(data);
+          tx.oncomplete = resolve;
+        } else {
+          reject("Metadados não encontrados");
+        }
       };
       req.onerror = reject;
     });
@@ -398,7 +402,7 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
   if (tipo === "number") {
     body.innerHTML = `
       <div class="filtro-card-row">
-        <select class="filtro-card-op-select num-op-select" data-planilha="${pid}" data-coluna="${col}" data-op="num-op">
+        <select class="filtro-card-op-select num-op-select" data-op="num-op">
           <option value="range">Intervalo (De/Até)</option>
           <option value="exact">Valor Exato (=)</option>
         </select>
@@ -431,22 +435,13 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
       if (opSelect.value === "range") {
         inputsArea.innerHTML = `
           <div class="filtro-card-row">
-            <div class="filtro-card-field">
-              <label class="filtro-card-field-label">Mínimo</label>
-              <input type="number" class="filtro-card-input filtro-card-input-principal" step="any" data-op="range-min">
-            </div>
-            <div class="filtro-card-field">
-              <label class="filtro-card-field-label">Máximo</label>
-              <input type="number" class="filtro-card-input" step="any" data-op="range-max">
-            </div>
+            <div class="filtro-card-field"><label class="filtro-card-field-label">Mínimo</label><input type="number" class="filtro-card-input filtro-card-input-principal" step="any" data-op="range-min"></div>
+            <div class="filtro-card-field"><label class="filtro-card-field-label">Máximo</label><input type="number" class="filtro-card-input" step="any" data-op="range-max"></div>
           </div>`;
       } else {
         inputsArea.innerHTML = `
           <div class="filtro-card-row">
-            <div class="filtro-card-field">
-              <label class="filtro-card-field-label">Valor exato</label>
-              <input type="number" class="filtro-card-input filtro-card-input-principal" step="any" data-op="exact-val" placeholder="Ex: 123">
-            </div>
+            <div class="filtro-card-field"><label class="filtro-card-field-label">Valor exato</label><input type="number" class="filtro-card-input filtro-card-input-principal" step="any" data-op="exact-val" placeholder="Ex: 123"></div>
           </div>`;
       }
       card.classList.remove("filtro-card--ativo");
@@ -477,7 +472,6 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
 
     const opSelect = body.querySelector(".date-op-select");
     const inputsArea = body.querySelector(".date-inputs-area");
-
     const setupDateInputs = () => {
       inputsArea.querySelectorAll("input").forEach(input => {
         input.addEventListener("input", () => {
@@ -487,27 +481,17 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
         });
       });
     };
-
     opSelect.addEventListener("change", () => {
       if (opSelect.value === "period") {
         inputsArea.innerHTML = `
           <div class="filtro-card-row">
-            <div class="filtro-card-field">
-              <label class="filtro-card-field-label">De</label>
-              <input type="date" class="filtro-card-input filtro-card-input-principal" data-op="period-start">
-            </div>
-            <div class="filtro-card-field">
-              <label class="filtro-card-field-label">Até</label>
-              <input type="date" class="filtro-card-input" data-op="period-end">
-            </div>
+            <div class="filtro-card-field"><label class="filtro-card-field-label">De</label><input type="date" class="filtro-card-input filtro-card-input-principal" data-op="period-start"></div>
+            <div class="filtro-card-field"><label class="filtro-card-field-label">Até</label><input type="date" class="filtro-card-input" data-op="period-end"></div>
           </div>`;
       } else {
         inputsArea.innerHTML = `
           <div class="filtro-card-row">
-            <div class="filtro-card-field">
-              <label class="filtro-card-field-label">Data exata</label>
-              <input type="date" class="filtro-card-input filtro-card-input-principal" data-op="exact-date">
-            </div>
+            <div class="filtro-card-field"><label class="filtro-card-field-label">Data exata</label><input type="date" class="filtro-card-input filtro-card-input-principal" data-op="exact-date"></div>
           </div>`;
       }
       card.classList.remove("filtro-card--ativo");
@@ -529,7 +513,7 @@ function preencherCardBody(body, planilha, coluna, schemaCol, card) {
   body.appendChild(limparBtn);
 
   body.addEventListener("input", (e) => {
-    if (tipo !== "number") {
+    if (tipo !== "number" && tipo !== "date") {
       const inputs = body.querySelectorAll("input");
       const temValor = Array.from(inputs).some(i => i.value.trim() !== "");
       card.classList.toggle("filtro-card--ativo", temValor);
@@ -622,7 +606,6 @@ function linhaPassaFiltros(linha, filtros, schema) {
     } else if (s.type === 'date') {
       const dt = parseDate(rawVal, s.format);
       if (!dt) return false;
-      
       if (type === 'period') {
         const start = parseDate(valores[0], "YYYY-MM-DD");
         const end = parseDate(valores[1], "YYYY-MM-DD");
@@ -631,10 +614,7 @@ function linhaPassaFiltros(linha, filtros, schema) {
       } else if (type === 'exact') {
         const target = parseDate(valores[0], "YYYY-MM-DD");
         if (target) {
-          // Comparar apenas Ano, Mês e Dia (ignorar horas)
-          const sameDay = dt.getFullYear() === target.getFullYear() &&
-                          dt.getMonth() === target.getMonth() &&
-                          dt.getDate() === target.getDate();
+          const sameDay = dt.getFullYear() === target.getFullYear() && dt.getMonth() === target.getMonth() && dt.getDate() === target.getDate();
           if (!sameDay) return false;
         }
       }
@@ -650,8 +630,35 @@ function linhaPassaFiltros(linha, filtros, schema) {
   return true;
 }
 
-// ... rest of helpers ...
-
+function getTipoLabel(type) { return { text: "ABC", number: "123", date: "DATA" }[type] || "ABC"; }
+function getIconForType(type) {
+  if (type === "number") return '<i class="ph ph-hash"></i>';
+  if (type === "date") return '<i class="ph ph-calendar"></i>';
+  return '<i class="ph ph-text-aa"></i>';
+}
+function parseNumber(val, decimalSep) {
+  if (val === null || val === undefined || val === "") return NaN;
+  let s = String(val).replace(/[R$\s]/g, "");
+  if (decimalSep === ",") { s = s.replace(/\./g, "").replace(",", "."); }
+  else { s = s.replace(/,/g, ""); }
+  return parseFloat(s);
+}
+function parseDate(val, format) {
+  if (!val) return null;
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const d = new Date(s.includes(" ") ? s.replace(" ", "T") : s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(\s\d{2}:\d{2})?/);
+  if (!match) return null;
+  let d, m, y;
+  if (format === "MM/DD/YYYY") { m = parseInt(match[1]) - 1; d = parseInt(match[2]); y = parseInt(match[3]); }
+  else { d = parseInt(match[1]); m = parseInt(match[2]) - 1; y = parseInt(match[3]); }
+  if (y < 100) y += 2000;
+  const date = new Date(y, m, d);
+  return isNaN(date.getTime()) ? null : date;
+}
 function atualizarChipsFiltrosAtivos() {
   const bar = document.getElementById("filtros-chips-bar");
   if (!bar) return;
@@ -749,7 +756,6 @@ function abrirPopoverTipo(btn, planilha, coluna, schemaColAtual, card) {
   }));
   setTimeout(() => document.addEventListener("click", function h(e) { if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener("click", h); } }), 0);
 }
-
 function renderPagina() {
   const colMap = new Map();
   totalResultados.forEach(row => Object.keys(row).forEach(k => { const n = k.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); if (!colMap.has(n)) colMap.set(n, k); }));
@@ -759,7 +765,6 @@ function renderPagina() {
   renderTabela(totalResultados.slice(start, start + PAGE_SIZE));
   renderControlesPaginacao(totalP);
 }
-
 function renderTabela(rows) {
   const wrap = document.getElementById("table-wrapper");
   const bar = document.getElementById("results-bar");
@@ -776,7 +781,6 @@ function renderTabela(rows) {
   table.appendChild(body);
   if (wrap) { wrap.innerHTML = ""; wrap.appendChild(table); }
 }
-
 function renderControlesPaginacao(total) {
   const el = document.getElementById("pagination"); if (!el) return;
   if (total <= 1) { el.hidden = true; return; }
@@ -785,13 +789,10 @@ function renderControlesPaginacao(total) {
   document.getElementById("pg-prev")?.addEventListener("click", () => { if (paginaAtual > 1) { paginaAtual--; renderPagina(); } });
   document.getElementById("pg-next")?.addEventListener("click", () => { if (paginaAtual < total) { paginaAtual++; renderPagina(); } });
 }
-
 async function abrirModalExport() {
   if (!totalResultados.length) return;
-  const finalCols = ultimasColunas.map(c => ({ id: c, label: c, original: c }));
-  confirmarExport(finalCols); // Simplificado para teste
+  confirmarExport(ultimasColunas.map(c => ({ label: c, original: c })));
 }
-
 async function confirmarExport(configColunas) {
   toggleLoading(true, "Gerando CSV...");
   try {
