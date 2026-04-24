@@ -511,7 +511,7 @@ body:not(.light-mode) .dropdown-item.danger {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 580px;
+  max-width: 760px;
   max-height: 88vh;
   box-shadow: var(--shadow-strong);
 }
@@ -552,10 +552,10 @@ body:not(.light-mode) .dropdown-item.danger {
 .filtros-modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .filtros-modal-footer {
@@ -875,7 +875,6 @@ body.light-mode .coluna-search-input { background: white; }
 .filtro-drawer-novo {
   display: flex;
   flex-direction: column;
-  max-height: 340px;
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -884,7 +883,19 @@ body.light-mode .coluna-search-input { background: white; }
 
 body.light-mode .filtro-drawer-novo { background: rgba(0,0,0,0.02); }
 
-.filtro-panel-planilha { display: flex; flex-direction: column; }
+.filtro-panel-planilha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.filtro-panel-planilha .filtro-card:nth-child(odd):not(.filtro-card--open) {
+  border-right: 1px solid var(--border-color);
+}
+
+.filtro-panel-planilha .filtro-card.filtro-card--open {
+  grid-column: 1 / -1;
+  border-right: none;
+}
 
 /* Cards de coluna */
 .filtro-card {
@@ -902,7 +913,7 @@ body.light-mode .filtro-drawer-novo { background: rgba(0,0,0,0.02); }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   cursor: pointer;
   transition: background 0.15s;
   user-select: none;
@@ -964,6 +975,9 @@ body.light-mode .filtro-drawer-novo { background: rgba(0,0,0,0.02); }
   background: rgba(0,0,0,0.1);
 }
 
+/* Corrige: display:flex explícito anulava o atributo hidden */
+.filtro-card-body[hidden] { display: none !important; }
+
 body.light-mode .filtro-card-body { background: rgba(0,0,0,0.03); }
 
 .filtro-card-row {
@@ -1006,6 +1020,17 @@ body.light-mode .filtro-card-input { background: white; }
 .filtro-card-input:focus {
   border-color: var(--accent-cyan);
   box-shadow: 0 0 0 2px rgba(87, 197, 234, 0.1);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+body.light-mode input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.5;
 }
 
 .filtro-card-op-select {
