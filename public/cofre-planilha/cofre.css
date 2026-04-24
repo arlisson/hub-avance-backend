@@ -928,18 +928,19 @@ body.light-mode .coluna-search-input { background: white; }
 }
 
 .filtro-panel-planilha {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-content: start;
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
 }
 
-/* Remove a expansão para as duas colunas: abre como gaveta na própria coluna */
-.filtro-panel-planilha .filtro-card.filtro-card--open {
-  grid-column: auto; 
-  border-right: none;
+.filtro-col-filtros {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Evita quebra de layout com nomes longos */
 }
 
-.filtro-panel-planilha .filtro-card:nth-child(odd) {
+.filtro-col-filtros:first-child {
   border-right: 1px solid var(--border-color);
 }
 
@@ -947,6 +948,7 @@ body.light-mode .coluna-search-input { background: white; }
   border-bottom: 1px solid var(--border-color);
   transition: all 0.2s ease;
   background: transparent;
+  width: 100%;
 }
 
 .filtro-card--ativo {

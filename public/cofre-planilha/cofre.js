@@ -342,7 +342,22 @@ function renderFiltrosPanel() {
     panel.className = "filtro-panel-planilha";
     panel.dataset.planilhaId = p.id;
     panel.hidden = i !== 0;
-    p.colunas.forEach(col => panel.appendChild(criarCartaoColuna(p, col, p.schema?.[col])));
+
+    // Cria duas colunas independentes
+    const colEsquerda = document.createElement("div");
+    colEsquerda.className = "filtro-col-filtros";
+    const colDireita = document.createElement("div");
+    colDireita.className = "filtro-col-filtros";
+
+    p.colunas.forEach((col, idx) => {
+      const card = criarCartaoColuna(p, col, p.schema?.[col]);
+      // Distribui alternadamente entre as colunas
+      if (idx % 2 === 0) colEsquerda.appendChild(card);
+      else colDireita.appendChild(card);
+    });
+
+    panel.appendChild(colEsquerda);
+    panel.appendChild(colDireita);
     drawer.appendChild(panel);
   });
   lista.appendChild(drawer);
