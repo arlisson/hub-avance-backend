@@ -351,7 +351,14 @@ function renderFiltrosPanel() {
     return;
   }
 
-  // Busca Global
+  // 1. Barra de chips de filtros ativos
+  const chipsBar = document.createElement("div");
+  chipsBar.id = "filtros-chips-bar";
+  chipsBar.className = "filtros-chips-bar";
+  chipsBar.innerHTML = '<span class="filtros-chips-vazio">Nenhum filtro ativo</span>';
+  lista.appendChild(chipsBar);
+
+  // 2. Busca global
   const globalSearchBox = document.createElement("div");
   globalSearchBox.className = "global-search-box";
   globalSearchBox.innerHTML = `
@@ -361,131 +368,392 @@ function renderFiltrosPanel() {
     </div>
   `;
   lista.appendChild(globalSearchBox);
+  globalSearchBox.querySelector("#global-search").addEventListener("input", atualizarChipsFiltrosAtivos);
 
-  const wrap = document.createElement("div");
-  wrap.className = "filtro-tabs-wrap";
-
-  const tabsRow = document.createElement("div");
-  tabsRow.className = "filtro-tabs-row";
-
+  // 3. Seletor de planilha (dropdown se múltiplas, nome se só uma)
   const drawer = document.createElement("div");
-  drawer.className = "filtro-drawer";
+  drawer.id = "filtro-drawer-novo";
+  drawer.className = "filtro-drawer-novo";
 
+  if (planilhas.length > 1) {
+    const selectorWrap = document.createElement("div");
+    selectorWrap.className = "filtro-planilha-selector";
+    selectorWrap.innerHTML = `
+      <label class="filtro-planilha-label"><i class="ph ph-files"></i> Planilha:</label>
+      <select class="filtro-planilha-select" id="filtro-planilha-select">
+        ${planilhas.map(p => `<option value="${p.id}" title="${escHtml(p.nome)}">${escHtml(p.nome.length > 35 ? p.nome.slice(0, 32) + "…" : p.nome)}</option>`).join("")}
+      </select>
+    `;
+    lista.appendChild(selectorWrap);
+
+    selectorWrap.querySelector("#filtro-planilha-select").addEventListener("change", (e) => {
+      const pid = e.target.value;
+      drawer.querySelectorAll(".filtro-panel-planilha").forEach(p => {
+        p.hidden = String(p.dataset.planilhaId) !== pid;
+      });
+      const colInput = document.getElementById("coluna-search");
+      if (colInput) { colInput.value = ""; filtrarColunasVisiveis(""); }
+    });
+  } else {
+    const nomeWrap = document.createElement("div");
+    nomeWrap.className = "filtro-planilha-nome";
+    nomeWrap.innerHTML = `<i class="ph ph-file-csv"></i><span title="${escHtml(planilhas[0].nome)}">${escHtml(planilhas[0].nome.length > 40 ? planilhas[0].nome.slice(0, 37) + "…" : planilhas[0].nome)}</span>`;
+    lista.appendChild(nomeWrap);
+  }
+
+  // 4. Busca de coluna
+  const colSearch = document.createElement("div");
+  colSearch.className = "filtro-coluna-search";
+  colSearch.innerHTML = `
+    <div class="input-with-icon">
+      <i class="ph ph-list-magnifying-glass"></i>
+      <input type="text" id="coluna-search" placeholder="Buscar coluna..." class="coluna-search-input">
+    </div>
+  `;
+  lista.appendChild(colSearch);
+  colSearch.querySelector("#coluna-search").addEventListener("input", (e) => filtrarColunasVisiveis(e.target.value));
+
+  // 5. Painéis de colunas — um por planilha, todos no DOM (preserva filtros ao trocar aba)
   planilhas.forEach((p, i) => {
-    const tabItem = document.createElement("div");
-    tabItem.className = "filtro-tab-item";
-    
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "filtro-tab-btn";
-    btn.dataset.planilhaId = p.id;
-    btn.textContent = `${i + 1}º`;
-    btn.title = p.nome;
-
-    const configBtn = document.createElement("button");
-    configBtn.type = "button";
-    configBtn.className = "filtro-tab-config";
-    configBtn.innerHTML = '<i class="ph ph-gear"></i>';
-    configBtn.title = "Configurar tipos de dados";
-    configBtn.onclick = (e) => { e.stopPropagation(); abrirConfigSchema(p); };
-
-    tabItem.appendChild(btn);
-    tabItem.appendChild(configBtn);
-    tabsRow.appendChild(tabItem);
-
     const panel = document.createElement("div");
-    panel.className = "filtro-drawer-panel";
+    panel.className = "filtro-panel-planilha";
     panel.dataset.planilhaId = p.id;
+    panel.hidden = i !== 0;
     for (const col of p.colunas) {
-      panel.appendChild(criarItemColuna(p.id, col, p.schema?.[col]));
+      panel.appendChild(criarCartaoColuna(p, col, p.schema?.[col]));
     }
     drawer.appendChild(panel);
+  });
 
-    btn.addEventListener("click", () => {
-      const isActive = btn.classList.contains("active");
-      tabsRow.querySelectorAll(".filtro-tab-btn").forEach((b) => b.classList.remove("active"));
-      drawer.querySelectorAll(".filtro-drawer-panel").forEach((dp) => dp.classList.remove("active"));
-      if (!isActive) { btn.classList.add("active"); panel.classList.add("active"); }
+  lista.appendChild(drawer);
+}
+
+function filtrarColunasVisiveis(termo) {
+  const t = termo.trim().toLowerCase();
+  const activePanel = document.querySelector(".filtro-panel-planilha:not([hidden])");
+  if (!activePanel) return;
+  activePanel.querySelectorAll(".filtro-card").forEach(card => {
+    card.hidden = t !== "" && !card.dataset.coluna.toLowerCase().includes(t);
+  });
+}
+
+function criarCartaoColuna(planilha, coluna, schemaCol) {
+  const tipo = schemaCol?.type || "text";
+
+  const card = document.createElement("div");
+  card.className = "filtro-card";
+  card.dataset.planilha = planilha.id;
+  card.dataset.coluna = coluna;
+  card.dataset.type = tipo;
+
+  const header = document.createElement("div");
+  header.className = "filtro-card-header";
+
+  const typeBtn = document.createElement("button");
+  typeBtn.type = "button";
+  typeBtn.className = "filtro-card-type-btn";
+  typeBtn.title = `Tipo: ${getTipoLabel(tipo)}. Clique para alterar.`;
+  typeBtn.innerHTML = getIconForType(tipo);
+  typeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    abrirPopoverTipo(typeBtn, planilha, coluna, schemaCol, card);
+  });
+
+  const nome = document.createElement("span");
+  nome.className = "filtro-card-nome";
+  nome.textContent = coluna;
+  nome.title = coluna;
+
+  const chevron = document.createElement("i");
+  chevron.className = "ph ph-caret-down filtro-card-chevron";
+
+  header.appendChild(typeBtn);
+  header.appendChild(nome);
+  header.appendChild(chevron);
+
+  const body = document.createElement("div");
+  body.className = "filtro-card-body";
+  body.hidden = true;
+
+  preencherCardBody(body, planilha, coluna, schemaCol, card);
+
+  header.addEventListener("click", () => {
+    const isOpen = !body.hidden;
+    body.hidden = isOpen;
+    card.classList.toggle("filtro-card--open", !isOpen);
+    if (!isOpen) body.querySelector(".filtro-card-input-principal")?.focus();
+  });
+
+  card.appendChild(header);
+  card.appendChild(body);
+  return card;
+}
+
+function preencherCardBody(body, planilha, coluna, schemaCol, card) {
+  const tipo = schemaCol?.type || "text";
+  body.innerHTML = "";
+
+  const pid = planilha.id;
+  const col = escHtml(coluna);
+
+  if (tipo === "number") {
+    body.innerHTML = `
+      <div class="filtro-card-row">
+        <div class="filtro-card-field">
+          <label class="filtro-card-field-label">De</label>
+          <input type="number" class="filtro-card-input filtro-card-input-principal" placeholder="Mínimo"
+            data-planilha="${pid}" data-coluna="${col}" data-op="range-min">
+        </div>
+        <div class="filtro-card-field">
+          <label class="filtro-card-field-label">Até</label>
+          <input type="number" class="filtro-card-input" placeholder="Máximo"
+            data-planilha="${pid}" data-coluna="${col}" data-op="range-max">
+        </div>
+      </div>
+    `;
+  } else if (tipo === "date") {
+    body.innerHTML = `
+      <div class="filtro-card-row">
+        <div class="filtro-card-field">
+          <label class="filtro-card-field-label">De</label>
+          <input type="date" class="filtro-card-input filtro-card-input-principal"
+            data-planilha="${pid}" data-coluna="${col}" data-op="period-start">
+        </div>
+        <div class="filtro-card-field">
+          <label class="filtro-card-field-label">Até</label>
+          <input type="date" class="filtro-card-input"
+            data-planilha="${pid}" data-coluna="${col}" data-op="period-end">
+        </div>
+      </div>
+    `;
+  } else {
+    body.innerHTML = `
+      <div class="filtro-card-row filtro-card-row--text">
+        <select class="filtro-card-op-select" data-planilha="${pid}" data-coluna="${col}" data-op="text-op">
+          <option value="contains">Contém</option>
+          <option value="exact">Exato</option>
+          <option value="starts">Começa com</option>
+          <option value="ends">Termina com</option>
+        </select>
+        <input type="text" class="filtro-card-input filtro-card-input-principal" placeholder="Digite aqui..."
+          data-planilha="${pid}" data-coluna="${col}" data-op="text-val">
+      </div>
+    `;
+  }
+
+  const limparBtn = document.createElement("button");
+  limparBtn.type = "button";
+  limparBtn.className = "filtro-card-limpar";
+  limparBtn.innerHTML = '<i class="ph ph-x"></i> Limpar';
+  limparBtn.addEventListener("click", () => {
+    body.querySelectorAll("input").forEach(i => i.value = "");
+    card.classList.remove("filtro-card--ativo");
+    atualizarChipsFiltrosAtivos();
+  });
+  body.appendChild(limparBtn);
+
+  body.addEventListener("input", () => {
+    const temValor = [...body.querySelectorAll("input")].some(i => i.value.trim() !== "");
+    card.classList.toggle("filtro-card--ativo", temValor);
+    atualizarChipsFiltrosAtivos();
+  });
+}
+
+function atualizarChipsFiltrosAtivos() {
+  const bar = document.getElementById("filtros-chips-bar");
+  if (!bar) return;
+
+  const chips = [];
+
+  const globalVal = document.getElementById("global-search")?.value.trim();
+  if (globalVal) {
+    chips.push({
+      label: `Busca: "${globalVal}"`,
+      onRemove: () => {
+        const el = document.getElementById("global-search");
+        if (el) el.value = "";
+        atualizarChipsFiltrosAtivos();
+      }
+    });
+  }
+
+  document.querySelectorAll(".filtro-card--ativo").forEach(card => {
+    const coluna = card.dataset.coluna;
+    const tipo = card.dataset.type || "text";
+    let resumo = "";
+
+    if (tipo === "number") {
+      const min = card.querySelector("[data-op='range-min']")?.value.trim();
+      const max = card.querySelector("[data-op='range-max']")?.value.trim();
+      if (min && max) resumo = `${coluna}: ${min} – ${max}`;
+      else if (min) resumo = `${coluna} ≥ ${min}`;
+      else if (max) resumo = `${coluna} ≤ ${max}`;
+    } else if (tipo === "date") {
+      const s = card.querySelector("[data-op='period-start']")?.value.trim();
+      const e = card.querySelector("[data-op='period-end']")?.value.trim();
+      if (s && e) resumo = `${coluna}: ${formatDateBR(s)} – ${formatDateBR(e)}`;
+      else if (s) resumo = `${coluna} de ${formatDateBR(s)}`;
+      else if (e) resumo = `${coluna} até ${formatDateBR(e)}`;
+    } else {
+      const val = card.querySelector("[data-op='text-val']")?.value.trim();
+      const op = card.querySelector("[data-op='text-op']")?.value || "contains";
+      const opLabel = { contains: "contém", exact: "é", starts: "começa com", ends: "termina com" }[op] || "contém";
+      if (val) resumo = `${coluna} ${opLabel} "${val}"`;
+    }
+
+    if (resumo) {
+      chips.push({
+        label: resumo,
+        onRemove: () => {
+          card.querySelectorAll("input").forEach(i => i.value = "");
+          card.classList.remove("filtro-card--ativo");
+          atualizarChipsFiltrosAtivos();
+        }
+      });
+    }
+  });
+
+  if (!chips.length) {
+    bar.innerHTML = '<span class="filtros-chips-vazio">Nenhum filtro ativo</span>';
+    return;
+  }
+
+  bar.innerHTML = "";
+  chips.forEach(({ label, onRemove }) => {
+    const chip = document.createElement("span");
+    chip.className = "filtro-chip";
+    chip.innerHTML = `<span class="filtro-chip-label">${escHtml(label)}</span><button type="button" class="filtro-chip-remove" title="Remover filtro"><i class="ph ph-x"></i></button>`;
+    chip.querySelector(".filtro-chip-remove").addEventListener("click", onRemove);
+    bar.appendChild(chip);
+  });
+
+  if (chips.length > 1) {
+    const limparBtn = document.createElement("button");
+    limparBtn.type = "button";
+    limparBtn.className = "filtros-limpar-tudo";
+    limparBtn.textContent = "Limpar tudo";
+    limparBtn.addEventListener("click", () => {
+      const el = document.getElementById("global-search");
+      if (el) el.value = "";
+      document.querySelectorAll(".filtro-card--ativo").forEach(c => {
+        c.querySelectorAll("input").forEach(i => i.value = "");
+        c.classList.remove("filtro-card--ativo");
+      });
+      atualizarChipsFiltrosAtivos();
+    });
+    bar.appendChild(limparBtn);
+  }
+}
+
+function formatDateBR(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function abrirPopoverTipo(btn, planilha, coluna, schemaColAtual, card) {
+  document.querySelector(".tipo-popover")?.remove();
+
+  const tipoAtual = schemaColAtual?.type || "text";
+  const tipos = [
+    { value: "text", label: "Texto", icon: "ph-text-aa" },
+    { value: "number", label: "Número", icon: "ph-hash" },
+    { value: "date", label: "Data", icon: "ph-calendar" },
+  ];
+
+  const pop = document.createElement("div");
+  pop.className = "tipo-popover";
+  pop.innerHTML = `
+    <div class="tipo-popover-header">Tipo da coluna</div>
+    ${tipos.map(t => `
+      <button type="button" class="tipo-popover-opt${t.value === tipoAtual ? " active" : ""}" data-type="${t.value}">
+        <i class="ph ${t.icon}"></i> ${t.label}
+        ${t.value === tipoAtual ? '<i class="ph ph-check" style="margin-left:auto"></i>' : ""}
+      </button>
+    `).join("")}
+  `;
+  document.body.appendChild(pop);
+
+  const rect = btn.getBoundingClientRect();
+  pop.style.top = (rect.bottom + window.scrollY + 6) + "px";
+  pop.style.left = Math.min(rect.left, window.innerWidth - 180) + "px";
+
+  pop.querySelectorAll(".tipo-popover-opt").forEach(optBtn => {
+    optBtn.addEventListener("click", async () => {
+      const novoTipo = optBtn.dataset.type;
+      pop.remove();
+      if (novoTipo === tipoAtual) return;
+
+      const novoSchemaCol = {
+        type: novoTipo,
+        decimal: novoTipo === "number" ? "," : null,
+        format: novoTipo === "date" ? "DD/MM/YYYY" : null
+      };
+      const novoSchema = { ...(planilha.schema || {}), [coluna]: novoSchemaCol };
+
+      await salvarSchemaLocal(planilha.id, novoSchema);
+      planilha.schema = novoSchema;
+
+      card.dataset.type = novoTipo;
+      btn.innerHTML = getIconForType(novoTipo);
+      btn.title = `Tipo: ${getTipoLabel(novoTipo)}. Clique para alterar.`;
+
+      const body = card.querySelector(".filtro-card-body");
+      if (body) {
+        card.querySelectorAll("input").forEach(i => i.value = "");
+        card.classList.remove("filtro-card--ativo");
+        preencherCardBody(body, planilha, coluna, novoSchemaCol, card);
+        atualizarChipsFiltrosAtivos();
+      }
     });
   });
 
-  wrap.appendChild(tabsRow);
-  wrap.appendChild(drawer);
-  lista.appendChild(wrap);
+  setTimeout(() => {
+    document.addEventListener("click", function handler(e) {
+      if (!pop.contains(e.target) && e.target !== btn) {
+        pop.remove();
+        document.removeEventListener("click", handler);
+      }
+    });
+  }, 0);
 }
 
-function abrirConfigSchema(planilha) {
-  const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
-  overlay.innerHTML = `
-    <div class="modal" style="width: 600px; max-height: 85vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <h2 class="modal-title"><i class="ph ph-gear-six"></i> Configurar Tipos: ${escHtml(planilha.nome)}</h2>
-        <p class="modal-sub">Verifique se os tipos de dados foram detectados corretamente para habilitar filtros avançados.</p>
-      </div>
-      <div style="flex: 1; overflow-y: auto; margin: 15px 0; border: 1px solid var(--border-color); border-radius: 8px;">
-        <table class="schema-table">
-          <thead>
-            <tr>
-              <th>Coluna</th>
-              <th>Tipo de Dado</th>
-              <th>Detalhe</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${planilha.colunas.map(col => {
-              const s = planilha.schema?.[col] || { type: 'text' };
-              return `
-                <tr data-coluna="${escHtml(col)}">
-                  <td style="font-weight: 500;">${escHtml(col)}</td>
-                  <td>
-                    <select class="schema-type-select">
-                      <option value="text" ${s.type === 'text' ? 'selected' : ''}>Texto</option>
-                      <option value="number" ${s.type === 'number' ? 'selected' : ''}>Número</option>
-                      <option value="date" ${s.type === 'date' ? 'selected' : ''}>Data</option>
-                    </select>
-                  </td>
-                  <td class="schema-detail">
-                    ${s.type === 'number' ? `Separador: <b>${s.decimal}</b>` : ''}
-                    ${s.type === 'date' ? `Formato: <b>${s.format}</b>` : ''}
-                    ${s.type === 'text' ? '-' : ''}
-                  </td>
-                </tr>
-              `;
-            }).join("")}
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-modal-cancel" id="btn-schema-cancel">Cancelar</button>
-        <button class="btn-primary" id="btn-schema-save"><i class="ph ph-check"></i> Salvar Alterações</button>
-      </div>
-    </div>
-  `;
+function getTipoLabel(type) {
+  return { text: "Texto", number: "Número", date: "Data" }[type] || "Texto";
+}
 
-  document.body.appendChild(overlay);
-  
-  document.getElementById("btn-schema-cancel").onclick = () => overlay.remove();
-  document.getElementById("btn-schema-save").onclick = async () => {
-    const rows = overlay.querySelectorAll("tbody tr");
-    const novoSchema = {};
-    
-    rows.forEach(tr => {
-      const col = tr.dataset.coluna;
-      const type = tr.querySelector(".schema-type-select").value;
-      const original = planilha.schema?.[col] || {};
-      
-      novoSchema[col] = { 
-        type, 
-        decimal: original.decimal || (type === 'number' ? ',' : null),
-        format: original.format || (type === 'date' ? 'DD/MM/YYYY' : null)
-      };
-    });
+function criarItemColuna() {} // mantido por compatibilidade — substituído por criarCartaoColuna
+function adicionarTag() {}   // mantido por compatibilidade — não mais utilizado
 
-    await salvarSchemaLocal(planilha.id, novoSchema);
-    overlay.remove();
-    window.location.reload(); // Recarrega para aplicar os novos tipos na UI de filtros
-  };
+function coletarFiltros() {
+  const filtros = {};
+
+  document.querySelectorAll(".filtro-card--ativo").forEach(card => {
+    const pid = card.dataset.planilha;
+    const coluna = card.dataset.coluna;
+    const tipo = card.dataset.type || "text";
+
+    if (!filtros[pid]) filtros[pid] = [];
+
+    if (tipo === "number") {
+      const min = card.querySelector("[data-op='range-min']")?.value.trim();
+      const max = card.querySelector("[data-op='range-max']")?.value.trim();
+      if (min || max) filtros[pid].push({ coluna, valores: [min || "", max || ""], type: "range" });
+    } else if (tipo === "date") {
+      const start = card.querySelector("[data-op='period-start']")?.value.trim();
+      const end = card.querySelector("[data-op='period-end']")?.value.trim();
+      if (start || end) {
+        const fmt = v => { if (!v) return ""; const [y, m, d] = v.split("-"); return `${d}/${m}/${y}`; };
+        filtros[pid].push({ coluna, valores: [fmt(start), fmt(end)], type: "period" });
+      }
+    } else {
+      const val = card.querySelector("[data-op='text-val']")?.value.trim();
+      const op = card.querySelector("[data-op='text-op']")?.value || "contains";
+      if (val) filtros[pid].push({ coluna, valores: [val], type: op });
+    }
+  });
+
+  return filtros;
 }
 
 async function salvarSchemaLocal(id, schema) {
@@ -506,131 +774,6 @@ async function salvarSchemaLocal(id, schema) {
   } catch (err) { console.error(err); }
 }
 
-function criarItemColuna(planilhaId, coluna, schemaCol) {
-  const item = document.createElement("div");
-  item.className = "filtro-col-item";
-  item.dataset.type = schemaCol?.type || "text";
-
-  const head = document.createElement("div");
-  head.className = "filtro-col-head";
-
-  const label = document.createElement("label");
-  label.className = "filtro-col-label";
-
-  const chk = document.createElement("input");
-  chk.type = "checkbox"; chk.className = "filtro-col-check";
-  chk.dataset.planilha = planilhaId; chk.dataset.coluna = coluna;
-
-  const nome = document.createElement("span");
-  nome.className = "filtro-col-nome"; 
-  nome.innerHTML = `${escHtml(coluna)} ${getIconForType(schemaCol?.type)}`;
-  nome.title = coluna;
-
-  label.appendChild(chk); label.appendChild(nome);
-
-  const select = document.createElement("select");
-  select.className = "filtro-col-type";
-  
-  if (schemaCol?.type === "number") {
-    select.innerHTML = `
-      <option value="range">Intervalo (Min/Max)</option>
-      <option value="exact">Igual a</option>
-      <option value="greater">Maior que</option>
-      <option value="less">Menor que</option>
-    `;
-  } else if (schemaCol?.type === "date") {
-    select.innerHTML = `
-      <option value="period">Período</option>
-      <option value="exact">Data exata</option>
-      <option value="after">Depois de</option>
-      <option value="before">Antes de</option>
-    `;
-  } else {
-    select.innerHTML = `
-      <option value="contains">Contém</option>
-      <option value="exact">Exato</option>
-      <option value="starts">Começa com</option>
-      <option value="ends">Termina com</option>
-    `;
-  }
-  select.hidden = true;
-
-  head.appendChild(label);
-  head.appendChild(select);
-
-  const tagsWrap = document.createElement("div");
-  tagsWrap.className = "filtro-col-tags-wrap";
-  tagsWrap.hidden = true;
-
-  const tagsBox = document.createElement("div");
-  tagsBox.className = "filtro-col-tags";
-
-  const tagInput = document.createElement("input");
-  tagInput.type = "text";
-  tagInput.className = "filtro-col-tag-input";
-  tagInput.placeholder = "Valor + Enter";
-  tagInput.style.outline = "none";
-
-  tagInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      const val = tagInput.value.trim().replace(/,$/, "");
-      if (val) { adicionarTag(tagsBox, tagInput, val); tagInput.value = ""; }
-    } else if (e.key === "Backspace" && !tagInput.value) {
-      tagsBox.querySelector(".filtro-col-tag:last-of-type")?.remove();
-    }
-  });
-
-  tagsBox.appendChild(tagInput);
-  tagsWrap.appendChild(tagsBox);
-
-  chk.addEventListener("change", () => {
-    tagsWrap.hidden = !chk.checked;
-    select.hidden = !chk.checked;
-    if (!chk.checked) { tagsBox.querySelectorAll(".filtro-col-tag").forEach((t) => t.remove()); tagInput.value = ""; }
-    else tagInput.focus();
-  });
-
-  item.appendChild(head);
-  item.appendChild(tagsWrap);
-  return item;
-}
-
-function adicionarTag(tagsBox, tagInput, value) {
-  const tag = document.createElement("span");
-  tag.className = "filtro-col-tag";
-
-  const txt = document.createElement("span");
-  txt.textContent = value;
-
-  const rem = document.createElement("button");
-  rem.type = "button"; rem.className = "filtro-col-tag-remove";
-  rem.innerHTML = '<i class="ph ph-x"></i>';
-  rem.addEventListener("click", () => tag.remove());
-
-  tag.appendChild(txt); tag.appendChild(rem);
-  tagsBox.insertBefore(tag, tagInput);
-}
-
-function coletarFiltros() {
-  const filtros = {};
-  document.querySelectorAll(".filtro-col-check:checked").forEach((chk) => {
-    const item = chk.closest(".filtro-col-item");
-    const tagsBox = item?.querySelector(".filtro-col-tags");
-    const type = item?.querySelector(".filtro-col-type")?.value || "contains";
-    if (!tagsBox) return;
-
-    const valores = [...tagsBox.querySelectorAll(".filtro-col-tag span:first-child")].map((s) => s.textContent.trim());
-    const digitando = item.querySelector(".filtro-col-tag-input")?.value.trim();
-    if (digitando) valores.push(digitando);
-    if (!valores.length) return;
-
-    const pid = String(chk.dataset.planilha);
-    if (!filtros[pid]) filtros[pid] = [];
-    filtros[pid].push({ coluna: chk.dataset.coluna, valores, type });
-  });
-  return filtros;
-}
 
 // ── BUSCA ─────────────────────────────────────────────────
 async function buscar() {
@@ -1237,9 +1380,9 @@ function updateThemeIcon(btn, isDark) {
 }
 
 function getIconForType(type) {
-  if (type === "number") return '<i class="ph ph-hash" style="color:var(--accent-cyan); font-size:12px; margin-left:4px" title="Tipo: Número"></i>';
-  if (type === "date") return '<i class="ph ph-calendar" style="color:var(--accent-cyan); font-size:12px; margin-left:4px" title="Tipo: Data"></i>';
-  return "";
+  if (type === "number") return '<i class="ph ph-hash" style="color:var(--accent-cyan); font-size:13px" title="Tipo: Número"></i>';
+  if (type === "date") return '<i class="ph ph-calendar" style="color:var(--accent-cyan); font-size:13px" title="Tipo: Data"></i>';
+  return '<i class="ph ph-text-aa" style="color:var(--text-secondary); font-size:13px" title="Tipo: Texto"></i>';
 }
 
 function initSettingsMenu(btn, menu) {
