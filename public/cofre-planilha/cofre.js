@@ -610,7 +610,11 @@ function linhaPassaFiltros(linha, filtros, schema) {
         const start = parseDate(valores[0], "YYYY-MM-DD");
         const end = parseDate(valores[1], "YYYY-MM-DD");
         if (start && dt < start) return false;
-        if (end && dt > end) return false;
+        if (end) {
+          const endOfDay = new Date(end.getTime());
+          endOfDay.setHours(23, 59, 59, 999);
+          if (dt > endOfDay) return false;
+        }
       } else if (type === 'exact') {
         const target = parseDate(valores[0], "YYYY-MM-DD");
         if (target) {
