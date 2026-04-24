@@ -327,16 +327,6 @@ function renderFiltrosPanel() {
     lista.appendChild(tabsContainer);
   }
 
-  const colSearch = document.createElement("div");
-  colSearch.className = "filtro-coluna-search";
-  colSearch.innerHTML = `<div class="input-with-icon"><i class="ph ph-list-magnifying-glass"></i><input type="text" id="coluna-search" placeholder="Buscar coluna..." class="coluna-search-input"></div>`;
-  lista.appendChild(colSearch);
-  colSearch.querySelector("#coluna-search").addEventListener("input", (e) => {
-    const t = e.target.value.trim().toLowerCase();
-    const activePanel = document.querySelector(".filtro-panel-planilha:not([hidden])");
-    activePanel?.querySelectorAll(".filtro-card").forEach(card => card.hidden = t !== "" && !card.dataset.coluna.toLowerCase().includes(t));
-  });
-
   planilhas.forEach((p, i) => {
     const panel = document.createElement("div");
     panel.className = "filtro-panel-planilha";
