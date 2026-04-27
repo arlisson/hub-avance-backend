@@ -509,8 +509,8 @@ function renderPagination() {
   p.querySelector("#next").onclick = () => { paginaAtual++; renderPagina(); };
 }
 
-function initTheme(b) { const isL = localStorage.getItem("theme")==="light"; document.body.classList.toggle("light-mode", isL); b?.onclick = () => { const L = document.body.classList.toggle("light-mode"); localStorage.setItem("theme", L?"light":"dark"); }; }
-function initSettingsMenu(b, m) { b?.onclick = (e) => { e.stopPropagation(); m.hidden = !m.hidden; }; document.onclick = () => m && (m.hidden = true); }
-function initMobileSidebar(b) { b?.onclick = () => document.body.classList.toggle("sidebar-open"); }
+function initTheme(b) { const isL = localStorage.getItem("theme")==="light"; document.body.classList.toggle("light-mode", isL); b?.addEventListener("click", () => { const L = document.body.classList.toggle("light-mode"); localStorage.setItem("theme", L?"light":"dark"); }); }
+function initSettingsMenu(b, m) { b?.addEventListener("click", (e) => { e.stopPropagation(); m.hidden = !m.hidden; }); document.addEventListener("click", () => m && (m.hidden = true)); }
+function initMobileSidebar(b) { b?.addEventListener("click", () => document.body.classList.toggle("sidebar-open")); }
 function abrirPopoverTipo(btn, p, col, card) { /* Reuso simplificado para o exemplo, integra com o schema em lote */ abrirModalSchema(p); }
 async function abrirModalExport() { /* lógica de export aqui */ }
