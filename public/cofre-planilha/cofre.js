@@ -462,7 +462,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   planilhas = await carregarPlanilhasLocais();
   renderLista(); renderFiltrosPanel();
 
-  document.getElementById("upload-area")?.addEventListener("click", () => document.getElementById("file-input").click());
   document.getElementById("file-input")?.addEventListener("change", (e) => handleFiles(e.target.files));
   document.getElementById("btn-buscar")?.addEventListener("click", buscar);
   document.getElementById("btn-limpar-tudo")?.addEventListener("click", limparTudo);
