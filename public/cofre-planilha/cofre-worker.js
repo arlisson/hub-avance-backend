@@ -6,8 +6,15 @@ const STORE_DADOS = "planilhas_dados";
 function abrirDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("planilhas_meta")) db.createObjectStore("planilhas_meta", { keyPath: "id", autoIncrement: true });
+      if (db.objectStoreNames.contains("planilhas_dados")) db.deleteObjectStore("planilhas_dados");
+      const ds = db.createObjectStore("planilhas_dados", { keyPath: "id", autoIncrement: true });
+      ds.createIndex("fileId", "fileId", { unique: false });
+    };
     request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = () => reject("Erro ao abrir DB no Worker");
+    request.onerror = (e) => reject(new Error("Erro ao abrir DB no Worker: " + (e.target.error?.message || "")));
   });
 }
 
@@ -137,7 +144,7 @@ self.onmessage = async function ({ data }) {
       const tx = db.transaction([STORE_META], "readwrite");
       const req = tx.objectStore(STORE_META).add({ nome, colunas: [], schema: {} });
       req.onsuccess = (e) => resolve(e.target.result);
-      req.onerror = () => reject("Erro ao criar metadados");
+      req.onerror = (e) => reject(new Error("Erro ao criar metadados: " + (e.target.error?.message || "")));
     });
 
     while (offset < file.size) {
@@ -218,7 +225,7 @@ self.onmessage = async function ({ data }) {
 
   } catch (err) {
     console.error(err);
-    self.postMessage({ ok: false, error: err.message });
+    self.postMessage({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
 };
 
@@ -228,6 +235,6 @@ function salvarLote(db, fileId, dados) {
     const store = tx.objectStore(STORE_DADOS);
     store.add({ fileId, dados });
     tx.oncomplete = resolve;
-    tx.onerror = () => reject("Erro ao salvar lote no banco");
+    tx.onerror = (e) => reject(new Error("Erro ao salvar lote: " + (e.target.error?.message || "")));
   });
 }
