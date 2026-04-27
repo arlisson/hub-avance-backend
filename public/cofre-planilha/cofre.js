@@ -442,7 +442,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   initTheme(document.getElementById("theme-toggle"));
   initSettingsMenu(document.getElementById("settings-btn"), document.getElementById("settings-menu"));
   initMobileSidebar(document.getElementById("mobile-menu-btn"));
-  
+
+  // Autenticação e exibição do email
+  try {
+    const meResp = await apiFetch("/api/profile");
+    if (!meResp?.ok || !meResp?.user) throw new Error("Não autenticado");
+    const emailEl = document.getElementById("user-email");
+    if (emailEl) { emailEl.textContent = meResp.user.email || ""; emailEl.title = meResp.user.email || ""; }
+  } catch (err) {
+    if (err?.status === 401) { window.location.href = LOGIN_URL; return; }
+  }
+
+  document.getElementById("menu-logout")?.addEventListener("click", async () => {
+    try { await apiFetch("/api/logout", { method: "POST" }); } catch {}
+    window.location.href = LOGIN_URL;
+  });
+  document.getElementById("menu-back-hub")?.addEventListener("click", () => { window.location.href = HUB_URL; });
+
   planilhas = await carregarPlanilhasLocais();
   renderLista(); renderFiltrosPanel();
 
@@ -459,18 +475,37 @@ async function handleFiles(files) {
   for (const f of files) {
     if (!f.name.toLowerCase().endsWith(".csv")) continue;
     toggleLoading(true, `Lendo ${f.name}...`);
-    const res = await parsearArquivo(f);
-    planilhas.push({ id: res.id, nome: f.name, colunas: res.colunas, schema: {} });
+    try {
+      const res = await parsearArquivo(f);
+      planilhas.push({ id: res.id, nome: f.name, colunas: res.colunas, schema: res.schema || {} });
+    } catch (err) {
+      alert(`Erro ao processar "${f.name}": ${err.message || err}`);
+    }
   }
   toggleLoading(false); renderLista(); renderFiltrosPanel();
 }
 
 function parsearArquivo(file) {
-  return new Promise((resolve) => {
-    const w = new Worker('./cofre-worker.js?v=' + Date.now());
+  return new Promise((resolve, reject) => {
+    const w = new Worker('./cofre-worker.js');
     w.postMessage({ file, nome: file.name });
-    w.onmessage = ({ data }) => { if (data.ok) resolve(data); w.terminate(); };
+    w.onmessage = ({ data }) => {
+      w.terminate();
+      if (data.ok) resolve(data); else reject(new Error(data.error || "Falha no worker"));
+    };
+    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || "Erro no worker")); };
   });
+}
+
+async function apiFetch(url, { method = "GET", body } = {}) {
+  const headers = { Accept: "application/json" };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const resp = await fetch(url, { method, credentials: "include", headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const text = await resp.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { ok: false, error: text || "Resposta inválida." }; }
+  if (!resp.ok) { const err = new Error(data?.error || "Erro na requisição."); err.status = resp.status; err.response = data; throw err; }
+  return data;
 }
 
 async function limparTudo() {
