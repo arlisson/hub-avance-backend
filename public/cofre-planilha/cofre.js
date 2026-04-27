@@ -434,13 +434,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   planilhas = await carregarPlanilhasLocais();
   renderLista(); renderFiltrosPanel();
 
-  document.getElementById("upload-area")?.onclick = () => document.getElementById("file-input").click();
-  document.getElementById("file-input")?.onchange = (e) => handleFiles(e.target.files);
-  document.getElementById("btn-buscar")?.onclick = buscar;
-  document.getElementById("btn-limpar-tudo")?.onclick = limparTudo;
-  document.getElementById("btn-configurar-filtros")?.onclick = () => { document.getElementById("filtros-modal-overlay").hidden = false; };
-  document.getElementById("btn-fechar-filtros")?.onclick = () => { document.getElementById("filtros-modal-overlay").hidden = true; };
-  document.getElementById("btn-aplicar-filtros")?.onclick = () => { document.getElementById("filtros-modal-overlay").hidden = true; buscar(); };
+  document.getElementById("upload-area")?.addEventListener("click", () => document.getElementById("file-input").click());
+  document.getElementById("file-input")?.addEventListener("change", (e) => handleFiles(e.target.files));
+  document.getElementById("btn-buscar")?.addEventListener("click", buscar);
+  document.getElementById("btn-limpar-tudo")?.addEventListener("click", limparTudo);
+  document.getElementById("btn-configurar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = false; });
+  document.getElementById("btn-fechar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = true; });
+  document.getElementById("btn-aplicar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = true; buscar(); });
 });
 
 async function handleFiles(files) {
