@@ -65,6 +65,18 @@ async function salvarSchemaLocal(id, schema) {
   };
 }
 
+// ── HELPERS DE TIPO ───────────────────────────────────────
+function getIconForType(type) {
+  if (type === "number") return '<i class="ph ph-hash"></i>';
+  if (type === "date")   return '<i class="ph ph-calendar"></i>';
+  return '<i class="ph ph-text-aa"></i>';
+}
+function getTipoLabel(type) {
+  if (type === "number") return "Número";
+  if (type === "date")   return "Data";
+  return "Texto";
+}
+
 // ── CORE: FILTROS E BUSCA ──────────────────────────────────
 
 function sincronizarEstadoFiltro(pid, coluna, data) {
