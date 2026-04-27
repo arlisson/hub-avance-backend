@@ -490,6 +490,10 @@ function parsearArquivo(file) {
     const w = new Worker('./cofre-worker.js?v=2');
     w.postMessage({ file, nome: file.name });
     w.onmessage = ({ data }) => {
+      if (data.type === "progress") {
+        toggleLoading(true, data.msg || `Lendo ${file.name}...`, data.percent);
+        return;
+      }
       w.terminate();
       if (data.ok) resolve(data); else reject(new Error(data.error || "Falha no worker"));
     };
