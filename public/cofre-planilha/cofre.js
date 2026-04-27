@@ -68,12 +68,12 @@ async function salvarSchemaLocal(id, schema) {
 // ── HELPERS DE TIPO ───────────────────────────────────────
 function getIconForType(type) {
   if (type === "number") return '<i class="ph ph-hash"></i>';
-  if (type === "date")   return '<i class="ph ph-calendar"></i>';
+  if (type === "date") return '<i class="ph ph-calendar"></i>';
   return '<i class="ph ph-text-aa"></i>';
 }
 function getTipoLabel(type) {
   if (type === "number") return "Número";
-  if (type === "date")   return "Data";
+  if (type === "date") return "Data";
   return "Texto";
 }
 
@@ -178,7 +178,7 @@ function renderFiltrosPanel() {
     const tab = document.createElement("button");
     tab.className = `filtro-tab-item${i === 0 ? " active" : ""}`;
     tab.innerHTML = `<i class="ph ph-file-csv"></i> <span>${escHtml(p.nome.length > 20 ? p.nome.slice(0, 17) + "…" : p.nome)}</span>`;
-    
+
     const configBtn = document.createElement("button");
     configBtn.className = "filtro-tab-config";
     configBtn.innerHTML = '<i class="ph ph-gear-six"></i>';
@@ -260,15 +260,15 @@ function preencherCardBody(body, planilha, coluna, card) {
   if (schemaCol.type === "number") {
     body.innerHTML = `
       <div class="filtro-card-row">
-        <select class="filtro-card-op-select"><option value="range" ${current.op==='range'?'selected':''}>Intervalo</option><option value="exact" ${current.op==='exact'?'selected':''}>Exato</option></select>
+        <select class="filtro-card-op-select"><option value="range" ${current.op === 'range' ? 'selected' : ''}>Intervalo</option><option value="exact" ${current.op === 'exact' ? 'selected' : ''}>Exato</option></select>
       </div>
       <div class="inputs-area"></div>`;
     const renderInputs = (op) => {
       const area = body.querySelector(".inputs-area");
       if (op === "range") {
-        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label>Mín</label><input type="number" step="any" class="v1" value="${current.values[0]||''}"></div><div class="filtro-card-field"><label>Máx</label><input type="number" step="any" class="v2" value="${current.values[1]||''}"></div></div>`;
+        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label class="filtro-card-field-label">Mín</label><input type="number" step="any" class="filtro-card-input v1" value="${current.values[0] || ''}"></div><div class="filtro-card-field"><label class="filtro-card-field-label">Máx</label><input type="number" step="any" class="filtro-card-input v2" value="${current.values[1] || ''}"></div></div>`;
       } else {
-        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label>Valor</label><input type="number" step="any" class="v1" value="${current.values[0]||''}"></div></div>`;
+        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label class="filtro-card-field-label">Valor</label><input type="number" step="any" class="filtro-card-input v1" value="${current.values[0] || ''}"></div></div>`;
       }
     };
     renderInputs(current.op);
@@ -276,15 +276,15 @@ function preencherCardBody(body, planilha, coluna, card) {
   } else if (schemaCol.type === "date") {
     body.innerHTML = `
       <div class="filtro-card-row">
-        <select class="filtro-card-op-select"><option value="period" ${current.op==='period'?'selected':''}>Período</option><option value="exact" ${current.op==='exact'?'selected':''}>Dia Fixo</option></select>
+        <select class="filtro-card-op-select"><option value="period" ${current.op === 'period' ? 'selected' : ''}>Período</option><option value="exact" ${current.op === 'exact' ? 'selected' : ''}>Dia Fixo</option></select>
       </div>
       <div class="inputs-area"></div>`;
     const renderInputs = (op) => {
       const area = body.querySelector(".inputs-area");
       if (op === "period") {
-        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label>De</label><input type="date" class="v1" value="${current.values[0]||''}"></div><div class="filtro-card-field"><label>Até</label><input type="date" class="v2" value="${current.values[1]||''}"></div></div>`;
+        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label class="filtro-card-field-label">De</label><input type="date" class="filtro-card-input v1" value="${current.values[0] || ''}"></div><div class="filtro-card-field"><label class="filtro-card-field-label">Até</label><input type="date" class="filtro-card-input v2" value="${current.values[1] || ''}"></div></div>`;
       } else {
-        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label>Data</label><input type="date" class="v1" value="${current.values[0]||''}"></div></div>`;
+        area.innerHTML = `<div class="filtro-card-row"><div class="filtro-card-field"><label class="filtro-card-field-label">Data</label><input type="date" class="filtro-card-input v1" value="${current.values[0] || ''}"></div></div>`;
       }
     };
     renderInputs(current.op);
@@ -292,8 +292,8 @@ function preencherCardBody(body, planilha, coluna, card) {
   } else {
     body.innerHTML = `
       <div class="filtro-card-row filtro-card-row--text">
-        <select class="filtro-card-op-select"><option value="contains" ${current.op==='contains'?'selected':''}>Contém</option><option value="exact" ${current.op==='exact'?'selected':''}>Exato</option><option value="starts" ${current.op==='starts'?'selected':''}>Começa</option></select>
-        <input type="text" class="v1" placeholder="Digite..." value="${current.values[0]||''}" style="flex:1; padding:7px; border:1px solid var(--border-color); border-radius:8px; background:rgba(0,0,0,0.2); color:white; outline:none">
+        <select class="filtro-card-op-select"><option value="contains" ${current.op === 'contains' ? 'selected' : ''}>Contém</option><option value="exact" ${current.op === 'exact' ? 'selected' : ''}>Exato</option><option value="starts" ${current.op === 'starts' ? 'selected' : ''}>Começa</option></select>
+        <input type="text" class="v1" placeholder="Digite..." value="${current.values[0] || ''}" style="flex:1; padding:7px; border:1px solid var(--border-color); border-radius:8px; background:rgba(0,0,0,0.2); color:white; outline:none">
       </div>`;
   }
 
@@ -326,17 +326,17 @@ function abrirModalSchema(planilha) {
       <td><div style="font-weight:600; color:var(--text-primary)">${escHtml(col)}</div></td>
       <td>
         <select class="schema-type-select" data-col="${escHtml(col)}">
-          <option value="text" ${s.type==='text'?'selected':''}>Texto (ABC)</option>
-          <option value="number" ${s.type==='number'?'selected':''}>Número (123)</option>
-          <option value="date" ${s.type==='date'?'selected':''}>Data (DD/MM)</option>
+          <option value="text" ${s.type === 'text' ? 'selected' : ''}>Texto (ABC)</option>
+          <option value="number" ${s.type === 'number' ? 'selected' : ''}>Número (123)</option>
+          <option value="date" ${s.type === 'date' ? 'selected' : ''}>Data (DD/MM)</option>
         </select>
       </td>
       <td class="schema-config-cell">
-        ${s.type === 'number' ? `Sep. Decimal: <input type="text" class="s-decimal" value="${s.decimal||','}" style="width:30px; text-align:center">` : ''}
-        ${s.type === 'date' ? `Formato: <select class="s-format"><option value="DD/MM/YYYY" ${s.format==='DD/MM/YYYY'?'selected':''}>DD/MM/YYYY</option><option value="MM/DD/YYYY" ${s.format==='MM/DD/YYYY'?'selected':''}>MM/DD/YYYY</option></select>` : ''}
+        ${s.type === 'number' ? `Sep. Decimal: <input type="text" class="s-decimal" value="${s.decimal || ','}" style="width:30px; text-align:center">` : ''}
+        ${s.type === 'date' ? `Formato: <select class="s-format"><option value="DD/MM/YYYY" ${s.format === 'DD/MM/YYYY' ? 'selected' : ''}>DD/MM/YYYY</option><option value="MM/DD/YYYY" ${s.format === 'MM/DD/YYYY' ? 'selected' : ''}>MM/DD/YYYY</option></select>` : ''}
       </td>
     `;
-    
+
     tr.querySelector(".schema-type-select").onchange = (e) => {
       const type = e.target.value;
       const configCell = tr.querySelector(".schema-config-cell");
@@ -383,8 +383,8 @@ function atualizarChipsFiltrosAtivos() {
     const p = planilhas.find(x => String(x.id) === pid);
     for (const [col, f] of Object.entries(cols)) {
       let resumo = `${col}: `;
-      if (f.op === 'range') resumo += `${f.values[0]||'∞'} a ${f.values[1]||'∞'}`;
-      else if (f.op === 'period') resumo += `${formatDateBR(f.values[0])||'∞'} a ${formatDateBR(f.values[1])||'∞'}`;
+      if (f.op === 'range') resumo += `${f.values[0] || '∞'} a ${f.values[1] || '∞'}`;
+      else if (f.op === 'period') resumo += `${formatDateBR(f.values[0]) || '∞'} a ${formatDateBR(f.values[1]) || '∞'}`;
       else if (f.op === 'exact' && p?.schema?.[col]?.type === 'date') resumo += `= ${formatDateBR(f.values[0])}`;
       else resumo += `${f.op === 'exact' ? '=' : f.op} "${f.values[0]}"`;
 
@@ -419,11 +419,11 @@ function parseDate(val, format) {
   if (format === "MM/DD/YYYY") { mm = parseInt(m[1]) - 1; d = parseInt(m[2]); y = parseInt(m[3]); }
   else { d = parseInt(m[1]); mm = parseInt(m[2]) - 1; y = parseInt(m[3]); }
   if (y < 100) y += 2000;
-  return new Date(y, mm, d, m[4]?parseInt(m[4].trim().split(":")[0]):0, m[4]?parseInt(m[4].trim().split(":")[1]):0);
+  return new Date(y, mm, d, m[4] ? parseInt(m[4].trim().split(":")[0]) : 0, m[4] ? parseInt(m[4].trim().split(":")[1]) : 0);
 }
 
 function escHtml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-function formatDateBR(iso) { if (!iso) return ""; const b = iso.split("-"); return b.length===3 ? `${b[2]}/${b[1]}/${b[0]}` : iso; }
+function formatDateBR(iso) { if (!iso) return ""; const b = iso.split("-"); return b.length === 3 ? `${b[2]}/${b[1]}/${b[0]}` : iso; }
 
 function toggleLoading(a, m = "Processando...", p = null) {
   let l = document.getElementById("global-loader");
@@ -454,7 +454,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   document.getElementById("menu-logout")?.addEventListener("click", async () => {
-    try { await apiFetch("/api/logout", { method: "POST" }); } catch {}
+    try { await apiFetch("/api/logout", { method: "POST" }); } catch { }
     window.location.href = LOGIN_URL;
   });
   document.getElementById("menu-back-hub")?.addEventListener("click", () => { window.location.href = HUB_URL; });
@@ -533,18 +533,18 @@ function renderLista() {
 }
 
 function renderPagina() {
-  const rows = totalResultados.slice((paginaAtual-1)*PAGE_SIZE, paginaAtual*PAGE_SIZE);
+  const rows = totalResultados.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE);
   const wrap = document.getElementById("table-wrapper");
   if (!rows.length) { wrap.innerHTML = '<p class="table-placeholder">Nenhum resultado.</p>'; return; }
-  
+
   const colMap = new Map();
   totalResultados.forEach(row => Object.keys(row).forEach(k => { if (!k.startsWith("_")) colMap.set(k.toLowerCase(), k); }));
   ultimasColunas = ["_arquivo", ...colMap.values()];
 
-  let h = `<table class="results-table"><thead><tr>${ultimasColunas.map(c => `<th>${escHtml(c==='_arquivo'?'Arquivo':c)}</th>`).join("")}</tr></thead><tbody>`;
-  rows.forEach(r => { h += `<tr>${ultimasColunas.map(c => `<td>${escHtml(r[c]||"")}</td>`).join("")}</tr>`; });
+  let h = `<table class="results-table"><thead><tr>${ultimasColunas.map(c => `<th>${escHtml(c === '_arquivo' ? 'Arquivo' : c)}</th>`).join("")}</tr></thead><tbody>`;
+  rows.forEach(r => { h += `<tr>${ultimasColunas.map(c => `<td>${escHtml(r[c] || "")}</td>`).join("")}</tr>`; });
   wrap.innerHTML = h + "</tbody></table>";
-  
+
   document.getElementById("results-bar").hidden = false;
   document.getElementById("results-count").textContent = `${totalResultados.length} resultados`;
   renderPagination();
@@ -554,12 +554,12 @@ function renderPagination() {
   const tot = Math.ceil(totalResultados.length / PAGE_SIZE);
   const p = document.getElementById("pagination");
   p.hidden = tot <= 1;
-  p.innerHTML = `<button ${paginaAtual===1?'disabled':''} id="prev">Anterior</button><span>${paginaAtual}/${tot}</span><button ${paginaAtual===tot?'disabled':''} id="next">Próximo</button>`;
+  p.innerHTML = `<button ${paginaAtual === 1 ? 'disabled' : ''} id="prev">Anterior</button><span>${paginaAtual}/${tot}</span><button ${paginaAtual === tot ? 'disabled' : ''} id="next">Próximo</button>`;
   p.querySelector("#prev").onclick = () => { paginaAtual--; renderPagina(); };
   p.querySelector("#next").onclick = () => { paginaAtual++; renderPagina(); };
 }
 
-function initTheme(b) { const isL = localStorage.getItem("theme")==="light"; document.body.classList.toggle("light-mode", isL); b?.addEventListener("click", () => { const L = document.body.classList.toggle("light-mode"); localStorage.setItem("theme", L?"light":"dark"); }); }
+function initTheme(b) { const isL = localStorage.getItem("theme") === "light"; document.body.classList.toggle("light-mode", isL); b?.addEventListener("click", () => { const L = document.body.classList.toggle("light-mode"); localStorage.setItem("theme", L ? "light" : "dark"); }); }
 function initSettingsMenu(b, m) { b?.addEventListener("click", (e) => { e.stopPropagation(); m.hidden = !m.hidden; }); document.addEventListener("click", () => m && (m.hidden = true)); }
 function initMobileSidebar(b) { b?.addEventListener("click", () => document.body.classList.toggle("sidebar-open")); }
 function abrirPopoverTipo(btn, p, col, card) { /* Reuso simplificado para o exemplo, integra com o schema em lote */ abrirModalSchema(p); }
