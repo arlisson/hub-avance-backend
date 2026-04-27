@@ -487,7 +487,7 @@ async function handleFiles(files) {
 
 function parsearArquivo(file) {
   return new Promise((resolve, reject) => {
-    const w = new Worker('./cofre-worker.js');
+    const w = new Worker('./cofre-worker.js?v=2');
     w.postMessage({ file, nome: file.name });
     w.onmessage = ({ data }) => {
       w.terminate();
