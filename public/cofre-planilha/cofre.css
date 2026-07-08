@@ -1556,6 +1556,7 @@ body.light-mode .table-wrapper {
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   min-height: 0;
   padding-right: 4px;
@@ -1609,6 +1610,9 @@ body.light-mode .table-wrapper {
 
 .col-reorder-label {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   display: flex;
   flex-direction: column;
   gap: 2px;
