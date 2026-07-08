@@ -1504,7 +1504,8 @@ body.light-mode .table-wrapper {
   pointer-events: none;
 }
 
-.col-reorder-item .col-delete-btn {
+.col-reorder-item .col-delete-btn,
+.col-reorder-item .col-move-btn {
   pointer-events: auto;
 }
 
@@ -1659,6 +1660,74 @@ body.light-mode .conflict-choices {
 }
 
 .col-delete-btn:hover { background: rgba(255, 77, 77, 0.15); }
+
+.col-move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background .2s, color .2s;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.col-move-btn:hover {
+  background: rgba(87, 197, 234, 0.15);
+  color: var(--accent-cyan);
+}
+
+.modal-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.export-filename-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.export-filename-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.export-filename-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0 12px;
+  transition: border-color .2s;
+}
+
+.export-filename-input:focus-within {
+  border-color: var(--accent-cyan);
+}
+
+.export-filename-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 10px 0;
+}
+
+.export-filename-ext {
+  color: var(--text-secondary);
+  font-size: 14px;
+  flex-shrink: 0;
+}
 
 .modal-actions {
   display: flex;

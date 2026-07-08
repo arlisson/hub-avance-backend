@@ -468,7 +468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-configurar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = false; });
   document.getElementById("btn-fechar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = true; });
   document.getElementById("btn-aplicar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = true; buscar(); });
-  document.getElementById("btn-export")?.addEventListener("click", exportarCSV);
+  document.getElementById("btn-export")?.addEventListener("click", abrirModalExport);
 });
 
 async function handleFiles(files) {
@@ -564,37 +564,190 @@ function initTheme(b) { const isL = localStorage.getItem("theme") === "light"; d
 function initSettingsMenu(b, m) { b?.addEventListener("click", (e) => { e.stopPropagation(); m.hidden = !m.hidden; }); document.addEventListener("click", () => m && (m.hidden = true)); }
 function initMobileSidebar(b) { b?.addEventListener("click", () => document.body.classList.toggle("sidebar-open")); }
 function abrirPopoverTipo(btn, p, col, card) { /* Reuso simplificado para o exemplo, integra com o schema em lote */ abrirModalSchema(p); }
-function exportarCSV() {
-  if (!totalResultados.length) {
+function abrirModalExport() {
+  if (!ultimasColunas.length) {
     alert("Nenhum resultado para exportar. Faça uma busca primeiro.");
     return;
   }
 
-  // Garante a ordem de colunas (normalmente definida em renderPagina)
-  let colunas = ultimasColunas;
-  if (!colunas || !colunas.length) {
-    const colMap = new Map();
-    totalResultados.forEach(row => Object.keys(row).forEach(k => { if (!k.startsWith("_")) colMap.set(k.toLowerCase(), k); }));
-    colunas = ["_arquivo", ...colMap.values()];
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay"; overlay.id = "export-modal";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="ph ph-arrows-out-line-vertical"></i> Configurar exportação</h2>
+        <p class="modal-sub">Arraste (ou use as setas) para ordenar, e remova as colunas que não quer na planilha.</p>
+      </div>
+      <div class="export-filename-field">
+        <label for="export-filename">Nome do arquivo</label>
+        <div class="export-filename-input">
+          <input type="text" id="export-filename" value="resultado_cofre" spellcheck="false">
+          <span class="export-filename-ext">.csv</span>
+        </div>
+      </div>
+      <ul class="col-reorder-list" id="col-reorder-list">
+        ${ultimasColunas.map((col) => `
+          <li class="col-reorder-item" draggable="true" data-col="${escHtml(col)}">
+            <i class="ph ph-dots-six-vertical drag-handle"></i>
+            <span class="col-reorder-label">${escHtml(col === "_arquivo" ? "Arquivo" : (col.startsWith("_") ? col.slice(1) : col))}</span>
+            <button type="button" class="col-move-btn col-move-up" title="Mover para cima"><i class="ph ph-caret-up"></i></button>
+            <button type="button" class="col-move-btn col-move-down" title="Mover para baixo"><i class="ph ph-caret-down"></i></button>
+            <button type="button" class="col-delete-btn" title="Remover coluna"><i class="ph ph-x"></i></button>
+          </li>`).join("")}
+      </ul>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" id="export-modal-cancel">Cancelar</button>
+        <button class="btn-primary" id="export-modal-confirm"><i class="ph ph-download-simple"></i> Exportar</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
+  document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
+
+  const reorderList = document.getElementById("col-reorder-list");
+  reorderList?.addEventListener("click", (e) => {
+    const item = e.target.closest(".col-reorder-item");
+    if (!item) return;
+    if (e.target.closest(".col-delete-btn")) { item.remove(); return; }
+    if (e.target.closest(".col-move-up")) { const prev = item.previousElementSibling; if (prev) prev.before(item); return; }
+    if (e.target.closest(".col-move-down")) { const next = item.nextElementSibling; if (next) next.after(item); return; }
+  });
+  iniciarDragAndDrop(reorderList);
+}
+
+function fecharModalExport() { document.getElementById("export-modal")?.remove(); }
+
+async function confirmarExport() {
+  const lista = document.getElementById("col-reorder-list");
+  const colunasOrdenadas = [...lista.querySelectorAll(".col-reorder-item")].map(li => li.dataset.col);
+
+  if (!colunasOrdenadas.length) {
+    alert("Selecione ao menos uma coluna para exportar.");
+    return;
   }
 
-  const cabecalho = colunas.map(c => (c === "_arquivo" ? "Arquivo" : c));
-  const aoa = [cabecalho];
-  totalResultados.forEach(row => {
-    aoa.push(colunas.map(c => { const v = row[c]; return v === undefined || v === null ? "" : v; }));
+  // Nome do arquivo (sanitizado, com sufixo .csv garantido)
+  const rawNome = (document.getElementById("export-filename")?.value || "").trim() || "resultado_cofre";
+  const nomeArquivo = rawNome.replace(/[\\/:*?"<>|]+/g, "_").replace(/\.csv$/i, "") + ".csv";
+
+  fecharModalExport();
+  toggleLoading(true, "Gerando exportação CSV...");
+
+  // Pequeno delay para garantir que o loader renderize antes de travar a thread
+  await new Promise(r => setTimeout(r, 50));
+
+  // Exporta EXATAMENTE o que foi filtrado na busca atual
+  const resultados = totalResultados;
+
+  if (!resultados || !resultados.length) {
+    toggleLoading(false);
+    alert("Nenhum resultado para exportar.");
+    return;
+  }
+
+  try {
+    const cabecalho = colunasOrdenadas
+      .map(c => (c === "_arquivo" ? "Arquivo" : c))
+      .map(c => `"${c.replace(/"/g, '""')}"`).join(";");
+    const linhasCSV = resultados.map(linha => {
+      return colunasOrdenadas.map(c => {
+        const val = linha[c] ?? "";
+        return `"${String(val).replace(/"/g, '""')}"`;
+      }).join(";");
+    });
+
+    // Adiciona o BOM (﻿) para garantir que o Excel entenda o UTF-8 (Acentos)
+    const csvContent = "﻿" + [cabecalho, ...linhasCSV].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = nomeArquivo; a.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    alert("Ocorreu um erro ao gerar o CSV.");
+    console.error("Erro na exportação CSV:", error);
+  } finally {
+    toggleLoading(false);
+  }
+}
+
+function iniciarDragAndDrop(lista) {
+  if (!lista) return;
+
+  const overlay = lista.closest(".modal-overlay");
+  if (!overlay) return;
+
+  let dragSrc = null;
+  let placeholder = null;
+
+  function moverPlaceholder(clientY) {
+    // Filtrar apenas itens reais, ignorando o que está sendo arrastado e o próprio placeholder
+    const items = [...lista.querySelectorAll(".col-reorder-item:not(.dragging)")];
+    if (!items.length) return;
+
+    let nearest = null;
+    let nearestDist = Infinity;
+
+    for (const item of items) {
+      const rect = item.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const dist = Math.abs(clientY - mid);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = item;
+      }
+    }
+
+    if (nearest) {
+      const rect = nearest.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (clientY < mid) {
+        nearest.before(placeholder);
+      } else {
+        nearest.after(placeholder);
+      }
+    }
+  }
+
+  lista.addEventListener("dragstart", (e) => {
+    const item = e.target.closest(".col-reorder-item");
+    if (!item) return;
+
+    dragSrc = item;
+    e.dataTransfer.effectAllowed = "move";
+
+    placeholder = document.createElement("li");
+    placeholder.className = "col-reorder-placeholder";
+    placeholder.style.height = item.offsetHeight + "px";
+
+    // Pequeno delay para a classe dragging não afetar a imagem de drag do navegador
+    setTimeout(() => {
+      item.classList.add("dragging");
+      item.after(placeholder);
+    }, 0);
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const csv = XLSX.utils.sheet_to_csv(ws);
+  overlay.addEventListener("dragover", (e) => {
+    if (!dragSrc || !placeholder) return;
+    e.preventDefault();
+    moverPlaceholder(e.clientY);
+  });
 
-  // BOM UTF-8 para acentuação correta no Excel
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `cofre-export-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  overlay.addEventListener("drop", (e) => {
+    if (!dragSrc || !placeholder) return;
+    e.preventDefault();
+    placeholder.replaceWith(dragSrc);
+    dragSrc.classList.remove("dragging");
+    dragSrc = null;
+    placeholder = null;
+  });
+
+  overlay.addEventListener("dragend", () => {
+    if (!dragSrc) return;
+    placeholder?.remove();
+    dragSrc.classList.remove("dragging");
+    dragSrc = null;
+    placeholder = null;
+  });
 }
