@@ -468,6 +468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-configurar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = false; });
   document.getElementById("btn-fechar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = true; });
   document.getElementById("btn-aplicar-filtros")?.addEventListener("click", () => { document.getElementById("filtros-modal-overlay").hidden = true; buscar(); });
+  document.getElementById("btn-export")?.addEventListener("click", exportarCSV);
 });
 
 async function handleFiles(files) {
@@ -563,4 +564,37 @@ function initTheme(b) { const isL = localStorage.getItem("theme") === "light"; d
 function initSettingsMenu(b, m) { b?.addEventListener("click", (e) => { e.stopPropagation(); m.hidden = !m.hidden; }); document.addEventListener("click", () => m && (m.hidden = true)); }
 function initMobileSidebar(b) { b?.addEventListener("click", () => document.body.classList.toggle("sidebar-open")); }
 function abrirPopoverTipo(btn, p, col, card) { /* Reuso simplificado para o exemplo, integra com o schema em lote */ abrirModalSchema(p); }
-async function abrirModalExport() { /* lógica de export aqui */ }
+function exportarCSV() {
+  if (!totalResultados.length) {
+    alert("Nenhum resultado para exportar. Faça uma busca primeiro.");
+    return;
+  }
+
+  // Garante a ordem de colunas (normalmente definida em renderPagina)
+  let colunas = ultimasColunas;
+  if (!colunas || !colunas.length) {
+    const colMap = new Map();
+    totalResultados.forEach(row => Object.keys(row).forEach(k => { if (!k.startsWith("_")) colMap.set(k.toLowerCase(), k); }));
+    colunas = ["_arquivo", ...colMap.values()];
+  }
+
+  const cabecalho = colunas.map(c => (c === "_arquivo" ? "Arquivo" : c));
+  const aoa = [cabecalho];
+  totalResultados.forEach(row => {
+    aoa.push(colunas.map(c => { const v = row[c]; return v === undefined || v === null ? "" : v; }));
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const csv = XLSX.utils.sheet_to_csv(ws);
+
+  // BOM UTF-8 para acentuação correta no Excel
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cofre-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
