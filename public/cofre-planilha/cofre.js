@@ -122,11 +122,18 @@ function linhaPassaFiltros(linha, planilhaId, schema) {
       }
     } else {
       const cell = String(rawVal).toLowerCase();
-      const term = String(f.values[0]).toLowerCase();
-      if (f.op === "exact") { if (cell !== term) return false; }
-      else if (f.op === "starts") { if (!cell.startsWith(term)) return false; }
-      else if (f.op === "ends") { if (!cell.endsWith(term)) return false; }
-      else { if (!cell.includes(term)) return false; }
+      const terms = (Array.isArray(f.values) ? f.values : [f.values[0]])
+        .map(v => String(v ?? "").toLowerCase())
+        .filter(Boolean);
+      if (terms.length) {
+        const casa = terms.some(term => {
+          if (f.op === "exact") return cell === term;
+          if (f.op === "starts") return cell.startsWith(term);
+          if (f.op === "ends") return cell.endsWith(term);
+          return cell.includes(term);
+        });
+        if (!casa) return false;
+      }
     }
   }
   return true;
@@ -292,24 +299,82 @@ function preencherCardBody(body, planilha, coluna, card) {
   } else {
     body.innerHTML = `
       <div class="filtro-card-row filtro-card-row--text">
-        <select class="filtro-card-op-select"><option value="contains" ${current.op === 'contains' ? 'selected' : ''}>Contém</option><option value="exact" ${current.op === 'exact' ? 'selected' : ''}>Exato</option><option value="starts" ${current.op === 'starts' ? 'selected' : ''}>Começa</option></select>
-        <input type="text" class="v1" placeholder="Digite..." value="${current.values[0] || ''}" style="flex:1; padding:7px; border:1px solid var(--border-color); border-radius:8px; background:rgba(0,0,0,0.2); color:white; outline:none">
-      </div>`;
+        <select class="filtro-card-op-select"><option value="contains" ${current.op === 'contains' ? 'selected' : ''}>Contém</option><option value="exact" ${current.op === 'exact' ? 'selected' : ''}>Exato</option><option value="starts" ${current.op === 'starts' ? 'selected' : ''}>Começa</option><option value="ends" ${current.op === 'ends' ? 'selected' : ''}>Termina</option></select>
+      </div>
+      <div class="filtro-card-tags"></div>
+      <span class="filtro-card-tags-hint">Tecle Enter para adicionar várias palavras (qualquer uma corresponde)</span>`;
+
+    const tagsBox = body.querySelector(".filtro-card-tags");
+    const tagInput = document.createElement("input");
+    tagInput.type = "text";
+    tagInput.className = "filtro-card-tag-input";
+    tagInput.placeholder = "Digite e tecle Enter...";
+    tagsBox.appendChild(tagInput);
+
+    const syncText = () => {
+      const op = body.querySelector(".filtro-card-op-select").value;
+      const terms = [...tagsBox.querySelectorAll(".filtro-card-tag-text")].map(s => s.textContent);
+      const typing = tagInput.value.trim();
+      if (typing) terms.push(typing);
+      const ativo = terms.length > 0;
+      card.classList.toggle("filtro-card--ativo", ativo);
+      sincronizarEstadoFiltro(pid, coluna, ativo ? { op, values: terms } : null);
+    };
+
+    const addTag = (value) => {
+      const tag = document.createElement("span");
+      tag.className = "filtro-card-tag";
+      const txt = document.createElement("span");
+      txt.className = "filtro-card-tag-text";
+      txt.textContent = value;
+      const rem = document.createElement("button");
+      rem.type = "button"; rem.className = "filtro-card-tag-remove";
+      rem.innerHTML = '<i class="ph ph-x"></i>';
+      rem.onclick = () => { tag.remove(); syncText(); };
+      tag.appendChild(txt); tag.appendChild(rem);
+      tagsBox.insertBefore(tag, tagInput);
+    };
+
+    // Restaura valores já existentes no estado
+    (Array.isArray(current.values) ? current.values : [current.values[0]])
+      .filter(v => v !== undefined && v !== null && v !== "")
+      .forEach(v => addTag(String(v)));
+
+    tagInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        const val = tagInput.value.trim().replace(/,$/, "");
+        if (val) { addTag(val); tagInput.value = ""; }
+        syncText();
+      } else if (e.key === "Backspace" && !tagInput.value) {
+        tagsBox.querySelector(".filtro-card-tag:last-of-type")?.remove();
+        syncText();
+      }
+    });
+    tagInput.addEventListener("input", syncText);
+    tagInput.addEventListener("blur", () => {
+      const val = tagInput.value.trim();
+      if (val) { addTag(val); tagInput.value = ""; syncText(); }
+    });
+    body.querySelector(".filtro-card-op-select").addEventListener("change", syncText);
   }
 
   const limparBtn = document.createElement("button");
   limparBtn.className = "filtro-card-limpar"; limparBtn.innerHTML = '<i class="ph ph-x"></i> Limpar';
-  limparBtn.onclick = () => { body.querySelectorAll("input").forEach(i => i.value = ""); sincronizarEstadoFiltro(pid, coluna, null); card.classList.remove("filtro-card--ativo"); };
+  limparBtn.onclick = () => { body.querySelectorAll("input").forEach(i => i.value = ""); body.querySelectorAll(".filtro-card-tag").forEach(t => t.remove()); sincronizarEstadoFiltro(pid, coluna, null); card.classList.remove("filtro-card--ativo"); };
   body.appendChild(limparBtn);
 
-  body.oninput = () => {
-    const op = body.querySelector("select").value;
-    const v1 = body.querySelector(".v1")?.value || "";
-    const v2 = body.querySelector(".v2")?.value || "";
-    const ativo = !!(v1 || v2);
-    card.classList.toggle("filtro-card--ativo", ativo);
-    sincronizarEstadoFiltro(pid, coluna, ativo ? { op, values: [v1, v2] } : null);
-  };
+  // Apenas número/data usam o handler genérico; texto sincroniza pelas próprias tags.
+  if (schemaCol.type !== "text") {
+    body.oninput = () => {
+      const op = body.querySelector("select").value;
+      const v1 = body.querySelector(".v1")?.value || "";
+      const v2 = body.querySelector(".v2")?.value || "";
+      const ativo = !!(v1 || v2);
+      card.classList.toggle("filtro-card--ativo", ativo);
+      sincronizarEstadoFiltro(pid, coluna, ativo ? { op, values: [v1, v2] } : null);
+    };
+  }
 }
 
 // ── UI: GERENCIADOR DE SCHEMA (EM LOTE) ─────────────────────
@@ -386,7 +451,11 @@ function atualizarChipsFiltrosAtivos() {
       if (f.op === 'range') resumo += `${f.values[0] || '∞'} a ${f.values[1] || '∞'}`;
       else if (f.op === 'period') resumo += `${formatDateBR(f.values[0]) || '∞'} a ${formatDateBR(f.values[1]) || '∞'}`;
       else if (f.op === 'exact' && p?.schema?.[col]?.type === 'date') resumo += `= ${formatDateBR(f.values[0])}`;
-      else resumo += `${f.op === 'exact' ? '=' : f.op} "${f.values[0]}"`;
+      else {
+        const vals = (Array.isArray(f.values) ? f.values : [f.values[0]]).filter(v => v !== undefined && v !== null && v !== "");
+        const joined = vals.map(v => `"${v}"`).join(" ou ");
+        resumo += `${f.op === 'exact' ? '=' : f.op} ${joined || `"${f.values[0] ?? ''}"`}`;
+      }
 
       chips.push({ label: resumo, onRemove: () => { delete filtrosState[pid][col]; renderFiltrosPanel(); buscar(); } });
     }
