@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cofre de Planilhas | AVANCE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="./cofre.css?v=42" />
+    <link rel="stylesheet" href="./cofre.css?v=44" />
     <script src="./xlsx.min.js"></script>
   </head>
   <body>
@@ -25,7 +31,7 @@
         </a>
       </div>
 
-      <div class="chat-list" style="margin-top: 20px">
+      <div class="chat-list">
         <div class="chat-item active">
           <i class="ph ph-vault"></i>
           <div class="chat-info">
@@ -110,22 +116,15 @@
 
             <div id="upload-status" class="upload-status"></div>
 
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 8px;
-              "
-            >
-              <h2 class="section-title" style="margin: 0">
+            <div class="file-list-header">
+              <h2 class="section-title section-title--flush">
                 <i class="ph ph-stack"></i> Planilhas carregadas
               </h2>
               <button
                 id="btn-limpar-tudo"
                 class="btn-clear-all"
                 title="Limpar todo o cofre"
-                style="display: none"
+                hidden
               >
                 <i class="ph ph-trash"></i> Limpar tudo
               </button>
@@ -231,10 +230,9 @@
     <div class="filtros-modal-overlay" id="schema-modal-overlay" hidden>
       <div class="filtros-modal">
         <div class="filtros-modal-header">
-          <div style="display: flex; align-items: center; gap: 10px">
-            <i class="ph ph-gear-six"></i>
-            <span>Configurar Tipos da Planilha</span>
-          </div>
+          <span id="schema-modal-titulo">
+            <i class="ph ph-gear-six"></i> Configurar Tipos da Planilha
+          </span>
           <button class="filtros-modal-close" id="btn-fechar-schema">
             <i class="ph ph-x"></i>
           </button>
@@ -268,6 +266,6 @@
       </div>
     </div>
 
-    <script src="./cofre.js?v=60"></script>
+    <script src="./cofre.js?v=62"></script>
   </body>
 </html>

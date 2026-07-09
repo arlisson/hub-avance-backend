@@ -193,7 +193,7 @@ function renderFiltrosPanel() {
     configBtn.onclick = (e) => { e.stopPropagation(); abrirModalSchema(p); };
 
     const tabWrap = document.createElement("div");
-    tabWrap.style.display = "flex"; tabWrap.style.alignItems = "center"; tabWrap.style.gap = "4px";
+    tabWrap.className = "filtro-tab-wrap";
     tabWrap.appendChild(tab); tabWrap.appendChild(configBtn);
 
     tab.onclick = () => {
@@ -388,7 +388,7 @@ function abrirModalSchema(planilha) {
     const s = planilha.schema?.[col] || { type: 'text' };
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><div style="font-weight:600; color:var(--text-primary)">${escHtml(col)}</div></td>
+      <td><div class="schema-col-name">${escHtml(col)}</div></td>
       <td>
         <select class="schema-type-select" data-col="${escHtml(col)}">
           <option value="text" ${s.type === 'text' ? 'selected' : ''}>Texto (ABC)</option>
@@ -397,16 +397,16 @@ function abrirModalSchema(planilha) {
         </select>
       </td>
       <td class="schema-config-cell">
-        ${s.type === 'number' ? `Sep. Decimal: <input type="text" class="s-decimal" value="${s.decimal || ','}" style="width:30px; text-align:center">` : ''}
-        ${s.type === 'date' ? `Formato: <select class="s-format"><option value="DD/MM/YYYY" ${s.format === 'DD/MM/YYYY' ? 'selected' : ''}>DD/MM/YYYY</option><option value="MM/DD/YYYY" ${s.format === 'MM/DD/YYYY' ? 'selected' : ''}>MM/DD/YYYY</option></select>` : ''}
+        ${s.type === 'number' ? `<span class="schema-config-label">Sep. Decimal: <input type="text" class="s-decimal" value="${s.decimal || ','}"></span>` : ''}
+        ${s.type === 'date' ? `<span class="schema-config-label">Formato: <select class="s-format"><option value="DD/MM/YYYY" ${s.format === 'DD/MM/YYYY' ? 'selected' : ''}>DD/MM/YYYY</option><option value="MM/DD/YYYY" ${s.format === 'MM/DD/YYYY' ? 'selected' : ''}>MM/DD/YYYY</option></select></span>` : ''}
       </td>
     `;
 
     tr.querySelector(".schema-type-select").onchange = (e) => {
       const type = e.target.value;
       const configCell = tr.querySelector(".schema-config-cell");
-      if (type === 'number') configCell.innerHTML = `Sep. Decimal: <input type="text" class="s-decimal" value="," style="width:30px; text-align:center">`;
-      else if (type === 'date') configCell.innerHTML = `Formato: <select class="s-format"><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option></select>`;
+      if (type === 'number') configCell.innerHTML = `<span class="schema-config-label">Sep. Decimal: <input type="text" class="s-decimal" value=","></span>`;
+      else if (type === 'date') configCell.innerHTML = `<span class="schema-config-label">Formato: <select class="s-format"><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option></select></span>`;
       else configCell.innerHTML = "";
     };
     tbody.appendChild(tr);
@@ -592,7 +592,7 @@ function renderLista() {
   l.innerHTML = planilhas.length ? "" : '<li class="file-list-empty">Vazio</li>';
   planilhas.forEach(p => {
     const li = document.createElement("li"); li.className = "file-item";
-    li.innerHTML = `<i class="ph ph-file-csv" style="color:var(--accent-cyan)"></i><span class="file-item-name">${escHtml(p.nome)}</span><button class="del"><i class="ph ph-trash"></i></button>`;
+    li.innerHTML = `<i class="ph ph-file-csv file-item-icon"></i><span class="file-item-name">${escHtml(p.nome)}</span><button class="del"><i class="ph ph-trash"></i></button>`;
     li.querySelector(".del").onclick = async () => {
       const db = await abrirDB();
       db.transaction([STORE_META, STORE_DADOS], "readwrite").objectStore(STORE_META).delete(p.id);
@@ -624,7 +624,7 @@ function renderPagination() {
   const tot = Math.ceil(totalResultados.length / PAGE_SIZE);
   const p = document.getElementById("pagination");
   p.hidden = tot <= 1;
-  p.innerHTML = `<button ${paginaAtual === 1 ? 'disabled' : ''} id="prev">Anterior</button><span>${paginaAtual}/${tot}</span><button ${paginaAtual === tot ? 'disabled' : ''} id="next">Próximo</button>`;
+  p.innerHTML = `<button class="btn-page" ${paginaAtual === 1 ? 'disabled' : ''} id="prev"><i class="ph ph-caret-left"></i> Anterior</button><span class="pagination-info">${paginaAtual} / ${tot}</span><button class="btn-page" ${paginaAtual === tot ? 'disabled' : ''} id="next">Próximo <i class="ph ph-caret-right"></i></button>`;
   p.querySelector("#prev").onclick = () => { paginaAtual--; renderPagina(); };
   p.querySelector("#next").onclick = () => { paginaAtual++; renderPagina(); };
 }
@@ -645,7 +645,7 @@ function abrirModalExport() {
     <div class="modal">
       <div class="modal-header">
         <h2 class="modal-title"><i class="ph ph-arrows-out-line-vertical"></i> Configurar exportação</h2>
-        <p class="modal-sub">Arraste (ou use as setas) para ordenar, e remova as colunas que não quer na planilha.</p>
+        <p class="modal-sub">Arraste (ou use as setas) para ordenar e remova as colunas que não quer. Marque duas ou mais para fundir em uma só.</p>
       </div>
       <div class="export-filename-field">
         <label for="export-filename">Nome do arquivo</label>
@@ -654,16 +654,11 @@ function abrirModalExport() {
           <span class="export-filename-ext">.csv</span>
         </div>
       </div>
-      <ul class="col-reorder-list" id="col-reorder-list">
-        ${ultimasColunas.map((col) => `
-          <li class="col-reorder-item" draggable="true" data-col="${escHtml(col)}">
-            <i class="ph ph-dots-six-vertical drag-handle"></i>
-            <span class="col-reorder-label">${escHtml(col === "_arquivo" ? "Arquivo" : (col.startsWith("_") ? col.slice(1) : col))}</span>
-            <button type="button" class="col-move-btn col-move-up" title="Mover para cima"><i class="ph ph-caret-up"></i></button>
-            <button type="button" class="col-move-btn col-move-down" title="Mover para baixo"><i class="ph ph-caret-down"></i></button>
-            <button type="button" class="col-delete-btn" title="Remover coluna"><i class="ph ph-x"></i></button>
-          </li>`).join("")}
-      </ul>
+      <div class="export-fuse-bar">
+        <button type="button" class="export-fuse-btn" id="btn-fundir" disabled><i class="ph ph-arrows-merge"></i> Fundir selecionadas (0)</button>
+        <span class="export-fuse-hint">Marque colunas equivalentes (ex.: Telefone e Celular) para uni-las.</span>
+      </div>
+      <ul class="col-reorder-list" id="col-reorder-list"></ul>
       <div class="modal-actions">
         <button class="btn-modal-cancel" id="export-modal-cancel">Cancelar</button>
         <button class="btn-primary" id="export-modal-confirm"><i class="ph ph-download-simple"></i> Exportar</button>
@@ -671,27 +666,125 @@ function abrirModalExport() {
     </div>`;
 
   document.body.appendChild(overlay);
-  document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
-  document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
 
   const reorderList = document.getElementById("col-reorder-list");
-  reorderList?.addEventListener("click", (e) => {
+  ultimasColunas.forEach((col) => {
+    const label = col === "_arquivo" ? "Arquivo" : (col.startsWith("_") ? col.slice(1) : col);
+    reorderList.appendChild(criarItemExport({ cols: [col], label }));
+  });
+
+  document.getElementById("export-modal-cancel")?.addEventListener("click", fecharModalExport);
+  document.getElementById("export-modal-confirm")?.addEventListener("click", confirmarExport);
+  document.getElementById("btn-fundir")?.addEventListener("click", () => fundirSelecionadas(reorderList));
+
+  reorderList.addEventListener("click", (e) => {
     const item = e.target.closest(".col-reorder-item");
     if (!item) return;
-    if (e.target.closest(".col-delete-btn")) { item.remove(); return; }
+    if (e.target.closest(".col-delete-btn")) { item.remove(); atualizarBotaoFundir(); return; }
     if (e.target.closest(".col-move-up")) { const prev = item.previousElementSibling; if (prev) prev.before(item); return; }
     if (e.target.closest(".col-move-down")) { const next = item.nextElementSibling; if (next) next.after(item); return; }
   });
+  reorderList.addEventListener("change", (e) => {
+    if (!e.target.classList.contains("col-select-check")) return;
+    e.target.closest(".col-reorder-item")?.classList.toggle("selected", e.target.checked);
+    atualizarBotaoFundir();
+  });
+
   iniciarDragAndDrop(reorderList);
+}
+
+// Cria um <li> da lista de exportação (via DOM p/ evitar escaping do JSON).
+function criarItemExport({ cols, label, fused = false }) {
+  const li = document.createElement("li");
+  li.className = "col-reorder-item";
+  li.draggable = true;
+  li.dataset.cols = JSON.stringify(cols);
+  li.dataset.label = label;
+
+  const check = document.createElement("input");
+  check.type = "checkbox"; check.className = "col-select-check"; check.title = "Selecionar para fundir";
+
+  const handle = document.createElement("i");
+  handle.className = "ph ph-dots-six-vertical drag-handle";
+
+  const labelWrap = document.createElement("div");
+  labelWrap.className = "col-reorder-label";
+  if (fused) {
+    const input = document.createElement("input");
+    input.type = "text"; input.className = "col-fused-name"; input.value = label; input.spellcheck = false;
+    input.title = "Nome da coluna resultante";
+    const badge = document.createElement("span");
+    badge.className = "col-source-badge";
+    badge.textContent = "Fundida: " + cols.map(c => (c === "_arquivo" ? "Arquivo" : c)).join(" + ");
+    labelWrap.appendChild(input); labelWrap.appendChild(badge);
+  } else {
+    const span = document.createElement("span");
+    span.textContent = label;
+    labelWrap.appendChild(span);
+  }
+
+  const up = document.createElement("button");
+  up.type = "button"; up.className = "col-move-btn col-move-up"; up.title = "Mover para cima";
+  up.innerHTML = '<i class="ph ph-caret-up"></i>';
+  const down = document.createElement("button");
+  down.type = "button"; down.className = "col-move-btn col-move-down"; down.title = "Mover para baixo";
+  down.innerHTML = '<i class="ph ph-caret-down"></i>';
+  const del = document.createElement("button");
+  del.type = "button"; del.className = "col-delete-btn"; del.title = "Remover coluna";
+  del.innerHTML = '<i class="ph ph-x"></i>';
+
+  li.append(check, handle, labelWrap, up, down, del);
+  return li;
+}
+
+function atualizarBotaoFundir() {
+  const btn = document.getElementById("btn-fundir");
+  if (!btn) return;
+  const n = document.querySelectorAll("#col-reorder-list .col-select-check:checked").length;
+  btn.disabled = n < 2;
+  btn.innerHTML = `<i class="ph ph-arrows-merge"></i> Fundir selecionadas (${n})`;
+}
+
+function fundirSelecionadas(lista) {
+  const marcados = [...lista.querySelectorAll(".col-reorder-item")].filter(li => li.querySelector(".col-select-check")?.checked);
+  if (marcados.length < 2) return;
+
+  const cols = [];
+  marcados.forEach(li => JSON.parse(li.dataset.cols).forEach(c => cols.push(c)));
+  const label = marcados[0].dataset.label || cols[0];
+
+  const fundido = criarItemExport({ cols, label, fused: true });
+  marcados[0].replaceWith(fundido);
+  marcados.slice(1).forEach(li => li.remove());
+  atualizarBotaoFundir();
 }
 
 function fecharModalExport() { document.getElementById("export-modal")?.remove(); }
 
+// Lê o valor de uma coluna numa linha, com fallback case-insensitive.
+function getCellValue(row, col) {
+  if (col === "_arquivo") return row._arquivo ?? "";
+  let v = row[col];
+  if (v === undefined) {
+    const alvo = String(col).toLowerCase();
+    for (const k of Object.keys(row)) {
+      if (k.toLowerCase() === alvo) { v = row[k]; break; }
+    }
+  }
+  return v === undefined || v === null ? "" : String(v);
+}
+
 async function confirmarExport() {
   const lista = document.getElementById("col-reorder-list");
-  const colunasOrdenadas = [...lista.querySelectorAll(".col-reorder-item")].map(li => li.dataset.col);
+  const config = [...lista.querySelectorAll(".col-reorder-item")].map(li => {
+    const cols = JSON.parse(li.dataset.cols);
+    const nomeFundido = li.querySelector(".col-fused-name")?.value.trim();
+    let label = nomeFundido || li.dataset.label || cols[0];
+    if (cols.length === 1 && cols[0] === "_arquivo") label = "Arquivo";
+    return { cols, label };
+  });
 
-  if (!colunasOrdenadas.length) {
+  if (!config.length) {
     alert("Selecione ao menos uma coluna para exportar.");
     return;
   }
@@ -716,13 +809,16 @@ async function confirmarExport() {
   }
 
   try {
-    const cabecalho = colunasOrdenadas
-      .map(c => (c === "_arquivo" ? "Arquivo" : c))
-      .map(c => `"${c.replace(/"/g, '""')}"`).join(";");
+    const cabecalho = config.map(c => `"${c.label.replace(/"/g, '""')}"`).join(";");
     const linhasCSV = resultados.map(linha => {
-      return colunasOrdenadas.map(c => {
-        const val = linha[c] ?? "";
-        return `"${String(val).replace(/"/g, '""')}"`;
+      return config.map(c => {
+        // Fusão: primeiro valor preenchido entre as colunas de origem.
+        let valor = "";
+        for (const col of c.cols) {
+          const v = getCellValue(linha, col);
+          if (v !== "") { valor = v; break; }
+        }
+        return `"${valor.replace(/"/g, '""')}"`;
       }).join(";");
     });
 
